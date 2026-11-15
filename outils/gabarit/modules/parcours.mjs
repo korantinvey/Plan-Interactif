@@ -15,6 +15,7 @@ import { creeEvenement } from "./evenement.mjs";
 import { avive } from "./couleurs.mjs";
 import { inscritTiroirExclusif } from "./tiroirs-exclusifs.mjs";
 import { esc } from "./texte.mjs";
+import { suitLaRacine } from "./jetons-racine.mjs";
 import { SLUG } from "./salon.mjs";
 import { jetonMesure, mesure } from "./mesure.mjs";
 import { momentLocal } from "./temps.mjs";
@@ -368,6 +369,13 @@ function calqueMarques(){
  * Le calque se relit dans le plan plutôt qu'il ne se tient à jour : les deux
  * marques changent par des chemins sans rapport — un signet, un clic, un
  * changement de pavillon — et une seule lecture les remet d'accord.
+ *
+ * Elles portent leur style en attributs — couleur, épaisseur, tirets —, et
+ * la feuille ne les peint plus : le SVG de secours les lit comme tels, et le
+ * dessin aussi, sans demander au navigateur un style calculé
+ * (`style-attributs.mjs`, `docs/migration-webgl.md`, étape 2). Les couleurs
+ * sont donc résolues ici, une fois par tracé du calque, et le calque se
+ * retrace quand l'une d'elles change sur la racine (`jetons-racine.mjs`).
  */
 /**
  * L'encadrement d'une tuile choisie, dans sa propre teinte. En Tuiles, la
@@ -379,11 +387,39 @@ function calqueMarques(){
  * alors la couleur de sélection réglée.
  */
 function traitTuile(/** @type {Element} */ p){
-  if (!document.documentElement.classList.contains("ambiance-tuiles")) return "";
+  if (!document.documentElement.classList.contains("ambiance-tuiles")) return null;
   const v = (getComputedStyle(p).fill.match(/[\d.]+/g) || []).map(Number);
   const c = v.length >= 3 ? avive([v[0], v[1], v[2], 255]) : null;
-  return c ? ' style="stroke:rgb(' + c.slice(0, 3).join(",") + ')"' : "";
+  return c ? "rgb(" + c.slice(0, 3).join(",") + ")" : null;
 }
+
+/* Ce dont dépend le style des marques : les deux couleurs réglées
+   (`apparence.mjs` `appliqueCouleursData`), l'accent qui les remplace quand
+   elles sont vides, et les classes de la racine qui changent ce qu'on trace.
+   La teinte d'une tuile choisie se tire de celle des stands et de la
+   sélection. Les couleurs se lisent sur le calque, qui les hérite comme la
+   feuille les lui donnait. */
+function jetonsMarques(/** @type {CSSStyleDeclaration} */ cs){
+  const r = document.documentElement;
+  const v = (/** @type {string} */ n) => cs.getPropertyValue(n).trim();
+  const accent = v("--accent");
+  return {
+    parc: v("--c-parc") || accent, sel: v("--c-sel-trait") || accent,
+    tuiles: r.classList.contains("ambiance-tuiles"),
+    /* Le parcours est tracé hors des couches : le retrait du plan derrière un
+       cartouche (« poi-actif ») ne l'atteignait donc pas, et ses liserés
+       restaient seuls à pleine force au milieu d'un hall effacé — on les
+       prenait pour ce que le cartouche venait de désigner. Le temps d'une mise
+       en avant, ils ne se tracent pas : ce qu'on a retenu se retrouve en
+       refermant le cartouche. Ni quand l'exploitant a retiré le parcours. */
+    sansParc: r.classList.contains("sans-parcours") || r.classList.contains("poi-actif"),
+    teintes: v("--c-stand") + "|" + v("--c-zone") + "|" + v("--c-sel") + "|" + v("--c-survol"),
+  };
+}
+
+/* Le trait commun aux deux marques : sans aplat, d'une épaisseur fixe à
+   l'écran quel que soit le zoom. */
+const TRAIT = ' fill="none" vector-effect="non-scaling-stroke"';
 
 export function dessineMarques(){
   /* Les liserés vivent hors des couches : rien ne les masquerait avec elles.
@@ -392,6 +428,8 @@ export function dessineMarques(){
      sans stands. */
   const montree = n => { const g = $(n); return !g || g.style.display !== "none"; };
   const vu = { stands: montree("stands"), zones: montree("zones") };
+  const calque = calqueMarques();
+  const j = jetonsMarques(getComputedStyle(calque));
   let parc = "", sel = "";
   document.querySelectorAll("#stands > g, #zones > g").forEach(g => {
     if (!vu[g.parentNode.id]) return;
@@ -401,15 +439,26 @@ export function dessineMarques(){
        qui la distingue d'un stand. Le parcours, lui, se veut continu partout :
        il dit qu'on a retenu l'endroit, pas ce qu'il est. Le tracé relu est
        décodé : un guillemet y fermerait l'attribut, et le reste deviendrait
-       du balisage — il repasse par `esc()`. */
+       du balisage — il repasse par `esc()`, comme les couleurs relues. */
     const d = ' d="' + esc(p.getAttribute("d")) + '"/>';
-    if (g.classList.contains("enparcours")) parc += '<path class="parc"' + d;
-    if (g.classList.contains("sel"))
-      sel += '<path class="sel' + (g.parentNode.id === "zones" ? " zn" : "") + '"' + traitTuile(p) + d;
+    if (!j.sansParc && g.classList.contains("enparcours"))
+      parc += '<path class="parc"' + TRAIT + ' stroke="' + esc(j.parc) + '" stroke-width="2"' + d;
+    if (g.classList.contains("sel")){
+      const zone = g.parentNode.id === "zones";
+      sel += '<path class="sel' + (zone ? " zn" : "") + '"' + TRAIT +
+        ' stroke="' + esc(traitTuile(p) || j.sel) + '" stroke-width="3"' +
+        (zone ? ' stroke-dasharray="5 4"' : "") + d;
+    }
   });
   // la sélection en dernier : c'est elle qu'on vient de désigner
-  calqueMarques().innerHTML = parc + sel;
+  calque.innerHTML = parc + sel;
 }
+
+/* Une couleur réglée, l'accent, l'ambiance, un cartouche ouvert : autant de
+   jetons et de classes posés sur la racine, que la feuille suivait d'elle-même
+   quand elle peignait les marques (`jetons-racine.mjs`). Rien avant le
+   premier tracé — le plan n'est pas monté. */
+suitLaRacine(cs => JSON.stringify(jetonsMarques(cs)), () => { if ($("marques")) dessineMarques(); });
 
 /**
  * Ce qu'un visiteur a retenu, marqué sur le plan.

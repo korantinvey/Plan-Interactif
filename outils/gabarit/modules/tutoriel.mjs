@@ -58,6 +58,8 @@ import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { calqueActif, enCours } from "./calques-dessin.mjs";
 import { formeSel } from "./forme-choisie.mjs";
 import { TUTO, poseTuto } from "./visite-guidee.mjs";
+import { emplacements, groupeEmplacement, poseCibleTuto } from "./etat-emplacements.mjs";
+import { suitLaRacine } from "./jetons-racine.mjs";
 
 /* Le dessin du plan s'importe de `vue.mjs`, le mouvement réduit de
    `ecran.mjs`, la page où l'on est (`PLAN_ADMIN`) de `salon.mjs`. L'état de
@@ -639,6 +641,7 @@ function quitteTutoriel(){
   TUTO.ecoutes.forEach(([t, f, c]) => removeEventListener(t, f, c));
   ["tuto", "tutoRepere", "tutoZone", "tutoVoile"].forEach(id => { const e = $(id); if (e) e.remove(); });
   racine.classList.remove("tuto-retrait");
+  poseCibleTuto(null);
   if (TUTO.guet) TUTO.guet.disconnect();
   poseTuto(null);
 }
@@ -984,6 +987,23 @@ function rafaleTuto(){
   TUTO.raf = requestAnimationFrame(image);
 }
 
+/* Le halo et le trait de la zone désignée, de la couleur principale. */
+const traitsZoneTuto = (/** @type {string} */ accent) => ({
+  halo: { fill: accent, "fill-opacity": ".16", stroke: accent, "stroke-width": "10", "stroke-opacity": ".22" },
+  trait: { fill: "none", stroke: accent, "stroke-width": "3" },
+});
+/* L'accent changé pendant la visite : la zone désignée le suit, comme la
+   feuille la faisait suivre quand elle la peignait (`jetons-racine.mjs`). */
+suitLaRacine(cs => cs.getPropertyValue("--accent").trim(), () => {
+  const g = $("tutoZone");
+  if (!g || !g.firstChild) return;
+  const traits = traitsZoneTuto(getComputedStyle(g).getPropertyValue("--accent").trim());
+  g.querySelectorAll("path").forEach(p => {
+    const a = traits[/** @type {"halo" | "trait"} */ (p.getAttribute("class"))];
+    if (a) for (const [k, v] of Object.entries(a)) p.setAttribute(k, v);
+  });
+});
+
 /**
  * La zone à toucher, recopiée au-dessus du plan.
  *
@@ -1002,6 +1022,10 @@ function marqueZoneTuto(z){
      un observateur lui rend sa marque aussitôt. */
   racine.classList.toggle("tuto-retrait", vue);
   marqueLibelleTuto(vue ? z.id : null);
+  /* La zone désignée se dit au modèle, que le dessin lit (`etat-emplacements.mjs`) ;
+     son groupe SVG n'est marqué que s'il existe, pour le rendu de secours. */
+  const cible = vue ? emplacements().find(e => e.zone && e.id === z.id) : null;
+  poseCibleTuto(cible ? cible.cle : null);
   document.querySelectorAll("#zones g.tutoCible").forEach(n => {
     if (!vue || n.dataset.id !== z.id) n.classList.remove("tutoCible");
   });
@@ -1011,7 +1035,7 @@ function marqueZoneTuto(z){
      quand même l'attribut, et le guet de la carte graphique y voit un
      changement : tout le plan se redessinait quatre fois par seconde, une
      image toutes les quatre secondes sous un rendu logiciel. */
-  const forme = $("zones").querySelector('g[data-id="' + CSS.escape(z.id) + '"]');
+  const forme = cible ? groupeEmplacement(cible.cle) : null;
   if (forme && !forme.classList.contains("tutoCible")) forme.classList.add("tutoCible");
   if (g && g.dataset.id === z.id) return;
   if (!g){
@@ -1022,12 +1046,20 @@ function marqueZoneTuto(z){
   }
   g.dataset.id = z.id;
   g.innerHTML = "";
-  ["halo", "trait"].forEach(cls => {
+  /* La zone porte son style en attributs : le SVG de secours les lit comme
+     tels, et le dessin aussi (`style-attributs.mjs`), sans que la feuille la
+     peigne. Un halo pâle et large, puis le trait de la couleur principale,
+     d'épaisseur fixe à l'écran. Seul le battement reste à la feuille : le
+     dessin ne le rejoue pas. */
+  const traits = traitsZoneTuto(getComputedStyle(g).getPropertyValue("--accent").trim());
+  for (const [cls, attrs] of Object.entries(traits)){
     const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
     p.setAttribute("class", cls);
     p.setAttribute("d", z.d);
+    for (const [k, v] of Object.entries({ ...attrs, "vector-effect": "non-scaling-stroke", "stroke-linejoin": "round" }))
+      p.setAttribute(k, v);
     g.appendChild(p);
-  });
+  }
 }
 
 /** Le libellé de la zone désignée, gardé clair quand le plan recule. */

@@ -59,6 +59,7 @@ import { libelles } from "./libelles.mjs";
 import { dessineDessins } from "./dessin.mjs";
 import { view } from "./vue.mjs";
 import { poseToutAuParcours } from "./tout-au-parcours.mjs";
+import { poseRetires, emplacements, groupeEmplacement } from "./etat-emplacements.mjs";
 
 
 /* Le secteur n'est offert comme critère que là où le plan sectorise et le
@@ -576,13 +577,18 @@ export { filtre, visible, visibleSurPlan, visibleSociete, retraitLeve, reposeRet
  */
 export function marqueRetrait(){
   releveHotes();
-  document.querySelectorAll("#stands g, #zones g").forEach(g => {
-    const o = parId.get(g.dataset.id);
+  /* Le retrait se décide sur les données et se dit au modèle, que le dessin
+     lit (`etat-emplacements.mjs`) ; le groupe SVG n'est marqué que s'il
+     existe, pour le rendu de secours. */
+  const retires = new Set();
+  for (const e of emplacements()){
     // un stand ajouté et lié suit sa société, comme un stand dessiné
-    const vu = !o || (g.dataset.soc !== undefined
-      ? visibleSociete(o, Number(g.dataset.soc)) : visibleSurPlan(o));
-    g.classList.toggle("dim", !vu);
-  });
+    const vu = !e.o || (e.soc !== undefined ? visibleSociete(e.o, e.soc) : visibleSurPlan(e.o));
+    if (!vu) retires.add(e.cle);
+    const g = groupeEmplacement(e.cle);
+    if (g) g.classList.toggle("dim", !vu);
+  }
+  poseRetires(retires);
   document.querySelectorAll("#couches .dcal .sdes[data-id]").forEach(g => {
     const o = parId.get(g.dataset.id);
     g.classList.toggle("dim", !!o && !visibleSociete(o, Number(g.dataset.soc)));

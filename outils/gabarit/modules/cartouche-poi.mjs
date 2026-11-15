@@ -28,6 +28,7 @@ import { DESSINS, mesCalques } from "./calques-dessin.mjs";
 import { PICTOS, nomTypeRepere, typeZone, pictoForme, glypheRepere, pastillePoi } from "./reperes.mjs";
 import { majFondus } from "./bandes.mjs";
 import { formeParId } from "./forme-choisie.mjs";
+import { posePhares, emplacements, groupeEmplacement } from "./etat-emplacements.mjs";
 
 /**
  * Les repères, en objets de recherche.
@@ -276,8 +277,16 @@ function eclairePoi(){
     const f = formeParId(g.dataset.f);
     g.classList.toggle("phare", phareRepere(f && f.f));
   });
-  $("zones").querySelectorAll("g").forEach(g =>
-    g.classList.toggle("phare", phareZone(parId.get(g.dataset.id))));
+  // décidé sur les données et dit au modèle (`etat-emplacements.mjs`) ; le groupe SVG, s'il existe
+  const phares = new Set();
+  for (const e of emplacements()){
+    if (!e.zone) continue;
+    const oui = phareZone(e.o);
+    if (oui) phares.add(e.cle);
+    const g = groupeEmplacement(e.cle);
+    if (g) g.classList.toggle("phare", oui);
+  }
+  posePhares(phares);
   /* Le libellé d'une zone mise en avant est ce qui la nomme : le laisser en
      retrait avec le reste du plan aurait effacé la seule chose qui distingue
      deux restaurations. Il se réécrit à chaque déplacement de la vue, et

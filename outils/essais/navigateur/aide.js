@@ -4,6 +4,7 @@
  */
 const fs = require("fs");
 const path = require("path");
+const { expect } = require("@playwright/test");
 
 const PLANS = fs.readFileSync(path.join(__dirname, "..", "..", "donnees", "plans.json"), "utf8");
 const DONNEES = JSON.parse(PLANS);
@@ -77,6 +78,32 @@ async function attendLaListe(page) {
   return page.locator("#list > *");
 }
 
+/**
+ * Un point de l'écran au centre d'un stand du plan, que rien ne recouvre :
+ * là où le visiteur poserait le doigt. Quel que soit le rendu — en WebGL, le
+ * SVG caché garde sa géométrie figée, et c'est la vue du dessin qui dit où le
+ * stand se trouve (`webgl.mjs` `rectEcranWebgl`). Rend `null` si aucun stand
+ * ne convient ; `sauf` écarte celui dont le texte le contient.
+ */
+function standAViser(page, { sauf = "" } = {}) {
+  return page.evaluate((sauf) => {
+    const { GL, rectEcranWebgl } = /** @type {any} */ (globalThis).__essais;
+    const st = document.getElementById("stage").getBoundingClientRect();
+    for (const n of document.querySelectorAll("#stands g[data-id]")) {
+      if (sauf && n.textContent.includes(sauf)) continue;
+      const r = GL.actif ? rectEcranWebgl(n) : n.getBoundingClientRect();
+      if (!r || r.width < 10 || r.height < 10) continue;
+      const x = r.left + r.width / 2, y = r.top + r.height / 2;
+      if (x < st.left + 30 || x > st.right - 30 || y < st.top + 30 || y > st.bottom - 30) continue;
+      const e = document.elementFromPoint(x, y);
+      if (!e || !e.closest("#stage") ||
+          e.closest("#viseur, .tools, .zoombar, #poi, #side, #detail, #parcours, #itineraire, .topbar")) continue;
+      return { x, y };
+    }
+    return null;
+  }, sauf);
+}
+
 /* Les deux empreintes d'intégrité de MapLibre, relues là où la page les tient
    (`modules/environs.mjs` `MAPLIBRE`) : jamais recopiées, elles changent à
    chaque `npm run maplibre`. */
@@ -111,4 +138,44 @@ async function remplaceMapLibre(page, reponse) {
   await page.route("**/bibliotheques/maplibre-gl-*", reponse);
 }
 
-module.exports = { prepare, attendLaListe, remplaceMapLibre, DONNEES, PREMIER };
+/* `plans.json` n'a pas de programme : sans conférence rattachée à une zone, la
+   visite n'a pas de chapitre des zones. On en pose une, dans une zone nommée
+   du premier pavillon — celui qu'on regarde à l'ouverture. */
+function avecUnProgramme() {
+  const d = JSON.parse(JSON.stringify(DONNEES));
+  const zone = d.plans[0].zones.find((z) => z.nom);
+  d.plans[0].conferences = [{
+    id: "essai-visite", nom: "Conférence d'essai", texte: null,
+    debut: "2026-03-14T09:00:00Z", fin: "2026-03-14T10:00:00Z",
+    debutLocal: "2026-03-14T10:00:00", finLocal: "2026-03-14T11:00:00",
+    salleId: null, salle: zone.nom, zone: zone.id, type: null, couleur: null, theme: null,
+  }];
+  return JSON.stringify(d);
+}
+
+/** Ouvre le plan en premier visiteur, et accepte la visite qu'on lui propose. */
+async function commenceLaVisite(page, { adresse = "/plan?plan=smcl-2026", donnees = null } = {}) {
+  const erreurs = await prepare(page, { premiereVisite: true });
+  await page.addInitScript(() => {
+    for (const salon of ["smcl-2026", ""]) {
+      localStorage.setItem("plan-installation:" + salon, JSON.stringify({ compris: true }));
+    }
+  });
+  if (donnees) {
+    // posée après celle de `prepare`, cette route passe devant elle
+    await page.route("**/api/plan*", (r) => {
+      if (new URL(r.request().url()).searchParams.get("entete")) {
+        return r.fulfill({ json: { v: "essai" } });
+      }
+      return r.fulfill({ status: 200, contentType: "application/json",
+        headers: { "X-Version": "essai" }, body: donnees });
+    });
+  }
+  await page.goto(adresse);
+  await page.locator("#modale.open").getByRole("button", { name: "Commencer" }).click();
+  await expect(page.locator("#tuto")).toBeVisible();
+  return erreurs;
+}
+
+module.exports = { prepare, attendLaListe, remplaceMapLibre, standAViser, avecUnProgramme, commenceLaVisite,
+  DONNEES, PREMIER };

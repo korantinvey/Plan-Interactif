@@ -35,6 +35,8 @@ import { select } from "./fiche.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { injecteChaleur } from "./secteurs.mjs";
 import { svg, vue, suitLaVue, versScene, cadrePlan } from "./vue.mjs";
+import { poseChaleurs, emplacements, groupeEmplacement } from "./etat-emplacements.mjs";
+import { lisTrace } from "./trace.mjs";
 
 const racine = document.documentElement;
 
@@ -169,36 +171,66 @@ export function coloreChaleur(){
   racine.classList.toggle("chaleur-halos", halos);
   /** @type {Array<[number, number, number, number, string]>} */
   const releve = [];
-  document.querySelectorAll("#stands g, #couches .dcal .sdes[data-id]").forEach(g => {
+  /* Le groupe SVG d'un stand ou d'un découpage dessiné, marqué pour le rendu
+     de secours : la teinte, et le chiffre derrière elle, à portée de curseur.
+     Une carte de chaleur se lit de loin mais se vérifie de près, et
+     l'exploitant qui prépare une relance a besoin du nombre, pas de la nuance. */
+  const marque = (/** @type {Element} */ g, /** @type {number} */ n, /** @type {string} */ ton, /** @type {string} */ id) => {
     const titre = g.querySelector(":scope > title.chal");
+    const st = /** @type {SVGElement} */ (g).style;
     if (!on){
       g.removeAttribute("data-chaleur");
-      g.style.removeProperty("--chal-c");
+      st.removeProperty("--chal-c");
       if (titre) titre.remove();
       return;
     }
-    const n = CHALEUR.par.get(g.dataset.id) || 0;
     g.setAttribute("data-chaleur", "");
-    const niv = niveauChaleur(n, CHALEUR.max), ton = tonChaleur(niv);
-    g.style.setProperty("--chal-c", ton);
-    /* La boîte se lit ici, une fois par lecture des compteurs, et non à chaque
-       image : le halo suit ensuite la vue sans rien remesurer. */
-    if (halos && n > 0){
-      const b = /** @type {SVGGraphicsElement} */ (g).getBBox();
-      releve.push([b.x + b.width / 2, b.y + b.height / 2,
-                   Math.max(b.width, b.height) / 2, niv, ton]);
-    }
-    /* Le chiffre derrière la couleur, à portée de curseur. Une carte de chaleur
-       se lit de loin mais se vérifie de près, et l'exploitant qui prépare une
-       relance a besoin du nombre, pas de la nuance. */
+    st.setProperty("--chal-c", ton);
     const t = titre || g.insertBefore(
       document.createElementNS("http://www.w3.org/2000/svg", "title"), g.firstChild);
     t.setAttribute("class", "chal");
-    const o = parId.get(g.dataset.id);
+    const o = parId.get(id);
     t.textContent = (o && (o.nom || o.code) ? (o.code ? o.code + " — " : "") +
       (o.nom || "emplacement") + " · " : "") +
       nbChal(n) + (n > 1 ? " consultations" : " consultation");
+  };
+  /* La boîte se lit une fois par lecture des compteurs, et non à chaque
+     image : le halo suit ensuite la vue sans rien remesurer. Sur le groupe
+     s'il existe ; sinon sur le tracé de l'emplacement. */
+  const halo = (/** @type {Element | null} */ g, /** @type {string} */ d, /** @type {number} */ niv, /** @type {string} */ ton) => {
+    let b = null;
+    if (g) b = /** @type {SVGGraphicsElement} */ (g).getBBox();
+    else {
+      const pts = lisTrace(d || "").flatMap(t => t.pts);
+      if (pts.length){
+        const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
+        const x = Math.min(...xs), y = Math.min(...ys);
+        b = { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y };
+      }
+    }
+    if (b) releve.push([b.x + b.width / 2, b.y + b.height / 2, Math.max(b.width, b.height) / 2, niv, ton]);
+  };
+  // ce que le dessin lit au modèle (`etat-emplacements.mjs`) : la couleur de chaque stand, par clé
+  /** @type {Map<string, string>} */
+  const couleurs = new Map();
+  for (const e of emplacements()){
+    if (e.zone) continue;
+    const g = groupeEmplacement(e.cle);
+    const n = on ? CHALEUR.par.get(e.id) || 0 : 0;
+    const niv = on ? niveauChaleur(n, CHALEUR.max) : 0, ton = on ? tonChaleur(niv) : "";
+    if (on) couleurs.set(e.cle, ton);
+    if (g) marque(g, n, ton, e.id);
+    if (on && halos && n > 0) halo(g, e.source.d, niv, ton);
+  }
+  // les découpages dessinés vivent dans leur calque, et non parmi les emplacements
+  document.querySelectorAll("#couches .dcal .sdes[data-id]").forEach(g => {
+    const id = /** @type {SVGElement} */ (g).dataset.id || "";
+    const n = on ? CHALEUR.par.get(id) || 0 : 0;
+    const niv = on ? niveauChaleur(n, CHALEUR.max) : 0, ton = on ? tonChaleur(niv) : "";
+    marque(g, n, ton, id);
+    if (on && halos && n > 0) halo(g, "", niv, ton);
   });
+  poseChaleurs(on ? couleurs : null);
   // les plus chauds par-dessus : un rouge ne se noie pas sous le bleu d'à côté
   HALOS = releve.sort((a, b) => a[3] - b[3]);
   dessineHalos();

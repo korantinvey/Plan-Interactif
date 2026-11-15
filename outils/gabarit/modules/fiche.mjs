@@ -49,6 +49,7 @@ import { inscritTiroirExclusif, fermeLesAutresTiroirs } from "./tiroirs-exclusif
 import { poseDistsFiche } from "./distinctions.mjs";
 import { decoupeStand, marqueStandsDessines } from "./dessin.mjs";
 import { montePlan, chargeFond, PAVILLON_QUITTE } from "./rendu.mjs";
+import { poseChoisi, cleDuGroupe } from "./etat-emplacements.mjs";
 
 /**
  * Ce que la fiche emprunte aux modules qui l'importent : le montage du plan
@@ -188,6 +189,8 @@ export function select(id, recentrer, canal, iSoc){
   state.sel = id;
   state.selSoc = iSoc === undefined ? -1 : iSoc;
   const n = noeud(id, state.selSoc); if (n) n.classList.add("sel");
+  // le dessin lit l'emplacement allumé au modèle (`etat-emplacements.mjs`) ; un découpage n'en est pas un
+  poseChoisi(cleDuGroupe(n));
   dessineMarques();
   marqueStandsDessines();
   if (ailleurs) liste(); else marqueChoisie();
@@ -1153,6 +1156,7 @@ export function ferme(){
      qu'un remplissage, jamais le contour qui la donne. */
   const n = ouvert && id ? noeud(id, state.selSoc) : null;
   document.querySelectorAll(".sel").forEach(x => x.classList.remove("sel"));
+  poseChoisi(null);
   state.sel = null; state.selSoc = -1;
   dessineMarques();
   marqueStandsDessines();

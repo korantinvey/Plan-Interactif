@@ -39,6 +39,12 @@ import { creeEvenement } from "./evenement.mjs";
 import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, anneau, rectArrondi,
   avecTrous, couleurGl } from "./trace.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
+import { jetonsEmplacements, styleEmplacement } from "./style-emplacements.mjs";
+import { etatEmplacement } from "./etat-emplacements.mjs";
+import { jetonsHabillage, styleSousCalque, styleSansSousCalque, styleElementHabillage, opaciteElement } from "./style-habillage.mjs";
+import { copieDuCalque } from "./calque-detache.mjs";
+import { styleParAttributs } from "./style-attributs.mjs";
+import { poseHabillageDansLeSvg } from "./habillage-svg.mjs";
 import { MODES_TRANSPORT } from "./reperes.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
 import { TRAIT_PLEIN, TRAIT_PLANCHER } from "./chemin-forme.mjs";
@@ -268,9 +274,11 @@ function chargeWebgl(){
      secours : bibliothèque introuvable, ou dessin trop long à venir. */
   const racine = document.documentElement;
   racine.classList.add("gl-attente");
+  // le dessin lit l'habillage dans ses données : le SVG caché n'a pas à le porter
+  poseHabillageDansLeSvg(false);
   /* Le SVG montré faute de dessin, c'est encore le plan à l'écran : ce qui
      attendait l'affichage n'a plus à attendre. */
-  const secours = () => { racine.classList.remove("gl-attente"); planAffiche(); };
+  const secours = () => { racine.classList.remove("gl-attente"); poseHabillageDansLeSvg(true); planAffiche(); };
   /* Le secours n'en est un que s'il montre le même plan. En immersif, le SVG
      n'a que les tuiles à plat : montré le temps que les volumes se préparent
      — et c'est le dessin le plus long à venir —, il faisait croire à une
@@ -712,6 +720,8 @@ function perdContexteWebgl(raison = "contexte perdu"){
   console.warn("Rendu WebGL : " + raison + ", le plan repasse en SVG.");
   clearTimeout(_gardeBoucle); _gardeBoucle = 0;
   GL.actif = false; GL.pret = false;
+  // le SVG reprend le plan : il lui faut son habillage
+  poseHabillageDansLeSvg(true);
   /* Dit tout de suite, et non une fois le dessin jeté : rendre la caméra
      recadre la vue, qui repasse aussitôt par « monteWebgl ». Sans ce drapeau,
      un dessin neuf y naissait, que la suite jetait à la place de l'ancien —
@@ -1027,7 +1037,7 @@ function cleReunion(/** @type {any} */ c){
   if (TEXTE_DE_CALQUE.test(c.id) && !p.passeSousPixel)
     return ["t", c.id.replace(/^.*-/, ""), p.fontFamily, p.fontWeight, p.pickable, p.modeFiltre, p.muetALEcran,
       p.billboard, p.etireAPlat, p.lineHeight, JSON.stringify(p.parameters || {})].join("|");
-  if (TRAIT_DE_CALQUE.test(c.id) && !p.defile && !p.billboard)
+  if (TRAIT_DE_CALQUE.test(c.id) && !p.billboard)
     return ["p", p.pickable, p.widthUnits, p.widthMinPixels, JSON.stringify(p.parameters || {})].join("|");
   return null;
 }
@@ -1435,51 +1445,6 @@ function constTexte(){
       muet: this.props.muetALEcran && !GL.geste ? 1 : 0, etire: this.props.etireAPlat || 1 } }); }
   }
   FiltreZoom.extensionName = "FiltreZoom";
-  /* Les pointillés de l'itinéraire avancent : ils disent le sens du trajet.
-
-     Ils taillent leurs tirets eux-mêmes, au lieu de décaler ceux de la
-     bibliothèque. Décaler les siens paraissait pourtant tenir en une ligne —
-     ajouter au « vDashOffset » qu'elle pose en fin de shader — mais cette
-     ligne n'a jamais rien fait : les deux extensions écrivent au même endroit,
-     et celle de la bibliothèque repasse derrière, quel que soit leur ordre.
-     Rien ne le signalait, le trait se dessinait juste immobile, et le rendu
-     SVG défilait pendant ce temps — c'est-à-dire chez presque personne, le
-     WebGL étant le rendu par défaut.
-
-     Le trajet garde donc sa propre distance parcourue, « vDefilePos », et le
-     fragment décide lui-même de ce qu'il jette. Les longueurs se comptent en
-     demi-épaisseurs de trait, comme celles de la bibliothèque, et le décalage
-     arrive en pixels — comme le « stroke-dashoffset » d'un trait qui ne
-     grossit pas au zoom —, d'où la division au moment de le passer.
-
-     Un trait qui ne défile pas donne des tirets de longueur nulle : le
-     fragment n'en tient alors aucun compte, et la bibliothèque reste seule à
-     pointiller ce qu'elle pointille. */
-  class TiretsQuiDefilent extends deck.LayerExtension {
-    getShaders(){
-      const bloc = "layout(std140) uniform defileUniforms {\n  vec2 tirets;\n  float decalage;\n} defile;\n";
-      return {
-        modules: [{ name: "defile", vs: bloc, fs: bloc,
-                    uniformTypes: { tirets: "vec2<f32>", decalage: "f32" } }],
-        inject: {
-          "vs:#decl": "out float vDefilePos;",
-          "vs:#main-end": "vDefilePos = vPathPosition.y;",
-          "fs:#decl": "in float vDefilePos;",
-          "fs:DECKGL_FILTER_COLOR":
-            "float uniteDefile = defile.tirets.x + defile.tirets.y;\n" +
-            "if (uniteDefile > 0.0 &&\n" +
-            "    mod(vDefilePos + defile.decalage, uniteDefile) > defile.tirets.x) discard;",
-        },
-      };
-    }
-    draw(){
-      const demi = Math.max(this.props.demiEpaisseur || 1, .001);
-      this.setShaderModuleProps({ defile: { tirets: this.props.tirets || [0, 0],
-                                            decalage: (this.props.decalage || 0) / demi } });
-    }
-  }
-  TiretsQuiDefilent.extensionName = "TiretsQuiDefilent";
-  TiretsQuiDefilent.defaultProps = { tirets: [0, 0], decalage: 0, demiEpaisseur: 1 };
   /* Les deux drapeaux du texte sont des réglages de l'extension : la
      bibliothèque les transmet ainsi aux lettres, que lit `filtreCouches`. */
   FiltreZoom.defaultProps = { getZoomFiltre: { type: "accessor", value: [-100, 100, -100] }, modeFiltre: 0,
@@ -1585,8 +1550,8 @@ function constTexte(){
        quoi le liseré serait rogné au bord de la case. */
     grand: { ext: textes, mode: 2, atlas: { sdf: true, fontSize: 64, buffer: 10, radius: RAYON_SDF } },
     /* Tous les traits partagent un seul programme : tirets — un trait plein
-       en a de longueur nulle —, défilement arrêté, filtre de zoom ouvert. */
-    traits: [new deck.PathStyleExtension({ dash: true, highPrecisionDash: true }), new TiretsQuiDefilent(), new FiltreZoom()],
+       en a de longueur nulle —, filtre de zoom ouvert. */
+    traits: [new deck.PathStyleExtension({ dash: true, highPrecisionDash: true }), new FiltreZoom()],
     sansDeclencheur: {},
   });
 }
@@ -1905,7 +1870,14 @@ function convertitBloc(racine, cle){
     racine.id === "calageApercu");
   const avant = racine.id === "stands" ? cleChoisi() : null;
   if (avant !== null) CHOISI = null;
-  parcoursGl(racine, M_ID, 1, acc);
+  // les couleurs de la page, lues une fois pour tous les stands ou toutes les zones du bloc
+  JETONS = racine.id === "stands" || racine.id === "zones" ? jetonsEmplacements(racine) : null;
+  try {
+    if (estHabillage(racine)) habillageGl(racine, acc);
+    else if (PAR_ATTRIBUTS.has(racine.id)) parcoursAttributs(racine, M_ID, 1, acc, racine);
+    else parcoursGl(racine, M_ID, 1, acc);
+  }
+  finally { JETONS = null; }
   // un autre stand choisi, ou le même à une autre hauteur : d'autres noms passent derrière lui
   if (avant !== null && cleChoisi() !== avant) GL.couchesLibelles = null;
   const out = couchesDeBloc(acc, cle);
@@ -1914,6 +1886,58 @@ function convertitBloc(racine, cle){
   out.push(...couchesJetons(acc.jetons, cle));
   // les marques des distinctions suivent leur stand qui monte (`marquesSurLesToits`)
   return racine.id === "dists" && GL.camera ? out.map(c => c.clone({ marques: true })) : out;
+}
+
+/* Les stands et les zones ne se relisent pas dans le style calculé.
+
+   Un `getComputedStyle` par groupe et par tracé obligeait le navigateur à
+   tenir à jour le style de tout le SVG caché, et chaque conversion relisait
+   le tracé de chaque emplacement, chiffre par chiffre. Le style se résout
+   donc ici sans la feuille (`style-emplacements.mjs`), sur les couleurs de la
+   page lues une fois pour le bloc (`JETONS`, posées par `convertitBloc`), et
+   le tracé se lit une fois pour toutes : la même chaîne rend le même tracé,
+   et la sélection, la recherche ou les secteurs ne le changent pas.
+
+   Un groupe qui sortirait de la règle — une transformation, un enfant
+   inconnu — repasse par la feuille, comme avant. */
+/** @type {ReturnType<typeof jetonsEmplacements> | null} */
+let JETONS = null;
+/** @type {Map<string, any[]>} */
+const TRACES = new Map();
+/* Au-delà, la mémoire des tracés repart de zéro : quatre pavillons de neuf
+   cents stands, et leurs tracés en Tuiles, y tiennent largement. */
+const TRACES_MAX = 20000;
+function tracesDe(/** @type {string} */ d){
+  let t = TRACES.get(d);
+  if (!t){
+    if (TRACES.size >= TRACES_MAX) TRACES.clear();
+    t = lisTrace(d);
+    TRACES.set(d, t);
+  }
+  return t;
+}
+const estEmplacement = (/** @type {Element} */ el) => {
+  const p = el.parentNode;
+  return el.localName === "g" && !!p && (/** @type {Element} */ (p).id === "stands" || /** @type {Element} */ (p).id === "zones") &&
+    !el.hasAttribute("transform");
+};
+function emplacementGl(/** @type {Element} */ g, /** @type {number[]} */ m, /** @type {number} */ op, /** @type {any} */ acc){
+  // l'état vient de ceux qui le décident (`etat-emplacements.mjs`), et non des classes du groupe
+  const d = /** @type {SVGElement} */ (g).dataset;
+  const etat = etatEmplacement(d.id, d.aj, g.classList.contains("zone"), g.matches(":focus-visible"));
+  const st = styleEmplacement(etat, /** @type {ReturnType<typeof jetonsEmplacements>} */ (JETONS));
+  op *= st.opacite;
+  if (!(op > .003)) return;
+  for (const c of g.children){
+    const tag = c.localName;
+    // une bulle d'aide (la carte de chaleur en pose une) ne se dessine pas
+    if (tag === "title" || tag === "desc") continue;
+    if (tag !== "path" || c.hasAttribute("transform") || c.hasAttribute("class") || c.hasAttribute("style")){
+      parcoursGl(c, m, op, acc);
+      continue;
+    }
+    formeGl(c, st.trace, m, op, tracesDe(c.getAttribute("d") || ""), acc);
+  }
 }
 
 /* Ce que le cartouche met en avant se range à part : il bat, et seules ses
@@ -1936,6 +1960,7 @@ function accDe(el, acc){
 }
 
 function parcoursGl(el, m, op, acc){
+  if (JETONS && estEmplacement(el)){ emplacementGl(el, m, op, acc); return; }
   const cs = getComputedStyle(el);
   if (cs.display === "none") return;
   const tr = el.getAttribute("transform");
@@ -1960,15 +1985,130 @@ function parcoursGl(el, m, op, acc){
   }
   if (tag === "text"){ texteGl(el, cs, m, op, acc); return; }
   if (tag === "image"){ imageGl(el, m, op, acc); return; }
-  let traces = null;
-  if (tag === "path") traces = lisTrace(el.getAttribute("d") || "");
-  else if (tag === "polyline") traces = [{ pts: lisPoints(el.getAttribute("points")), ferme: false }];
-  else if (tag === "polygon") traces = [{ pts: lisPoints(el.getAttribute("points")), ferme: true }];
-  else if (tag === "line") traces = [{ pts: [[num(el, "x1"), num(el, "y1")], [num(el, "x2"), num(el, "y2")]], ferme: false }];
-  else if (tag === "rect") traces = [{ pts: rectArrondi(num(el, "x"), num(el, "y"), num(el, "width"), num(el, "height"), num(el, "rx"), num(el, "ry")), ferme: true }];
-  else if (tag === "circle"){ const r = num(el, "r"); traces = [{ pts: anneau(num(el, "cx"), num(el, "cy"), r, r, 32), ferme: true }]; }
-  else if (tag === "ellipse") traces = [{ pts: anneau(num(el, "cx"), num(el, "cy"), num(el, "rx"), num(el, "ry"), 32), ferme: true }];
+  const traces = tracesDeForme(el, tag);
   if (traces) formeGl(el, cs, m, op, traces, acc);
+}
+
+/** Le tracé d'une forme du SVG, en anneaux ou en lignes, dans son repère. */
+function tracesDeForme(/** @type {Element} */ el, /** @type {string} */ tag){
+  if (tag === "path") return lisTrace(el.getAttribute("d") || "");
+  if (tag === "polyline") return [{ pts: lisPoints(el.getAttribute("points")), ferme: false }];
+  if (tag === "polygon") return [{ pts: lisPoints(el.getAttribute("points")), ferme: true }];
+  if (tag === "line") return [{ pts: [[num(el, "x1"), num(el, "y1")], [num(el, "x2"), num(el, "y2")]], ferme: false }];
+  if (tag === "rect") return [{ pts: rectArrondi(num(el, "x"), num(el, "y"), num(el, "width"), num(el, "height"), num(el, "rx"), num(el, "ry")), ferme: true }];
+  if (tag === "circle"){ const r = num(el, "r"); return [{ pts: anneau(num(el, "cx"), num(el, "cy"), r, r, 32), ferme: true }]; }
+  if (tag === "ellipse") return [{ pts: anneau(num(el, "cx"), num(el, "cy"), num(el, "rx"), num(el, "ry"), 32), ferme: true }];
+  return null;
+}
+
+/* ------------------------------------------------------------
+   L'habillage de Klipso, lu dans ses données
+
+   Les calques que Klipso livre en SVG (`P().fond`) font l'essentiel du SVG
+   caché, et chacun de leurs milliers d'éléments se relisait par un
+   `getComputedStyle`. Le calque se lit désormais dans une copie détachée de
+   son balisage, jamais posée dans la page — le navigateur n'en tient ni le
+   style ni la mise en page —, gardée tant que sa donnée vit et partagée avec
+   le panneau des calques (`calque-detache.mjs`) ; son style se
+   résout sans la feuille (`style-habillage.mjs`), sur la configuration de
+   l'exploitant et les attributs de Klipso.
+
+   Seul le groupe du calque dans la page se lit encore : son affichage et son
+   opacité, que le cartouche, la visite guidée ou l'exploitant posent sur lui
+   — un appel par calque. Le pas suivant ne remplira plus ce groupe quand le
+   WebGL peint (`docs/migration-webgl.md`, étape 3).
+   ------------------------------------------------------------ */
+const estHabillage = (/** @type {Element} */ b) =>
+  b.classList.contains("cal") && Boolean(/** @type {SVGElement} */ (b).dataset.cle);
+function habillageGl(/** @type {Element} */ racine, /** @type {any} */ acc){
+  const cs = getComputedStyle(racine);
+  if (cs.display === "none") return;
+  const tr = racine.getAttribute("transform");
+  const m = tr ? mulM(M_ID, lisTransform(tr)) : M_ID;
+  const op = parseFloat(cs.opacity);
+  if (!(op > .003)) return;
+  const cle = /** @type {string} */ (/** @type {SVGElement} */ (racine).dataset.cle);
+  const f = (P().fond || []).find((/** @type {any} */ x) => x.cle === cle);
+  // le fond n'est pas encore arrivé, ou le calque est vide
+  const copie = copieDuCalque(f);
+  if (!copie) return;
+  const j = jetonsHabillage(/** @type {Element} */ (racine.parentNode));
+  // un `opacity="inherit"` au premier niveau de la copie prend celle du calque posé
+  j.calque = op;
+  const hors = styleSansSousCalque(j);
+  for (const c of copie.children) parcoursHabillage(c, m, op, acc, null, hors, cle, j);
+}
+function parcoursHabillage(/** @type {Element} */ el, /** @type {number[]} */ m, /** @type {number} */ op, /** @type {any} */ acc,
+    /** @type {Element | null} */ sous, /** @type {any} */ s, /** @type {string} */ cle, /** @type {any} */ j){
+  const tag = el.localName;
+  // le groupe d'un sous-calque prend le réglage de l'exploitant
+  if (tag === "g" && !sous && el.hasAttribute("data-s")){
+    s = styleSousCalque(cle, el, j);
+    if (s.eteint) return;
+    sous = el;
+  }
+  const tr = el.getAttribute("transform");
+  if (tr) m = mulM(m, lisTransform(tr));
+  // un pourcentage, `inherit`, une valeur hors de [0, 1] : lus comme le style calculé les lisait
+  if (el.hasAttribute("opacity")){ op *= opaciteElement(el, j.calque); if (!(op > .003)) return; }
+  if (tag === "g"){ for (const c of el.children) parcoursHabillage(c, m, op, acc, sous, s, cle, j); return; }
+  const st = styleElementHabillage(el, sous, s, j);
+  if (tag === "text"){ texteGl(el, st, m, op, acc); return; }
+  const traces = tracesDeForme(el, tag);
+  if (traces) formeGl(el, st, m, op, traces, acc);
+}
+
+/* ------------------------------------------------------------
+   Les surcouches qui portent leur style en attributs
+
+   Le module qui dessine une surcouche y écrit son style en attributs SVG ; la
+   feuille ne la peint plus (`style-attributs.mjs`). Le dessin les lit donc
+   tels quels, sans style calculé. Les blocs, par leur identifiant : une
+   surcouche n'y entre qu'une fois sa feuille vidée de ses règles.
+   ------------------------------------------------------------ */
+const PAR_ATTRIBUTS = new Set(["dists", "tutoZone", "marques", "itin"]);
+function parcoursAttributs(/** @type {Element} */ el, /** @type {number[]} */ m, /** @type {number} */ op, /** @type {any} */ acc,
+    /** @type {Element} */ racine){
+  const st = styleParAttributs(el, racine);
+  if (st.display === "none") return;
+  const tr = el.getAttribute("transform");
+  if (tr) m = mulM(m, lisTransform(tr));
+  const o = parseFloat(st.opacity);
+  if (Number.isFinite(o)) op *= o;
+  if (!(op > .003)) return;
+  const tag = el.localName;
+  if (tag === "g"){ for (const c of el.children) parcoursAttributs(c, m, op, acc, racine); return; }
+  if (tag === "text"){ texteGl(el, st, m, op, acc); return; }
+  const traces = tracesDeForme(el, tag);
+  if (traces) formeGl(el, st, m, op, traces, acc);
+}
+
+/**
+ * Pour les essais des lectures sans la feuille (`habillage.spec.js`,
+ * `surcouches.spec.js`) : ce que le dessin tire d'un bloc par la lecture
+ * d'avant — le groupe dans la page et son style calculé — et par la sienne —
+ * la copie détachée d'un calque, ou les attributs d'une surcouche —, et ce
+ * qui diffère.
+ * @param {Element} racine le groupe du bloc, rempli dans la page
+ */
+export function compareLectures(racine){
+  const ancien = accVide(false), nouveau = accVide(false);
+  parcoursGl(racine, M_ID, 1, ancien);
+  if (estHabillage(racine)) habillageGl(racine, nouveau);
+  else parcoursAttributs(racine, M_ID, 1, nouveau, racine);
+  const r = (/** @type {number} */ x) => Math.round(x * 1e4) / 1e4;
+  const resume = (/** @type {any} */ a) => [
+    ...a.pleins.map((/** @type {any} */ p) => "plein " + JSON.stringify([p.polygon.map((/** @type {any} */ an) => an.map((/** @type {any} */ q) => q.map(r))), p.couleur])),
+    ...[...a.traitsPx, ...a.traitsM, ...a.traitsZ].map((/** @type {any} */ t) =>
+      "trait " + JSON.stringify([t.path.map((/** @type {any} */ q) => q.map(r)), t.couleur, r(t.largeur), t.dash.map(r)])),
+    ...[...a.textes.entries()].flatMap(([k, v]) => v.items.map((/** @type {any} */ i) =>
+      "texte " + JSON.stringify([k, i.text, i.position.map(r), r(i.taille), r(i.angle), i.ancre, i.couleur]))),
+  ];
+  const A = resume(ancien), N = resume(nouveau);
+  const ecarts = [];
+  for (let i = 0; i < Math.max(A.length, N.length) && ecarts.length < 5; i++)
+    if (A[i] !== N[i]) ecarts.push({ rang: i, feuille: (A[i] || "").slice(0, 300), donnees: (N[i] || "").slice(0, 300) });
+  return { formes: A.length, ecarts };
 }
 
 /* La hauteur d'une forme en vue immersive : celle d'un stand ou d'une zone
@@ -2625,14 +2765,13 @@ function formeGl(el, cs, m, op, traces, acc){
       ? cs.strokeDasharray.split(/[\s,]+/).map(parseFloat).filter(Number.isFinite) : null;
     // la bibliothèque mesure les tirets en demi-épaisseurs de trait
     const dash = tirets && tirets.length >= 2 ? [2 * tirets[0] / sw, 2 * tirets[1] / sw] : [0, 0];
-    const defile = el.classList.contains("iSens");
     const sol = auDessusDuSol(el), sur = sol ? standDeLaMarque(el) : null;
     const monte = sol ? (/** @type {number[]} */ p) => [p[0], p[1], sol] : null;
     for (const t of traces){
       if (t.pts.length < 2) continue;
       const pts = t.pts.map(p => appM(m, p)), path = monte ? pts.map(monte) : pts;
       if (t.ferme) path.push(path[0]);
-      (amincit ? acc.traitsZ : fixe ? acc.traitsPx : acc.traitsM).push({ path, couleur: trait, largeur, dash, defile, el: cible,
+      (amincit ? acc.traitsZ : fixe ? acc.traitsPx : acc.traitsM).push({ path, couleur: trait, largeur, dash, el: cible,
         prise: el.closest(PRISES), sur });
     }
   }
@@ -2656,6 +2795,11 @@ function corpsDeclare(el){
   for (let n = el; n && n.getAttribute; n = n.parentNode){
     const v = n.getAttribute("font-size");
     if (v && /^\s*[\d.]+\s*(px)?\s*$/.test(v)) return parseFloat(v);
+    /* La déclaration la plus proche décide : un mot-clé ou une unité (`small`,
+       `1.5em`) n'est pas un corps en pixels, et l'ancêtre qui en porte un ne
+       vaut plus pour ce texte. Le style calculé le résout alors — ou, pour
+       l'habillage lu sans la page, `style-habillage.mjs`. */
+    if (v && v.trim() && v.trim() !== "inherit") return 0;
     if (n.tagName === "svg") return 0;
   }
   return 0;
@@ -3060,37 +3204,19 @@ function couchesDeBloc(acc, cle){
   for (const [suffixe, tous, unites] of [["traits-px", acc.traitsPx, "pixels"], ["traits-m", acc.traitsM, "common"]])
   partage(tous, acc.prises, repondus).forEach((liste, k) => {
     if (!liste.length) return;
-    // ce qui défile a ses couches : ce sont elles seules qui bougent
     const K = constTexte();
-    /* Les traits qui défilent sont taillés par « TiretsQuiDefilent », et non
-       par la bibliothèque : elle les laisse donc tranquilles. Leur réglage est
-       unique par couche et non porté par la donnée — d'où une couche par
-       longueur, les trois traits de la comète n'ayant pas la même. */
-    const parLongueur = new Map();
-    for (const d of liste) if (d.defile){
-      const c = d.dash.join(" ") + "/" + d.largeur;
-      if (!parLongueur.has(c)) parLongueur.set(c, []);
-      parLongueur.get(c).push(d);
-    }
-    const lots = [[liste.filter(d => !d.defile), ""]];
-    [...parLongueur.values()].forEach((l, n) => lots.push([l, "-defile" + n]));
-    for (const [l, marque] of lots){
-      if (!l.length) continue;
-      const bouge = marque !== "";
-      out.push(new L.PathLayer({ id: cle + "-" + suffixe + "-" + k + marque, data: l, pickable: k === 0,
-        /* Le trajet se trace face à l'œil en vue immersive : couché sur le sol
-           incliné, il s'amincissait au loin jusqu'à se perdre. Et sans
-           consulter la profondeur : sa lueur, peinte juste avant à la même
-           hauteur, la retenait, et vu de biais le trait tombait d'un rien
-           derrière elle — il ne restait du trajet qu'un ruban pâle. Peint
-           par-dessus, il se lit de bout en bout, comme une signalétique au
-           sol. */
-        ...(GL.camera && cle === "#itin" ? { billboard: true, parameters: { depthCompare: "always", depthWriteEnabled: false } } : plat),
-        getPath: d => d.path, getColor: d => d.couleur, getWidth: d => d.largeur, widthUnits: unites,
-        jointRounded: true, capRounded: false, widthMinPixels: unites === "common" ? .6 : 0, defile: bouge,
-        extensions: K.traits, getDashArray: bouge ? [0, 0] : d => d.dash, dashJustified: false,
-        tirets: bouge ? l[0].dash : [0, 0], demiEpaisseur: l[0].largeur / 2 }));
-    }
+    out.push(new L.PathLayer({ id: cle + "-" + suffixe + "-" + k, data: liste, pickable: k === 0,
+      /* Le trajet se trace face à l'œil en vue immersive : couché sur le sol
+         incliné, il s'amincissait au loin jusqu'à se perdre. Et sans
+         consulter la profondeur : sa lueur, peinte juste avant à la même
+         hauteur, la retenait, et vu de biais le trait tombait d'un rien
+         derrière elle — il ne restait du trajet qu'un ruban pâle. Peint
+         par-dessus, il se lit de bout en bout, comme une signalétique au
+         sol. */
+      ...(GL.camera && cle === "#itin" ? { billboard: true, parameters: { depthCompare: "always", depthWriteEnabled: false } } : plat),
+      getPath: d => d.path, getColor: d => d.couleur, getWidth: d => d.largeur, widthUnits: unites,
+      jointRounded: true, capRounded: false, widthMinPixels: unites === "common" ? .6 : 0,
+      extensions: K.traits, getDashArray: d => d.dash, dashJustified: false }));
   });
   /* Les traits qui s'amincissent : comptés en mètres, à la largeur que le
      SVG leur donnerait à « TRAIT_PLEIN » pixels par mètre, et bornés par
@@ -3774,30 +3900,6 @@ function couchesPhareNoms(){
       updateTriggers: { getColor: GL.versionModeles + ":" + pas } }));
 }
 
-/* La comète du sens, tenue d'accord avec « #itin .iSens » et ses
-   « @keyframes comete » : la période qu'une tête parcourt, et le temps qu'elle
-   y met. Deux nombres écrits deux fois, faute de pouvoir passer une valeur de
-   la feuille de style au shader ; les changer d'un seul côté fait courir la
-   tête à une autre allure sous la carte graphique.
-
-   Elle avance par images de trentième de seconde. Chacune repeint le plan
-   sous le trajet, qui traverse le salon entier — trente par seconde est ce
-   qu'il faut pour qu'une tête qui file à cent trente pixels par seconde ne
-   saute pas, là où les tirets qu'elle remplace se contentaient de quinze : on
-   ne voyait pas sauter un tiret parmi douze. */
-const COMETE_PERIODE = 200, COMETE_DUREE = 1.5, COMETE_HZ = 30;
-const palierDefile = t => Math.floor(t * COMETE_HZ);
-/* La période d'un trait qui défile, en pixels : son tiret et son vide, que la
-   feuille de style donne en demi-épaisseurs. Deux cents pour la comète ;
-   l'étincelle du fil lumineux en prend six cents, pour ne passer qu'une fois
-   là où la comète passait trois. Sa durée suit, à la même allure. */
-const periodeDe = c => (c.props.tirets[0] + c.props.tirets[1]) * c.props.demiEpaisseur || COMETE_PERIODE;
-/* Où en est la tête de sa course, entre 0 et 1, au palier où l'on est. */
-const phaseDe = (c, t) => {
-  const duree = COMETE_DUREE * periodeDe(c) / COMETE_PERIODE;
-  return (palierDefile(t) / COMETE_HZ) % duree / duree;
-};
-
 /** Une couche telle qu'elle doit paraître à cet instant. */
 /* L'instant de l'image : l'heure qu'il est, toujours. Celle de la dernière
    image de la boucle datait dès que le plan travaillait entre deux images —
@@ -3834,11 +3936,6 @@ function animeCouche(c){
     const s = echellePhare(GL.temps), [x, y] = ph.centre;
     return c.clone({ modelMatrix: [s, 0, 0, 0, 0, s, 0, 0, 0, 0, 1, 0, x * (1 - s), y * (1 - s), 0, 1] });
   }
-  /* La comète : le décalage part de la longueur du trait et descend d'une
-     période, comme le « stroke-dashoffset » de ses images-clés. Partir de sa
-     propre longueur est ce qui fait tomber les trois têtes au même endroit. */
-  if (c.props.defile && GL.bouge) return c.clone({
-    decalage: c.props.tirets[0] * c.props.demiEpaisseur - periodeDe(c) * phaseDe(c, GL.temps) });
   return c;
 }
 
@@ -3848,7 +3945,7 @@ function majAnimationWebgl(){
   const couches = [...GL.blocs.values()].flat();
   GL.animePhare = GL.bouge && document.documentElement.classList.contains("poi-actif") &&
     (GL.libellesPhare.length > 0 || couches.some(c => c.props.phare));
-  GL.anime = GL.animePhare || (GL.bouge && couches.some(c => c.props.defile)) || hausses.size > 0;
+  GL.anime = GL.animePhare || hausses.size > 0;
   if (GL.anime && !GL.imageAnim) GL.imageAnim = requestAnimationFrame(animeWebgl);
 }
 function animeWebgl(now){
@@ -3864,13 +3961,12 @@ function animeWebgl(now){
     GL.couchesLibelles = null;
     for (const k of [...GL.groupes.keys()]) if (/^labels-hausse\|/.test(k)) GL.groupes.delete(k);
   }
-  if (!GL.animePhare && !hausses.size && !(GL.bouge && [...GL.blocs.values()].flat().some(c => c.props.defile))){
+  if (!GL.animePhare && !hausses.size){
     GL.anime = false; GL.deck.setProps({ layers: assembleWebgl() }); return;
   }
   /* Tout le plan se redessine quand une couche change : le battement se
-     contente donc de trente images par seconde, et le défilement seul ne
-     redessine qu'à chacun de ses paliers. */
-  const cle = (GL.animePhare ? Math.floor(GL.temps * 30) : "") + "|" + palierDefile(GL.temps) +
+     contente donc de trente images par seconde. */
+  const cle = (GL.animePhare ? Math.floor(GL.temps * 30) : "") + "|" +
     (hausses.size ? "|" + Math.round(now) : "");
   if (cle !== GL.cleAnim){
     GL.cleAnim = cle;

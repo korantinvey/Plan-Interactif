@@ -19,8 +19,7 @@
    Le reste des réglages — `opacity`, `modelMatrix`, `parameters`,
    `elevationScale`, les réglages d'une extension — se lit au dessin.
 
-   Les extensions de `webgl.mjs` (`FiltreZoom`, `LissageSdf`,
-   `TiretsQuiDefilent`…) écrivent du GLSL pour les shaders de deck.gl. Le
+   Les extensions de `webgl.mjs` (`FiltreZoom`, `LissageSdf`…) écrivent du GLSL pour les shaders de deck.gl. Le
    moteur ne les compile pas : il les reconnaît à leur nom (`extensionName`)
    et fait la même chose dans les siens. Leurs méthodes `initializeState` et
    `draw` tournent comme chez deck.gl, la couche pour `this` : c'est par

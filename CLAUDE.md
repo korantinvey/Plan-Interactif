@@ -306,7 +306,7 @@ l'importe, ses injections : `CARTE.md`. Son anglais : `outils/anglais/<module>.j
 | vue, zoom, cadrage, passage écran → plan | `modules/vue.mjs` ; l'état seul `modules/vue-etat.mjs` (`changeVue`) |
 | gestes — glisser, pincer, molette, clavier | `modules/gestes.mjs` `brancheGestes` ; ceux de l'exploitant `modules/gestes-admin.mjs` |
 | tiroirs du bas sur écran étroit | `modules/tiroirs.mjs` ; un seul ouvert à la fois `modules/tiroirs-exclusifs.mjs` |
-| dessin WebGL | ce qui se peint `modules/webgl.mjs` ; qui le peint, le moteur du plan `modules/moteur-gl.mjs` (couches `moteur-gl-formes.mjs`, `moteur-gl-texte.mjs`, `moteur-gl-objets.mjs`) — deck.gl en recours par `?moteur=deck`, refait par `npm run deck` ; lecture du SVG `modules/trace.mjs` |
+| dessin WebGL | ce qui se peint `modules/webgl.mjs` ; qui le peint, le moteur du plan `modules/moteur-gl.mjs` (couches `moteur-gl-formes.mjs`, `moteur-gl-texte.mjs`, `moteur-gl-objets.mjs`) — deck.gl en recours par `?moteur=deck`, refait par `npm run deck` ; lecture du SVG `modules/trace.mjs` ; style des stands et des zones sans la feuille `modules/style-emplacements.mjs`, leur état `modules/etat-emplacements.mjs` ; habillage lu dans ses données `modules/style-habillage.mjs`, `modules/calque-detache.mjs`, porté par le SVG seulement en repli `modules/habillage-svg.mjs` ; sortie du SVG, l'inventaire `docs/migration-webgl.md` |
 | configuration (`CONF`, `conf`, `enregistreConf`), options vendues à part | `modules/configuration.mjs`, `modules/options.mjs` |
 | apparence des calques, couleurs, habillage, barre | `modules/apparence.mjs`, `modules/habillage.mjs`, `modules/ton-barre.mjs` |
 | ambiance du plan — Classique, Tuiles | `modules/ambiance.mjs` |
@@ -365,7 +365,15 @@ Ce qui ne se voit ni à la lecture d'un module ni dans la carte.
   `ACCORDS` et `_partage/champs.ts`. L'empreinte d'une conférence :
   `modules/notifications.mjs` `empreinteDebut` et la fonction SQL `empreinte_debut`.
   Le type d'une vignette lu dans ses octets : `modules/recherche.mjs`
-  `chargeUnLot` et `_partage/octets.ts` `typeDeVignette`.
+  `chargeUnLot` et `_partage/octets.ts` `typeDeVignette`. Le style des stands
+  et des zones, que le dessin ne relit plus dans la feuille : `_styles-plan.css`
+  et `modules/style-emplacements.mjs` `styleEmplacement`
+  (`outils/essais/navigateur/style-emplacements.spec.js` compare les deux).
+  Le style de l'habillage de Klipso, que le dessin lit dans une copie détachée
+  sans le SVG caché : les règles `#couches .cal` de `_styles-plan.css` et
+  `apparence.mjs` `styleFond` d'un côté, `modules/style-habillage.mjs` de l'autre
+  (`outils/essais/navigateur/habillage.spec.js` compare ce que le dessin tire
+  des deux).
 - **Le seuil de concentration n'est pas une capacité** : le compteur ne voit
   que les journées organisées depuis le plan. C'est un prix, jamais un refus
   (`modules/ordonnanceur.mjs` `peineDeCharge`). La clé de configuration
@@ -384,6 +392,15 @@ Ce qui ne se voit ni à la lecture d'un module ni dans la carte.
   prouver ; l'existant est dans sa référence figée `html-acceptes.json`.
 - **Un effet visuel ajouté au plan en CSS** (animation, filtre) doit être rejoué
   dans `modules/webgl.mjs`, sans quoi il ne se voit qu'en SVG (`?rendu=svg`).
+- **Une surcouche qui porte son style en attributs ne se peint plus par la
+  feuille** — les marques des distinctions d'abord (`modules/distinctions.mjs`
+  `traceDist`). Le dessin la lit dans ses attributs (`modules/style-attributs.mjs`,
+  `webgl.mjs` `PAR_ATTRIBUTS`) : une règle CSS ajoutée pour elle ne se verrait
+  qu'en SVG. Son style s'écrit dans le module qui la dessine ;
+  `outils/essais/navigateur/surcouches.spec.js` échoue si la feuille la peint encore.
+  Une couleur qu'elle tire de la racine (`--accent`…) est figée au moment du
+  tracé : la surcouche s'inscrit donc à `modules/jetons-racine.mjs`
+  `suitLaRacine`, sans quoi elle garde l'ancien accent quand l'exploitant le change.
 - **Deux moteurs peignent le plan, qui parlent la même langue** : le moteur du
   plan (`modules/moteur-gl.mjs`), par défaut, et deck.gl, le recours
   (`?moteur=deck`). `webgl.mjs` les reçoit sous le même nom, `deck`. Une classe,

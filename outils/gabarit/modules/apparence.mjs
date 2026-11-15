@@ -22,6 +22,8 @@ import { dessineDists, appliqueDists } from "./distinctions.mjs";
 import { fermeTiroir } from "./tiroirs-exclusifs.mjs";
 import { appliqueOptions } from "./options.mjs";
 import { appliqueAmbiance } from "./ambiance.mjs";
+import { copieDuCalque } from "./calque-detache.mjs";
+import { HABILLAGE_REPRIS, habillageDansLeSvg } from "./habillage-svg.mjs";
 
 const racine = document.documentElement;
 
@@ -39,7 +41,9 @@ const racine = document.documentElement;
 const remplis = new WeakSet();
 const fondDe = (cle) => P().fond.find(f => f.cle === cle);
 function remplitCalque(g, cle){
-  if (remplis.has(g)) return;
+  /* Quand le WebGL peint, il lit le calque dans ses données (`calque-detache.mjs`) :
+     le SVG caché n'a pas à le porter. Il le reprend si on lui rend la main. */
+  if (remplis.has(g) || !habillageDansLeSvg()) return;
   const f = fondDe(cle);
   // le fond n'est pas encore arrivé : `chargeFond` remontera l'habillage
   if (!f || f.svg === undefined) return;
@@ -47,10 +51,25 @@ function remplitCalque(g, cle){
   remplis.add(g);
 }
 
+/* Le SVG reprend le plan — un dessin trop long à venir, une carte graphique
+   perdue : les calques montrés se remplissent et se teignent, comme au
+   montage. */
+HABILLAGE_REPRIS.ecoute(() => {
+  if (!$("couches").querySelector(".cal")) return;
+  P().fond.forEach(f => styleFond(f.cle));
+});
+
 export function styleFond(cle){
   const c = conf(cle);
   const g = $("couches").querySelector('.cal[data-cle="' + CSS.escape(cle) + '"]');
   if (!g) return;
+  /* Le dessin lit le réglage du calque dans la configuration, et non sur ses
+     sous-calques, que le SVG caché ne porte plus quand le WebGL peint. Une
+     signature du réglage, posée sur le groupe et réécrite seulement quand il
+     change, prévient son guet (`webgl.mjs`) : il ne refait que ce calque. */
+  const signature = JSON.stringify([c.couleur, c.rempli, c.visible,
+    ...Object.keys(CONF).filter(k => k.indexOf(cle + "/") === 0).sort().map(k => [k, CONF[k]])]);
+  if (g.getAttribute("data-reglage") !== signature) g.setAttribute("data-reglage", signature);
   if (c.visible !== false) remplitCalque(g, cle);
   g.style.display = c.visible === false ? "none" : "";
   g.querySelectorAll("g[data-s]").forEach(sub => {
@@ -89,9 +108,8 @@ export function sousCalques(cle){
   if (!f || !f.svg) return [];
   const lu = sousLus.get(f);
   if (lu && lu.svg === f.svg) return lu.liste;
-  const copie = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  copie.innerHTML = f.svg;
-  const liste = lisSous(copie);
+  // la copie que le dessin lit aussi (`calque-detache.mjs`)
+  const liste = lisSous(/** @type {Element} */ (copieDuCalque(f)));
   sousLus.set(f, { svg: f.svg, liste });
   return liste;
 }

@@ -37,6 +37,8 @@ import { svg, versPlan, vue, cadrePlan } from "./vue.mjs";
 import { cameraEnJeu } from "./camera.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { inscritGesteTenu } from "./geste-tenu.mjs";
+import { emplacements, groupeEmplacement } from "./etat-emplacements.mjs";
+import { traceStand } from "./ambiance.mjs";
 
 /* Le pas de l'angle sous la poignée : un comptoir se pose droit, ou de biais
    à quarante-cinq degrés, rarement entre deux. */
@@ -75,16 +77,21 @@ let geste = null;
 // un comptoir tenu sous le doigt : l'envoi au repos attend qu'on le lâche
 inscritGesteTenu(() => geste && geste.bouge);
 
-const zoneDe = (/** @type {string} */ id) =>
-  document.querySelector('#zones g.zone[data-id="' + CSS.escape(id) + '"][data-type="accueil"]');
+/* Les zones d'accueil du pavillon, prises dans les données (`etat-emplacements.mjs`)
+   et non dans le SVG, qui ne les porte pas toujours ; leur groupe ne sert
+   qu'à marquer le rendu de secours. */
+/** @typedef {ReturnType<typeof emplacements>[number]} Emplacement */
+const accueils = () => emplacements().filter(e => e.zone && e.source.type === "accueil");
+const zoneDe = (/** @type {string} */ id) => accueils().find(e => e.id === id) || null;
+const groupeDe = (/** @type {string} */ id) => { const e = zoneDe(id); return e ? groupeEmplacement(e.cle) : null; };
+const masquee = (/** @type {Emplacement} */ e) => Boolean((e.o || e.source).masquee);
 
-/** Ce qu'on sait d'un comptoir posé sur le plan : sa zone, son contour, sa place. */
-function lis(/** @type {Element} */ g){
-  const path = g.querySelector("path");
-  const an = path && anneauDe(path.getAttribute("d") || "");
+/** Ce qu'on sait d'un comptoir posé sur le plan : sa zone, son contour, sa place.
+ *  Le contour est celui que le plan trace, l'ambiance comprise (`traceStand`). */
+function lis(/** @type {Emplacement} */ e){
+  const an = anneauDe(traceStand(e.source.d || ""));
   if (!an) return null;
-  const id = g.getAttribute("data-id") || "";
-  return { g, id, an, c: comptoir(an, reglageDe(id)) };
+  return { id: e.id, an, c: comptoir(an, reglageDe(e.id)) };
 }
 
 /** Un mètre du plan, compté en pixels de l'écran : la marge de la visée en dépend. */
@@ -92,8 +99,8 @@ const metresParPixel = () => vue().w / Math.max(1, cadrePlan().width);
 
 /** Le comptoir sous ce point du sol, s'il y en a un — le choisi d'abord. */
 function vise(/** @type {number[]} */ p){
-  const zones = [...document.querySelectorAll('#zones g.zone[data-type="accueil"]:not(.masquee)')];
-  if (choisi) zones.sort((a, b) => Number(b.getAttribute("data-id") === choisi) - Number(a.getAttribute("data-id") === choisi));
+  const zones = accueils().filter(e => !masquee(e));
+  if (choisi) zones.sort((a, b) => Number(b.id === choisi) - Number(a.id === choisi));
   const marge = 10 * metresParPixel();
   for (const g of zones){
     const z = lis(g);
@@ -114,12 +121,12 @@ function vise(/** @type {number[]} */ p){
 /** Choisir un comptoir, ou n'en choisir aucun : le dessin le dit par un attribut. */
 export function choisitComptoir(/** @type {string | null} */ id){
   if (choisi === id) return;
-  const avant = choisi && zoneDe(choisi);
+  const avant = choisi && groupeDe(choisi);
   if (avant) avant.removeAttribute("data-comptoir-choisi");
   choisi = id;
-  const g = id && zoneDe(id);
+  const e = id ? zoneDe(id) : null, g = e && groupeEmplacement(e.cle);
   if (g) g.setAttribute("data-comptoir-choisi", "");
-  else choisi = null;
+  if (!e) choisi = null;
 }
 
 /** Poser un réglage sur la zone, sans l'écrire encore sur le poste. Le
@@ -131,7 +138,7 @@ function pose(/** @type {{ id: string, an: number[][], c: any }} */ z, /** @type
   const t = CONF._comptoirs = CONF._comptoirs || {};
   const n = { u: +q.u.toFixed(4), v: +q.v.toFixed(4), a: Math.round((((q.a % 180) + 180) % 180) * 10) / 10 };
   t[z.id] = n;
-  const g = zoneDe(z.id);
+  const g = groupeDe(z.id);
   if (g) g.setAttribute("data-comptoir", [n.u, n.v, n.a].join(" "));
 }
 

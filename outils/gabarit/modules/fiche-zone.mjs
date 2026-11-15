@@ -40,6 +40,7 @@ import { liste } from "./recherche.mjs";
 import { champComptoir } from "./reglage-comptoir.mjs";
 import { champFoodtrucks } from "./reglage-foodtrucks.mjs";
 import { COTES_ESTRADE } from "./decor.mjs";
+import { emplacements, groupeEmplacement } from "./etat-emplacements.mjs";
 
 /* Les réglages (`CONF`, que le changement de salon remplace), importés, se
    lisent tels qu'ils sont à l'instant. */
@@ -924,10 +925,13 @@ export async function basculeAffichageZone(o){
 
 /** La teinte pâlie des zones éteintes, reposée sur le plan en place. */
 function marqueZonesMasquees(){
-  document.querySelectorAll("#zones g").forEach(g => {
-    const z = parId.get(g.dataset.id);
-    g.classList.toggle("masquee", !!z && !!z.masquee);
-  });
+  /* Le dessin lit le masquage dans les données (`etat-emplacements.mjs`) : le
+     groupe SVG n'est marqué que s'il existe, pour le rendu de secours. */
+  for (const e of emplacements()){
+    if (!e.zone) continue;
+    const g = groupeEmplacement(e.cle);
+    if (g) g.classList.toggle("masquee", !!e.o && !!e.o.masquee);
+  }
 }
 
 
