@@ -200,6 +200,15 @@ en attributs, ou en style pour un jeton. La lecture par attributs
 peint plus la borne. `surcouches.spec.js` éprouve que les deux peintres
 s'accordent.
 
+**Les témoins du style des noms et le sol (15 novembre 2026).** Le dessin
+ne pose plus de témoins cachés dans `#labels` pour lire l'encre, le liseré, la
+police et la graisse de chaque sorte de nom : `modules/style-libelles.mjs`
+résout les règles `#labels` de la feuille sur les jetons et les états de la
+racine, et la couleur du sol (`#trouDuFond`) se lit sur ses deux jetons.
+`style-libelles.spec.js` pose les témoins d'autrefois le temps de la mesure et
+compare les deux lectures sur toutes les combinaisons des états de la racine,
+couleurs réglées ou non.
+
 Reste du guet : les calques dessinés, qui s'écrivent encore dans le SVG
 caché et que le dessin y relit, et l'ordre des calques (l'ordre des nœuds de
 `#couches`).

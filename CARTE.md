@@ -1852,7 +1852,7 @@ Importé par :
 edition-en-cours · gestes-admin · libelles · logos-stands · nom-emplacement · pile
 placement-libelles · tutoriel · webgl
 
-### `modules/libelles.mjs` — 416 l. → plan, plan-admin
+### `modules/libelles.mjs` — 414 l. → plan, plan-admin
 
 - l.1 · Les libellés du plan — le nom de l'exposant prime sur le numéro
 - l.55 · 4. Libellés — le nom de l'exposant prime sur le numéro
@@ -2583,7 +2583,7 @@ acces-admin · affiche-ici · bande-admin · batiments · calage-carte · chaleu
 enregistrement · gestes-admin · lancement · nuancier · outil-dessin · pile
 placement-libelles · plan · reprise-emplacements
 
-### `modules/plan.mjs` — 83 l. → plan, plan-admin
+### `modules/plan.mjs` — 86 l. → plan, plan-admin
 
 - l.1 · Point d'entrée des trois pages du plan — public, démonstration,
 
@@ -2591,7 +2591,8 @@ Importe :
 
 appels · choix-ambiance · edition-en-cours · etat-emplacements · lancement · libelles
 logos-stands · mini-carte · polices-plan · qr · releve · salon · scan-parcours · scene
-scene-svg · style-emplacements · sur · texte-plan · trace · tutoriel · vue · webgl · webgl
+scene-svg · style-emplacements · style-libelles · sur · texte-plan · trace · tutoriel · vue
+webgl · webgl
 
 Importé par :
 
@@ -3327,6 +3328,18 @@ Importé par :
 
 apparence · webgl
 
+### `modules/style-libelles.mjs` — 112 l. → plan, plan-admin
+
+- l.1 · Le style des noms du plan, résolu sans la feuille
+
+Fonctions :
+
+`modelesLibelles` 43 · `couleurSol` 109
+
+Importé par :
+
+plan · webgl
+
 ### `modules/suggestion.mjs` — 336 l. → plan, plan-admin
 
 - l.1 · La suggestion — un exposant de plus, pour compléter la visite
@@ -3858,20 +3871,20 @@ Injections :
 
 - `injecteALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 4309 l. → plan, plan-admin
+### `modules/webgl.mjs` — 4271 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
 Fonctions :
 
-`injecteAuWebgl` 94 · `moteurVoulu` 114 · `carteDuWebgl` 144 · `sansCarteGraphique` 166
-`chargeWebgl` 266 · `chargeDeck` 317 · `signaleRate` 330 · `sortesDeChauffe` 372
-`chauffeAvantLesDonnees` 382 · `finisChauffe` 415 · `brancheWebgl` 427 · `monteWebgl` 447
-`poseToileWebgl` 666 · `guetteContexteWebgl` 672 · `contextePerduWebgl` 682
-`verifieContexteWebgl` 689 · `guetteBoucleWebgl` 731 · `perdContexteWebgl` 752
-`remonteWebgl` 788 · `vueDeck` 805 · `enCamera` 825 · `vuesGl` 829 · `effetsGl` 853
-`basculeCamera` 863 · `vueWebgl` 876 · `blocDe` 893 · `majEditionWebgl` 906 · `cleBloc` 918
-`planifieWebgl` 944 · `toutRepeindreWebgl` 948 · `jeuxDuRang` 965 · `blocsDansLOrdre` 969
+`injecteAuWebgl` 95 · `moteurVoulu` 115 · `carteDuWebgl` 145 · `sansCarteGraphique` 167
+`chargeWebgl` 267 · `chargeDeck` 318 · `signaleRate` 331 · `sortesDeChauffe` 373
+`chauffeAvantLesDonnees` 383 · `finisChauffe` 416 · `brancheWebgl` 428 · `monteWebgl` 448
+`poseToileWebgl` 667 · `guetteContexteWebgl` 673 · `contextePerduWebgl` 683
+`verifieContexteWebgl` 690 · `guetteBoucleWebgl` 732 · `perdContexteWebgl` 753
+`remonteWebgl` 789 · `vueDeck` 806 · `enCamera` 826 · `vuesGl` 830 · `effetsGl` 854
+`basculeCamera` 864 · `vueWebgl` 877 · `blocDe` 894 · `majEditionWebgl` 907 · `cleBloc` 919
+`planifieWebgl` 945 · `toutRepeindreWebgl` 949 · `jeuxDuRang` 965 · `blocsDansLOrdre` 969
 `repeintWebgl` 983 · `pointsParMetre` 1013 · `assembleWebgl` 1039 · `tuilesChoisies` 1045
 `assembleCouches` 1054 · `memesElements` 1097 · `cleReunion` 1105 · `reunisCalques` 1130
 `reunisVolumes` 1185 · `sorteDe` 1220 · `cleChauffe` 1282 · `chauffe` 1290
@@ -3896,29 +3909,29 @@ Fonctions :
 `anticipeHausses` 3104 · `monteALAppui` 3131 · `rendLAppui` 3144 · `detacheVolume` 3154
 `hauteurEnCours` 3188 · `hauteurHausse` 3194 · `echelleHausse` 3199 · `haussesParId` 3202
 `memesFormes` 3221 · `memesPoints` 3231 · `signeCouleurs` 3238 · `masqueVolumes` 3246
-`aPlat` 3266 · `ombresAuRepos` 3278 · `couchesDeBloc` 3303 · `modelesLibellesHtml` 3422
-`poseModelesLibelles` 3432 · `lisModelesLibelles` 3438 · `groupesNoms` 3471
-`couchesNoms` 3497 · `couchesPastilles` 3513 · `couchesLibellesWebgl` 3530
-`couchesDessineesWebgl` 3583 · `stage` 3604 · `lectureDifferee` 3637 · `survolTrouve` 3677
-`demandeSurvolWebgl` 3683 · `survoleWebgl` 3689 · `brancheSurvolWebgl` 3717
-`poseSurvolWebgl` 3730 · `enTuiles` 3767 · `hauteurTuile` 3780 · `visePour` 3786
-`suisChoisies` 3796 · `gonfleSurvol` 3804 · `coucheTuileSoulevee` 3827
-`couchesTuiles` 3858 · `poseCurseurWebgl` 3871 · `poseFocusWebgl` 3881 · `aplatsDe` 3888
-`coucheSurvol` 3891 · `coucheSurvolVolume` 3916 · `coucheFocus` 3952 · `couchesPhare` 3982
-`lueurDe` 3999 · `opacitePhare` 4037 · `echellePhare` 4038 · `couchesPhareNoms` 4041
-`instant` 4067 · `aUnInstant` 4069 · `animeCouche` 4074 · `majAnimationWebgl` 4094
-`animeWebgl` 4102 · `reanime` 4138 · `logosSurLesToits` 4147 · `objetSous` 4180
-`sansProfondeurDeDesignation` 4201 · `peutDesigner` 4221 · `objetSousDiffere` 4223
-`viseEnAvance` 4243 · `lisObjet` 4251 · `cibleWebgl` 4258 · `priseWebgl` 4268
-`repereSousWebgl` 4276 · `libelleSousWebgl` 4281 · `rectEcranWebgl` 4289
-`rectEcranBoite` 4302
+`aPlat` 3266 · `ombresAuRepos` 3278 · `couchesDeBloc` 3303 · `lisModelesLibelles` 3415
+`groupesNoms` 3433 · `couchesNoms` 3459 · `couchesPastilles` 3475
+`couchesLibellesWebgl` 3492 · `couchesDessineesWebgl` 3545 · `stage` 3566
+`lectureDifferee` 3599 · `survolTrouve` 3639 · `demandeSurvolWebgl` 3645
+`survoleWebgl` 3651 · `brancheSurvolWebgl` 3679 · `poseSurvolWebgl` 3692 · `enTuiles` 3729
+`hauteurTuile` 3742 · `visePour` 3748 · `suisChoisies` 3758 · `gonfleSurvol` 3766
+`coucheTuileSoulevee` 3789 · `couchesTuiles` 3820 · `poseCurseurWebgl` 3833
+`poseFocusWebgl` 3843 · `aplatsDe` 3850 · `coucheSurvol` 3853 · `coucheSurvolVolume` 3878
+`coucheFocus` 3914 · `couchesPhare` 3944 · `lueurDe` 3961 · `opacitePhare` 3999
+`echellePhare` 4000 · `couchesPhareNoms` 4003 · `instant` 4029 · `aUnInstant` 4031
+`animeCouche` 4036 · `majAnimationWebgl` 4056 · `animeWebgl` 4064 · `reanime` 4100
+`logosSurLesToits` 4109 · `objetSous` 4142 · `sansProfondeurDeDesignation` 4163
+`peutDesigner` 4183 · `objetSousDiffere` 4185 · `viseEnAvance` 4205 · `lisObjet` 4213
+`cibleWebgl` 4220 · `priseWebgl` 4230 · `repereSousWebgl` 4238 · `libelleSousWebgl` 4243
+`rectEcranWebgl` 4251 · `rectEcranBoite` 4264
 
 Importe :
 
 affichage · calque-detache · camera · chemin-forme · configuration · couleurs · decor
 densite-rendu · designation · dom · donnees · erreurs · etat-emplacements · evenement
 figurants · itineraire · libelle-place · logos-stands · moteur-gl · reperes · scene
-style-emplacements · style-habillage · sur · svg-de-secours · trace · tuiles · vue-etat
+style-emplacements · style-habillage · style-libelles · sur · svg-de-secours · trace
+tuiles · vue-etat
 
 Importé par :
 

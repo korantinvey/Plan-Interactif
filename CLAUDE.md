@@ -374,7 +374,9 @@ Ce qui ne se voit ni à la lecture d'un module ni dans la carte.
   sans le SVG caché : les règles `#couches .cal` de `_styles-plan.css` et
   `apparence.mjs` `styleFond` d'un côté, `modules/style-habillage.mjs` de l'autre
   (`outils/essais/navigateur/habillage.spec.js` compare ce que le dessin tire
-  des deux).
+  des deux). Le style des noms du plan : les règles `#labels` de
+  `_styles-plan.css` et `modules/style-libelles.mjs` `modelesLibelles`
+  (`outils/essais/navigateur/style-libelles.spec.js` compare les deux).
 - **Le seuil de concentration n'est pas une capacité** : le compteur ne voit
   que les journées organisées depuis le plan. C'est un prix, jamais un refus
   (`modules/ordonnanceur.mjs` `peineDeCharge`). La clé de configuration

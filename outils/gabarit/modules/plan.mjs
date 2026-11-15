@@ -61,6 +61,7 @@ import { etatEmplacement } from "./etat-emplacements.mjs";
 import { couleurGl } from "./trace.mjs";
 import { compareLectures, repereSousWebgl, rectEcranBoite } from "./webgl.mjs";
 import { reperes, boiteDuJeu } from "./scene.mjs";
+import { modelesLibelles, SORTES_LIBELLES, SORTES_PHARE } from "./style-libelles.mjs";
 
 globalThis.__essais = {
   SLUG, GL, rectEcranWebgl, CONTEXTE_PERDU, _lg, largeur, libelles, COMPTES_LOGOS,
@@ -72,6 +73,8 @@ globalThis.__essais = {
   compareLectures,
   // la scène d'édition, telle que les outils l'ont posée et que le dessin la vise
   scene: { reperes, boiteDuJeu, repereSousWebgl, rectEcranBoite },
+  // le style des noms résolu sans la feuille, que `style-libelles.spec.js` compare à elle
+  stylesLibelles: { modelesLibelles, SORTES_LIBELLES, SORTES_PHARE },
   get P_NOM(){ return P_NOM; },
   get P_CODE(){ return P_CODE; },
   get TUTO(){ return TUTO; },

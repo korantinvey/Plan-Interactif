@@ -36,6 +36,7 @@
 import { avive, eclate } from "./couleurs.mjs";
 import { $ } from "./dom.mjs";
 import { creeEvenement } from "./evenement.mjs";
+import { modelesLibelles, couleurSol } from "./style-libelles.mjs";
 import { SCENE_CHANGEE, JEUX, reperes } from "./scene.mjs";
 import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, anneau, rectArrondi,
   avecTrous, couleurGl } from "./trace.mjs";
@@ -535,7 +536,7 @@ export function monteWebgl(){
      La limite est un simple nombre d'entrées gardées ; on la relève une fois. */
   try { deck.TextLayer.fontAtlasCacheLimit = 24; } catch (e) {}
   document.documentElement.classList.add("rendu-webgl");
-  poseModelesLibelles();
+  lisModelesLibelles();
   guetteContexteWebgl();
 
   /* Le guet du SVG et les écoutes ne se posent qu'une fois : le dessin peut
@@ -949,8 +950,7 @@ function toutRepeindreWebgl(){
   GL.tout = true; GL.couchesLibelles = null;
   /* Le sol du hall : l'aplat qui le vide est peint de la couleur du fond
      que l'exploitant a choisie, ou du gris de la page à défaut. */
-  const trou = $("trouDuFond");
-  GL.sol = trou ? couleurGl(getComputedStyle(trou).fill, 1) : null;
+  GL.sol = couleurSol(couleurGl);
   // une mise en avant, la carte de chaleur : les noms s'estompent ou changent d'encre
   if (GL.actif){ lisModelesLibelles(); _page.libellesWebgl(); }
   planifieWebgl();
@@ -3407,52 +3407,14 @@ function couchesDeBloc(acc, cle){
 
    Cette préparation suit les règles des libellés du SVG, et reste avec
    elles (`libelles.mjs` `libellesWebgl`), qui la dépose
-   dans `GL`. Ici, les témoins de style qui disent l'encre et la police de
-   chaque sorte de nom, et les couches qui les peignent.
+   dans `GL`. Ici, le style de chaque sorte de nom (`style-libelles.mjs`), et
+   les couches qui les peignent.
    ------------------------------------------------------------ */
-const CLASSES_LIBELLES = ["nm", "nm sel", "zn", "zn sel", "zn masquee", "zn sel masquee", "cd", "cd sel",
-  "coexN", "coexN sel", "coexPast", "coexPast sel"];
-// le libellé d'une zone mise en avant ; celui qu'on déplace à la main
-const CLASSES_PHARE = ["zn", "zn sel", "zn masquee", "zn sel masquee"];
-
-/** Des témoins dans « #labels », jamais montrés : la feuille de style leur
- *  donne la couleur et la police qu'elle donnerait aux vrais. La pastille des
- *  coexposants est un rectangle ; le survol n'a pas de classe à lui, et prend
- *  la teinte que sa règle lui donne. */
-function modelesLibellesHtml(){
-  const temoin = (c, groupe, cle) => '<g class="' + groupe + '">' + (c.startsWith("coexPast")
-    ? '<rect class="' + c + '" data-modele="' + cle + '"/>'
-    : '<text class="' + c.replace(/\bcd\b/, "").trim() + '" data-modele="' + cle + '">A</text>') + '</g>';
-  return CLASSES_LIBELLES.map(c => temoin(c, "lbl", c)).join("") +
-    CLASSES_PHARE.map(c => temoin(c, "lbl phare", c + " phare")).join("") +
-    temoin("nm", "lbl pick", "pick") +
-    '<rect data-modele="survol" style="fill:var(--c-survol,var(--accent-soft));stroke:var(--accent)"/>' +
-    '<rect data-modele="poi" style="fill:var(--c-poi,var(--accent))"/>';
-}
-export function poseModelesLibelles(){
-  // ajoutés aux libellés du SVG, qui restent à l'écran jusqu'à la première image
-  if (!$("labels").querySelector("[data-modele]"))
-    $("labels").insertAdjacentHTML("beforeend", modelesLibellesHtml());
-  lisModelesLibelles();
-}
+/* Le style de chaque sorte de nom, résolu sans la feuille
+   (`style-libelles.mjs`) : plus de témoins cachés dans le SVG à relire. */
 function lisModelesLibelles(){
   const avant = GL.signatureModeles;
-  GL.modeles.clear();
-  $("labels").querySelectorAll("[data-modele]").forEach(t => {
-    const cs = getComputedStyle(t);
-    /* L'opacité du groupe — le plan en retrait derrière une mise en avant —
-       et celle du texte — une zone masquée — se multiplient, comme à l'écran. */
-    const op = parseFloat(getComputedStyle(t.parentNode).opacity) * parseFloat(cs.opacity);
-    const couleur = couleurGl(cs.fill, (parseFloat(cs.fillOpacity) || 1) * op) || [0, 0, 0, 0];
-    // un contour peint sous la lettre est un liseré ; sa largeur se dit en corps
-    const sw = parseFloat(cs.strokeWidth), corps = parseFloat(cs.fontSize) || 16;
-    const lisere = cs.paintOrder.startsWith("stroke") && cs.stroke !== "none" && sw > 0
-      ? couleurGl(cs.stroke, (parseFloat(cs.strokeOpacity) || 1) * op) : null;
-    GL.modeles.set(t.dataset.modele, { couleur,
-      trait: couleurGl(cs.stroke, (parseFloat(cs.strokeOpacity) || 1) * op) || [0, 0, 0, 0],
-      halo: lisere ? { couleur: lisere, largeur: sw / corps } : null,
-      famille: cs.fontFamily, graisse: cs.fontWeight, visible: cs.display !== "none" });
-  });
+  GL.modeles = modelesLibelles(couleurGl);
   GL.signatureModeles = JSON.stringify([...GL.modeles]);
   if (GL.signatureModeles !== avant) GL.versionModeles++;
 }

@@ -25,7 +25,7 @@ import { P_NOM, P_CODE, injecteAuxPolices } from "./polices-plan.mjs";
 import { largeur, habille, lignesSvg, ancre, place, coupes } from "./texte-plan.mjs";
 import { rectangleLibre } from "./place-libre.mjs";
 import { PLACE_LIBELLES, libSel, placementLibelle } from "./libelle-place.mjs";
-import { GL, planifieWebgl, poseModelesLibelles, injecteAuWebgl } from "./webgl.mjs";
+import { GL, planifieWebgl, injecteAuWebgl } from "./webgl.mjs";
 import { capCamera, SINUS_INCLINAISON } from "./camera.mjs";
 import { view, cadrePlan, repeintLibelles, injecteALaVue } from "./vue.mjs";
 import { visibleSurPlan, visibleSociete } from "./filtre.mjs";
@@ -298,8 +298,6 @@ function tassementImmersif(){
 
 export function libellesWebgl(){
   if (!GL.actif) return;
-  // le placement à la main a réécrit « #labels » : les témoins de style y reviennent
-  if (!$("labels").querySelector("[data-modele]")) poseModelesLibelles();
   const p = P(), items = [], pastilles = [], dessines = new Map();
   const libres = partsLibres(p);
   posePaliers(p.stands, p.zones, GL.camera ? tassementImmersif() : undefined, libres);
