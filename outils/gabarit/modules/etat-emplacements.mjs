@@ -34,8 +34,8 @@
    sinon. Deux groupes portent le même `data-id` quand un ajout matérialise
    l'exposant d'un stand : seule la clé les distingue.
 
-   Ce module n'importe que les données : tous ceux qui l'informent dépendent
-   déjà du dessin, qui le lit.
+   Ce module n'importe que les données, et la géométrie pure de `forme.mjs` :
+   tous ceux qui l'informent dépendent déjà du dessin, qui le lit.
 
    Il ne prévient encore personne d'un changement : le guet du SVG
    (`webgl.mjs`) voit la classe que l'écrivain pose en même temps, et ne
@@ -44,6 +44,7 @@
    viendra quand les stands ne seront plus dans le SVG.
    ============================================================ */
 import { parId, P } from "./donnees.mjs";
+import { anneauxGeo, boiteAnneaux } from "./forme.mjs";
 
 /**
  * Les emplacements du pavillon affiché, dans l'ordre où le plan pose leurs
@@ -72,6 +73,43 @@ export function emplacements(){
       source: s, o: parId.get(id) });
   }
   return out;
+}
+
+/**
+ * L'ajout qui matérialise une société sur un emplacement partagé, s'il y en
+ * a un : il porte l'identifiant de l'exposant et le rang de la société, comme
+ * un stand dessiné (`dessin.mjs` `decoupeStand`). Choisir la société allume
+ * alors lui seul, et non l'hôte, qui allumerait aussi la voisine.
+ * @param {string} id
+ * @param {number} iSoc
+ */
+export function ajoutLie(id, iSoc){
+  return emplacements().find(e => e.aj !== undefined && e.soc !== undefined &&
+    e.id === id && e.soc === Number(iSoc)) || null;
+}
+
+/**
+ * L'emplacement que la fiche d'un exposant allume : l'ajout lié de la
+ * société choisie s'il existe, sinon le premier qui porte l'identifiant —
+ * celui que l'ordre des groupes donnait au plan. Rien si l'exposant n'a pas
+ * d'emplacement dans ce pavillon (un stand dessiné seulement, par exemple).
+ * @param {string} id
+ * @param {number} iSoc
+ */
+export function emplacementPour(id, iSoc){
+  return ajoutLie(id, iSoc) || emplacements().find(e => e.id === id) || null;
+}
+
+/**
+ * La boîte d'un emplacement sur le plan, [x0, y0, x1, y1], lue dans son
+ * tracé et non sur son groupe (`getBBox`) : la fiche s'étire depuis elle.
+ * Rien sans tracé. Le centre des données n'y suffit pas : c'est l'ancrage du
+ * nom, qui n'est le milieu de la boîte que pour un rectangle.
+ * @param {{ source: any }} e
+ */
+export function boiteEmplacement(e){
+  const a = anneauxGeo(e && e.source && e.source.d);
+  return a.length ? boiteAnneaux(a) : null;
 }
 
 /* Les groupes SVG des emplacements, par clé : relevés une fois par pavillon
@@ -132,8 +170,11 @@ export function poseChaleurs(/** @type {Map<string, string> | null} */ couleurs)
 export function poseRepris(/** @type {string | null} */ id){ E.repris = id; }
 export function poseCibleTuto(/** @type {string | null} */ cle){ E.cibleTuto = cle; }
 
-/* Ce que le modèle dit d'une clé, pour qui désigne au lieu de lire la classe
-   du groupe (`designation.mjs`) : la recherche, le cartouche. */
+/* Ce que le modèle dit d'une clé, pour qui lisait la classe du groupe : qui
+   désigne (`designation.mjs`), la recherche, le cartouche, les marques du
+   parcours et des distinctions. */
+/** Cet emplacement est-il celui que la fiche allume ? */
+export const estChoisi = (/** @type {string} */ cle) => E.choisi === cle;
 /** La recherche retire-t-elle cet emplacement ? */
 export const estRetire = (/** @type {string} */ cle) => E.retires.has(cle);
 /** Le cartouche met-il cette zone en avant ? */

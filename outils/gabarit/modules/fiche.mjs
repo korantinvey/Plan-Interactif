@@ -32,7 +32,7 @@ import { JOURS, MOIS, momentLocal, jourLong } from "./temps.mjs";
 import { mesure } from "./mesure.mjs";
 import { recadreMarque } from "./marque.mjs";
 import { signetParcours, boutonParcours, dessineMarques, brancheParcours } from "./parcours.mjs";
-import { GL, rectEcranWebgl } from "./webgl.mjs";
+import { GL, rectEcranWebgl, rectEcranBoite } from "./webgl.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { svg, vue, vise, cadrePlan, masqueHaut, masque, masqueDroite, fit, glisseVers, rectVisee }
   from "./vue.mjs";
@@ -49,7 +49,7 @@ import { inscritTiroirExclusif, fermeLesAutresTiroirs } from "./tiroirs-exclusif
 import { poseDistsFiche } from "./distinctions.mjs";
 import { decoupeStand, marqueStandsDessines } from "./dessin.mjs";
 import { montePlan, chargeFond, PAVILLON_QUITTE } from "./rendu.mjs";
-import { poseChoisi, cleDuGroupe } from "./etat-emplacements.mjs";
+import { poseChoisi, emplacementPour, boiteEmplacement, groupeEmplacement } from "./etat-emplacements.mjs";
 
 /**
  * Ce que la fiche emprunte aux modules qui l'importent : le montage du plan
@@ -138,14 +138,38 @@ export function anime(mesure, sens){
    ou un stand dessiné porte le même identifiant, et c'est bien le stand qu'on
    veut allumer, cadrer et animer.
 
-   Sauf quand un découpage matérialise justement la société choisie : lui et
-   son hôte portent alors le même identifiant, et allumer les deux donnerait à
-   voir un grand stand allumé pour désigner le petit qui est dedans. */
-function noeud(id, iSoc){
+   Sauf quand un découpage matérialise justement la société choisie — un stand
+   dessiné, ou un stand ajouté et lié à elle : lui et son hôte portent alors
+   le même identifiant, et allumer les deux donnerait à voir un grand stand
+   allumé pour désigner le petit qui est dedans.
+
+   L'emplacement se trouve dans les données (`etat-emplacements.mjs`), et non
+   dans le SVG caché : `cle` est ce que le modèle allume, `depuis` ce d'où la
+   fiche s'étire — sa boîte —, `noeud` le groupe que le rendu de secours
+   marque encore, s'il est construit. Un stand dessiné, lui, vit dans son
+   calque, et s'y désigne par son nœud. */
+/**
+ * @param {string} id
+ * @param {number} iSoc
+ * @returns {{ cle: string | null, noeud: Element | null, depuis: Element | number[] | null }}
+ */
+function surLePlan(id, iSoc){
   const d = decoupeStand(id, iSoc);
-  if (d) return d;
-  const q = '[data-id="' + CSS.escape(id) + '"]';
-  return svg.querySelector("#zones " + q + ", #stands " + q) || svg.querySelector(q);
+  if (d) return { cle: null, noeud: d, depuis: d };
+  const e = emplacementPour(id, iSoc);
+  if (e){
+    const g = groupeEmplacement(e.cle);
+    return { cle: e.cle, noeud: g, depuis: boiteEmplacement(e) || g };
+  }
+  // une forme dessinée qui mène à l'exposant, quand il n'a pas d'emplacement ici
+  const n = svg.querySelector('[data-id="' + CSS.escape(id) + '"]');
+  return { cle: null, noeud: n, depuis: n };
+}
+/** La place à l'écran de ce d'où la fiche s'étire, dans la vue montrée. */
+function rectDe(/** @type {Element | number[] | null} */ depuis){
+  if (!depuis) return null;
+  if (Array.isArray(depuis)) return rectEcranBoite(depuis);
+  return GL.actif ? rectEcranWebgl(depuis) : depuis.getBoundingClientRect();
 }
 
 /* Trois façons d'atteindre un stand depuis le plan : sa forme, le logo que
@@ -188,9 +212,10 @@ export function select(id, recentrer, canal, iSoc){
   document.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
   state.sel = id;
   state.selSoc = iSoc === undefined ? -1 : iSoc;
-  const n = noeud(id, state.selSoc); if (n) n.classList.add("sel");
+  const ici = surLePlan(id, state.selSoc);
+  if (ici.noeud) ici.noeud.classList.add("sel");
   // le dessin lit l'emplacement allumé au modèle (`etat-emplacements.mjs`) ; un découpage n'en est pas un
-  poseChoisi(cleDuGroupe(n));
+  poseChoisi(ici.cle);
   dessineMarques();
   marqueStandsDessines();
   if (ailleurs) liste(); else marqueChoisie();
@@ -199,7 +224,7 @@ export function select(id, recentrer, canal, iSoc){
      demandait deux ordres — après la fiche sur un téléphone, avant elle sur un
      grand écran — et l'un des deux cadrait toujours sur une géométrie qu'il ne
      connaissait pas encore. */
-  ouvre(o, n, canal, iSoc, recentrer);
+  ouvre(o, ici.depuis, canal, iSoc, recentrer);
 }
 export const centre = (o) => centrePoint(o.c);
 
@@ -816,8 +841,8 @@ function rangeMarque(){
  * laquelle ; -1, le titulaire ; sinon le rang du co-exposant. L'emplacement,
  * lui, ne change pas — c'est le même stand qu'on regarde par deux entrées.
  *
- * `depuis` est la forme du plan d'où la fiche s'étire — le nœud, et non sa
- * place à l'écran : celle-ci ne se mesure qu'à la fin, quand la fiche est
+ * `depuis` est la forme du plan d'où la fiche s'étire — sa boîte sur le plan
+ * ou son nœud, et non sa place à l'écran : celle-ci ne se mesure qu'à la fin, quand la fiche est
  * posée et le plan cadré. `recentrer` dit s'il faut amener le plan sur
  * l'emplacement ; c'est ici que cela se fait, et pas plus tôt, la fiche étant
  * seule à savoir ce qu'elle masque.
@@ -1154,7 +1179,7 @@ export function ferme(){
      le découpage qu'il héberge. Sa boîte, elle, se mesure plus bas et
      seulement si l'on anime — la classe « sel » qu'on retire ici ne change
      qu'un remplissage, jamais le contour qui la donne. */
-  const n = ouvert && id ? noeud(id, state.selSoc) : null;
+  const depuis = ouvert && id ? surLePlan(id, state.selSoc).depuis : null;
   document.querySelectorAll(".sel").forEach(x => x.classList.remove("sel"));
   poseChoisi(null);
   state.sel = null; state.selSoc = -1;
@@ -1162,7 +1187,7 @@ export function ferme(){
   marqueStandsDessines();
   // fermer ne change que la ligne marquée : la liste reste ce qu'elle montrait
   marqueChoisie(); libelles(); $("voile").classList.remove("on");
-  if (ouvert) anime(() => n && (GL.actif ? rectEcranWebgl(n) : n.getBoundingClientRect()), -1);
+  if (ouvert) anime(() => rectDe(depuis), -1);
 }
 /* Les onglets ne font que choisir ce qu'on regarde : la fiche est construite
    entière, et la bascule ne relit rien. */

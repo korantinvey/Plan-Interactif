@@ -39,7 +39,7 @@ import { anneauxGeo, traceGeo, empreinteGeo, boiteAnneaux, arrondiGeo } from "./
 import { GL, cibleWebgl, priseWebgl } from "./webgl.mjs";
 import { designe } from "./designation.mjs";
 import { oublieGrilles } from "./itineraire.mjs";
-import { dessineMarques } from "./parcours.mjs";
+import { dessineMarques, estRetenuSurLePlan } from "./parcours.mjs";
 import { ecritMetres, coteCadre, montreCote, oublieAimantsDuPlan, coinsGeste, montreAimants, correction,
   aimante } from "./aimants.mjs";
 import { ficheZone, ZONE_AJOUTEE_ENREGISTREE } from "./fiche-zone.mjs";
@@ -59,7 +59,7 @@ import { CONF, conf, enregistreConf, optionActive } from "./configuration.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { pictoVerrou, remplitListeSocietes, societeSaisie, fermeIci } from "./socle-dessin.mjs";
 import { inscritMode, quitteLesAutres } from "./modes-edition.mjs";
-import { poseRepris } from "./etat-emplacements.mjs";
+import { poseRepris, estChoisi, cleEmplacement } from "./etat-emplacements.mjs";
 
 const racine = document.documentElement;
 
@@ -354,7 +354,9 @@ function retraceGeo(o){
   if (!g) return;
   const t = g.querySelector("path");
   if (t) t.setAttribute("d", o.d);
-  if (g.classList.contains("enparcours") || g.classList.contains("sel")) dessineMarques();
+  // les liserés se relèvent dans les données (`parcours.mjs`) : qui en porte un se retrace
+  const id = o.lien ? String(o.lien.stand) : String(o.id);
+  if (estRetenuSurLePlan(id) || estChoisi(cleEmplacement(id, o.ajout ? o.id : undefined))) dessineMarques();
 }
 
 /** Le clavier ajuste au quart de mètre ce que la main a posé à peu près, et

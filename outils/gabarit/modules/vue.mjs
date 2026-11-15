@@ -28,7 +28,7 @@
    L'ordre des calques, elle l'importe (`ordre-trace.mjs`).
    ============================================================ */
 import { $ } from "./dom.mjs";
-import { RENDU_WEBGL, GL, monteWebgl, vueWebgl, majEditionWebgl, rectEcranWebgl, injecteAuWebgl }
+import { RENDU_WEBGL, GL, monteWebgl, vueWebgl, majEditionWebgl, rectEcranWebgl, rectEcranBoite, injecteAuWebgl }
   from "./webgl.mjs";
 import { recul, dessineFondCarte, vueLibre } from "./environs.mjs";
 import { DEBORD_VUE } from "./lot-fige.mjs";
@@ -655,9 +655,14 @@ export function glisseVers(/** @type {any} */ but, demi = DEMI_VIE){
  * La vue visée est donc posée le temps de la mesure, puis retirée. Deux
  * écritures de « viewBox » de plus, et la géométrie est celle du navigateur
  * plutôt qu'un calcul refait à la main pour chaque sorte de forme.
+ *
+ * Un emplacement se donne par sa boîte, [x0, y0, x1, y1], tirée de ses
+ * données (`etat-emplacements.mjs` `boiteEmplacement`) : elle se projette
+ * avec la vue visée, sans nœud ni navigateur, dans les deux rendus.
  */
 export function rectVisee(/** @type {any} */ n){
   if (!n) return null;
+  if (Array.isArray(n)) return rectEcranBoite(n, vise || vue());
   if (GL.actif) return rectEcranWebgl(n, vise || vue());
   if (!vise) return n.getBoundingClientRect();
   const avant = vue();

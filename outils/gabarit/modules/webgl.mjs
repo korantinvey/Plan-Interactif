@@ -4130,13 +4130,22 @@ export function libelleSousWebgl(x, y){
   return o && o.lbl ? o.lbl : null;
 }
 
-export function rectEcranWebgl(n, v){
+/** La place à l'écran d'un nœud du SVG caché, par sa boîte. */
+export function rectEcranWebgl(/** @type {any} */ n, /** @type {any} */ v){
   let b;
   try { b = n.getBBox(); } catch (e) { return null; }
+  return rectEcranBoite([b.x, b.y, b.x + b.width, b.y + b.height], v);
+}
+/** La place à l'écran d'une boîte du plan, [x0, y0, x1, y1] — celle qu'un
+ *  emplacement tire de ses données (`etat-emplacements.mjs`
+ *  `boiteEmplacement`) —, avec la règle de la vue : le plan entier tenu dans
+ *  le cadre, centré. Elle vaut pour le rendu de secours, dont la « viewBox »
+ *  suit la même règle. */
+export function rectEcranBoite(/** @type {number[]} */ b, /** @type {any} */ v){
   const r = cadrePlan(), vue = v || vueDuPlan();
   const s = Math.min(r.width / vue.w, r.height / vue.h);
   const ox = (r.width - vue.w * s) / 2, oy = (r.height - vue.h * s) / 2;
-  const left = r.left + (b.x - vue.x) * s + ox, top = r.top + (b.y - vue.y) * s + oy;
-  const width = b.width * s, height = b.height * s;
+  const left = r.left + (b[0] - vue.x) * s + ox, top = r.top + (b[1] - vue.y) * s + oy;
+  const width = (b[2] - b[0]) * s, height = (b[3] - b[1]) * s;
   return { left, top, width, height, right: left + width, bottom: top + height, x: left, y: top };
 }

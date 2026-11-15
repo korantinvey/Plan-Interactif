@@ -20,6 +20,11 @@ import { SLUG } from "./salon.mjs";
 import { jetonMesure, mesure } from "./mesure.mjs";
 import { momentLocal } from "./temps.mjs";
 import { DATA, parId, CONFS } from "./donnees.mjs";
+import { conf } from "./configuration.mjs";
+import { emplacements, etatEmplacement, estChoisi } from "./etat-emplacements.mjs";
+import { jetonsEmplacements, styleEmplacement } from "./style-emplacements.mjs";
+import { couleurGl } from "./trace.mjs";
+import { traceStand } from "./ambiance.mjs";
 
 /* Ce que la liste fait faire au reste du plan — le tiroir qui la montre, les
    rappels qui en dépendent —, que ce module ne peut importer : tous deux
@@ -386,10 +391,14 @@ function calqueMarques(){
  * Rien hors des Tuiles, ni pour une tuile sans teinte : le liseré garde
  * alors la couleur de sélection réglée.
  */
-function traitTuile(/** @type {Element} */ p){
-  if (!document.documentElement.classList.contains("ambiance-tuiles")) return null;
-  const v = (getComputedStyle(p).fill.match(/[\d.]+/g) || []).map(Number);
-  const c = v.length >= 3 ? avive([v[0], v[1], v[2], 255]) : null;
+function traitTuile(/** @type {any} */ e, /** @type {ReturnType<typeof jetonsEmplacements>} */ jetons){
+  if (!jetons.tuiles) return null;
+  /* La teinte de la tuile, résolue comme le dessin la résout
+     (`style-emplacements.mjs`) : son secteur, sa chaleur, ou la couleur des
+     stands — et non relue dans le style calculé de son tracé. */
+  const st = styleEmplacement(etatEmplacement(e.id, e.aj, e.zone, false), jetons);
+  const v = couleurGl(st.trace.fill, 1);
+  const c = v ? avive([v[0], v[1], v[2], 255]) : null;
   return c ? "rgb(" + c.slice(0, 3).join(",") + ")" : null;
 }
 
@@ -421,35 +430,47 @@ function jetonsMarques(/** @type {CSSStyleDeclaration} */ cs){
    l'écran quel que soit le zoom. */
 const TRAIT = ' fill="none" vector-effect="non-scaling-stroke"';
 
+/** Ce que le parcours marque sur le plan : les stands retenus, et les zones
+ *  où se tiennent les conférences retenues (`marqueParcours`). */
+/** @type {Set<string>} */
+let retenus = new Set();
+/** L'emplacement porte-t-il le liseré du parcours ? — pour qui retrace sa forme. */
+export const estRetenuSurLePlan = (/** @type {string} */ id) => retenus.has(id);
+
 export function dessineMarques(){
   /* Les liserés vivent hors des couches : rien ne les masquerait avec elles.
      Une couche de données retirée par l'exploitant doit pourtant emporter les
      marques de ce qu'elle portait, sans quoi le plan garderait des contours
      sans stands. */
-  const montree = n => { const g = $(n); return !g || g.style.display !== "none"; };
-  const vu = { stands: montree("stands"), zones: montree("zones") };
+  // la couche éteinte dans la pile des calques (`apparence.mjs` `styleDataGroupe`)
+  const vu = { stands: conf("data:stands").visible !== false, zones: conf("data:zones").visible !== false };
   const calque = calqueMarques();
   const j = jetonsMarques(getComputedStyle(calque));
+  /** @type {ReturnType<typeof jetonsEmplacements> | null} */
+  let jetons = null;
   let parc = "", sel = "";
-  document.querySelectorAll("#stands > g, #zones > g").forEach(g => {
-    if (!vu[g.parentNode.id]) return;
-    const p = g.querySelector("path");
-    if (!p) return;
+  /* Les emplacements du pavillon dans leurs données, et non leurs groupes
+     dans le SVG caché : le tracé tel que l'ambiance le dessine, ce qui est
+     retenu (`retenus`, tenu par `marqueParcours`), ce qui est choisi au
+     modèle (`etat-emplacements.mjs`). */
+  for (const e of emplacements()){
+    if (!vu[e.zone ? "zones" : "stands"] || !e.source.d) continue;
+    const choisi = estChoisi(e.cle);
+    const retenu = !j.sansParc && retenus.has(e.id);
+    if (!choisi && !retenu) continue;
     /* Une zone garde son trait discontinu jusque dans sa sélection — c'est ce
        qui la distingue d'un stand. Le parcours, lui, se veut continu partout :
-       il dit qu'on a retenu l'endroit, pas ce qu'il est. Le tracé relu est
-       décodé : un guillemet y fermerait l'attribut, et le reste deviendrait
-       du balisage — il repasse par `esc()`, comme les couleurs relues. */
-    const d = ' d="' + esc(p.getAttribute("d")) + '"/>';
-    if (!j.sansParc && g.classList.contains("enparcours"))
-      parc += '<path class="parc"' + TRAIT + ' stroke="' + esc(j.parc) + '" stroke-width="2"' + d;
-    if (g.classList.contains("sel")){
-      const zone = g.parentNode.id === "zones";
-      sel += '<path class="sel' + (zone ? " zn" : "") + '"' + TRAIT +
-        ' stroke="' + esc(traitTuile(p) || j.sel) + '" stroke-width="3"' +
-        (zone ? ' stroke-dasharray="5 4"' : "") + d;
+       il dit qu'on a retenu l'endroit, pas ce qu'il est. Le tracé vient des
+       données : il repasse par `esc()`, comme les couleurs relues. */
+    const d = ' d="' + esc(traceStand(e.source.d)) + '"/>';
+    if (retenu) parc += '<path class="parc"' + TRAIT + ' stroke="' + esc(j.parc) + '" stroke-width="2"' + d;
+    if (choisi){
+      jetons = jetons || jetonsEmplacements(calque);
+      sel += '<path class="sel' + (e.zone ? " zn" : "") + '"' + TRAIT +
+        ' stroke="' + esc(traitTuile(e, jetons) || j.sel) + '" stroke-width="3"' +
+        (e.zone ? ' stroke-dasharray="5 4"' : "") + d;
     }
-  });
+  }
   // la sélection en dernier : c'est elle qu'on vient de désigner
   calque.innerHTML = parc + sel;
 }
@@ -473,10 +494,7 @@ export function marqueParcours(){
     const c = CONFS.get(id);
     if (c && c.zone) zones.add(String(c.zone));
   });
-  document.querySelectorAll("#stands > g, #zones > g").forEach(g => {
-    g.classList.toggle("enparcours",
-      PARCOURS.stands.indexOf(g.dataset.id) >= 0 || zones.has(g.dataset.id));
-  });
+  retenus = new Set([...PARCOURS.stands.map(String), ...zones]);
   dessineMarques();
 }
 

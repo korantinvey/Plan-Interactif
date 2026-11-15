@@ -23,11 +23,13 @@
    ============================================================ */
 import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
-import { DATA, parId, state, societes } from "./donnees.mjs";
+import { DATA, state, societes } from "./donnees.mjs";
 import { conf } from "./configuration.mjs";
 import { montre } from "./corps-fiche.mjs";
 import { trio, melange, luminance } from "./couleurs.mjs";
-import { rayonTuile } from "./ambiance.mjs";
+import { rayonTuile, traceStand } from "./ambiance.mjs";
+import { anneauxGeo, boiteAnneaux } from "./forme.mjs";
+import { emplacements, estRetire } from "./etat-emplacements.mjs";
 import { suitLaRacine } from "./jetons-racine.mjs";
 
 export const DISTINCTIONS = [
@@ -107,7 +109,7 @@ export const ETOILE_DIST =
  * Elle se pose sur un vrai coin du tracé (`coinDuTrace`), celui qui avance le
  * plus vers le haut droit — ou le haut gauche pour la seconde.
  */
-function traceDist(mode, p, b, rang, deuxLiseres, teinte){
+function traceDist(mode, d, b, rang, deuxLiseres, teinte){
   /* La marque porte son style en attributs : le SVG de secours les lit comme
      tels, et le dessin aussi (`style-attributs.mjs`), sans que la feuille les
      peigne. Un aplat de la teinte de la distinction, ou un liseré fixe à
@@ -122,7 +124,7 @@ function traceDist(mode, p, b, rang, deuxLiseres, teinte){
   if (mode === "lisere")
     return '<path class="dLis' + (deuxLiseres && !rang ? " large" : "") + '" fill="none" stroke="' + T +
       '" stroke-width="' + (deuxLiseres && !rang ? 6 : 2.4) + '" vector-effect="non-scaling-stroke" d="' +
-      esc(p.getAttribute("d") || "") + '"/>';
+      esc(d) + '"/>';
   if (!b || !(b.width > 0) || !(b.height > 0)) return "";
   const c = Math.min(Math.max(Math.min(b.width, b.height) * .34, .5), 1.6);
   const n = (v) => v.toFixed(2);
@@ -131,7 +133,7 @@ function traceDist(mode, p, b, rang, deuxLiseres, teinte){
      montrait plus qu'une. */
   const droite = rang % 2 === 0;
   const tuiles = document.documentElement.classList.contains("ambiance-tuiles");
-  const k = coinDuTrace(p.getAttribute("d") || "", droite, tuiles) || coinDeBoite(b, droite);
+  const k = coinDuTrace(d, droite, tuiles) || coinDeBoite(b, droite);
   const [x, y] = k.p, [ux, uy] = k.u, [vx, vy] = k.v;
   // un point de l'angle, à « a » le long d'un côté et « e » le long de l'autre
   const pt = (a, e) => [x + ux * a + vx * e, y + uy * a + vy * e];
@@ -242,19 +244,25 @@ function releveDists(){
     .map((d, rang) => ({ d, rang, mode: modeDist(d, "plan"), teinte: teinteDist(d) }))
     .filter(x => x.mode !== "aucun");
   const deuxLiseres = actives.filter(x => x.mode === "lisere").length > 1;
-  $("stands").querySelectorAll("g.stand").forEach(g => {
-    const o = parId.get(g.dataset.id);
-    const p = o && g.querySelector("path");
-    if (!p) return;
+  /* Les stands du pavillon dans leurs données, et non leurs groupes dans le
+     SVG caché : le tracé tel que l'ambiance le dessine (en Tuiles, retiré et
+     arrondi), et sa boîte tirée du même tracé. */
+  for (const e of emplacements()){
+    const o = e.zone ? null : e.o;
+    const trace = o && e.source.d ? traceStand(e.source.d) : "";
+    if (!trace) continue;
     // une seule mise en page par stand, même quand il porte les deux marques
     let b = null;
     actives.forEach(({ d, rang, mode, teinte }) => {
       if (!standPorte(o, d)) return;
-      if (mode !== "lisere" && !b) b = p.getBBox();
-      const t = traceDist(mode, p, b, rang, deuxLiseres, teinte);
-      if (t) traces.push({ id: g.dataset.id, cle: d.cle, d: t });
+      if (mode !== "lisere" && !b){
+        const x = boiteAnneaux(anneauxGeo(trace));
+        b = { x: x[0], y: x[1], width: x[2] - x[0], height: x[3] - x[1] };
+      }
+      const t = traceDist(mode, trace, b, rang, deuxLiseres, teinte);
+      if (t) traces.push({ id: e.id, cle: d.cle, d: t });
     });
-  });
+  }
   DISTS_VUES = { plan: state.plan, modes: modesDuPlan(), traces };
 }
 
@@ -268,15 +276,17 @@ function releveDists(){
 export function dessineDists(){
   if (!DATA) return;
   const g = calqueDists();
-  const eteint = $("stands").style.display === "none";
+  // la couche des stands éteinte dans la pile des calques (`apparence.mjs` `styleDataGroupe`)
+  const eteint = conf("data:stands").visible === false;
   if (eteint || DISTINCTIONS.every(d => modeDist(d, "plan") === "aucun")){
     if (g.firstChild) g.textContent = "";
     return;
   }
   if (DISTS_VUES.plan !== state.plan || DISTS_VUES.modes !== modesDuPlan())
     releveDists();
+  // les stands que la recherche retire, au modèle (`etat-emplacements.mjs`)
   const dim = new Set();
-  $("stands").querySelectorAll("g.dim").forEach(x => dim.add(x.dataset.id));
+  for (const e of emplacements()) if (!e.zone && estRetire(e.cle)) dim.add(e.id);
   /* La marque porte sa teinte en attribut (`traceDist`) ; une couleur changée
      refait le relevé (`modesDuPlan`). La classe de la distinction ne sert plus
      qu'à la liste, dont les neuf cents lignes se repeignent par le jeton de la

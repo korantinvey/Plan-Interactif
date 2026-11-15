@@ -619,14 +619,15 @@ export function poseLibellesDessines(pxParM){
  * page. Mais quand deux enseignes se partagent un emplacement, allumer l'hôte
  * allumerait du même coup la voisine, qu'on n'a pas demandée. La sélection
  * s'arrête donc au découpage dès qu'il en existe un pour la société choisie.
+ *
+ * Un stand ajouté sur la couche Stands et lié à la même société en est un
+ * aussi ; c'est un emplacement, qui se trouve dans les données
+ * (`etat-emplacements.mjs` `ajoutLie`) et non ici.
  */
 export function decoupeStand(id, iSoc){
   const z = (id === null || id === undefined) ? null : $("couches");
-  /* Un stand ajouté sur la couche Stands et lié à la même société en est un
-     aussi : il porte les mêmes deux attributs. */
   const q = '[data-id="' + CSS.escape(String(id)) + '"][data-soc="' + Number(iSoc) + '"]';
-  return (z && z.querySelector('.dcal .sdes' + q)) ||
-         (z && $("stands").querySelector('g[data-aj]' + q)) || null;
+  return (z && z.querySelector('.dcal .sdes' + q)) || null;
 }
 
 /**

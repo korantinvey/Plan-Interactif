@@ -40,6 +40,7 @@ import { nomDeLaZone } from "./noms-zones.mjs";
 import { logoPose, cedeAuLogo, nomTu } from "./logos-stands.mjs";
 import { boite } from "./forme-choisie.mjs";
 import { TYPES_MEUBLES } from "./decor.mjs";
+import { ajoutLie } from "./etat-emplacements.mjs";
 import { decoupeStand, poseLibellesDessines, rafraichitFleches, societeDeForme, nomSurLePlan } from "./dessin.mjs";
 
 
@@ -155,7 +156,7 @@ export function libelles(){
   /* Quand la sélection s'est arrêtée à un découpage, l'emplacement qui
      l'héberge n'est pas ce qu'on a choisi : son libellé reste celui d'un stand
      ordinaire, et c'est le découpage qui écrit le sien en évidence. */
-  const decoupe = Boolean(state.sel && decoupeStand(state.sel, state.selSoc));
+  const decoupe = Boolean(state.sel && (decoupeStand(state.sel, state.selSoc) || ajoutLie(state.sel, state.selSoc)));
 
   for (const s of p.stands){
     /* Un stand ajouté et lié se conduit comme un découpage : il est choisi
@@ -327,7 +328,7 @@ export function libellesWebgl(){
      par le masque qui ne recalcule que le filtre de zoom), et s'écrit choisi
      dans sa propre liste, que peint une petite couche à lui. */
   const choisis = [], pastillesChoisies = [];
-  const decoupe = Boolean(state.sel && decoupeStand(state.sel, state.selSoc));
+  const decoupe = Boolean(state.sel && (decoupeStand(state.sel, state.selSoc) || ajoutLie(state.sel, state.selSoc)));
   for (const s of p.stands){
     /* Un stand ajouté et lié est choisi quand sa société l'est, et suit le
        filtre de celle-ci — comme dans « libelles ». Choisi seulement par son
