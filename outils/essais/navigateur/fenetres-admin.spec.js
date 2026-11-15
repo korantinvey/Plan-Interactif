@@ -100,10 +100,11 @@ test.describe("la boîte à outils du dessin", () => {
     expect(erreurs).toEqual([]);
   });
 
-  /* En SVG : le repli ne lit que les poignées, tracées en SVG dans les deux
-     rendus, et le WebGL logiciel des essais coûte une minute à ce geste. */
+  /* En WebGL, le seul rendu où l'on édite (`modules/modes-edition.mjs`
+     `editionPossible`) : le geste y est lent en rendu logiciel, d'où le délai. */
   test("se replie quand la forme qu'on déplace passe dessous", async ({ page }) => {
-    const erreurs = await ouvreCalque(page, "&rendu=svg");
+    test.setTimeout(180_000);
+    const erreurs = await ouvreCalque(page);
     const b = await boite(page);
     // un rectangle à droite de la boîte, puis glissé sous elle
     const x0 = b.x + b.w + 80, y0 = b.y + b.h / 2;
@@ -127,7 +128,8 @@ test.describe("la boîte à outils du dessin", () => {
    (`modules/modes-edition.mjs`), par quelque crayon qu'on y entre. */
 test.describe("un seul mode d'édition à la fois", () => {
   test("le dessin, les libellés et la reprise se referment l'un l'autre", async ({ page }) => {
-    const erreurs = await ouvreAdmin(page, "&rendu=svg");
+    test.setTimeout(120_000);
+    const erreurs = await ouvreAdmin(page);
     const racine = page.locator("html");
     const outils = page.locator("#outils");
     await page.locator("#btnLayers").click();
@@ -151,6 +153,24 @@ test.describe("un seul mode d'édition à la fois", () => {
     await page.locator('#pile button.ren[title="Dessiner sur ce calque"]').first().click();
     await expect(outils).toHaveClass(/\bopen\b/);
     await expect(racine).not.toHaveClass(/\bmode-geo-stands\b/);
+    expect(erreurs).toEqual([]);
+  });
+});
+
+/* L'édition exige le WebGL : les poignées et les repères des outils n'ont
+   que le dessin pour peintre (`modules/scene-edition.mjs`). Quand le SVG
+   montre le plan, un outil ne s'ouvre pas, et la fenêtre dit pourquoi. */
+test.describe("sans carte graphique", () => {
+  test("un calque ne s'ouvre pas, et la fenêtre dit pourquoi", async ({ page }) => {
+    const erreurs = await ouvreAdmin(page, "&rendu=svg");
+    await page.locator("#btnLayers").click();
+    await page.locator("#pile button.ajout", { hasText: "Nouveau calque" }).click();
+    await page.locator("#mPied button", { hasText: "Valider" }).click();
+    await expect(fenetre(page)).toHaveClass(/\bopen\b/);
+    await expect(page.locator("#mTitre")).toHaveText("L'édition demande une carte graphique");
+    await expect(page.locator("#outils")).not.toHaveClass(/\bopen\b/);
+    await page.locator("#mPied button", { hasText: "Compris" }).click();
+    await expect(fenetre(page)).not.toHaveClass(/\bopen\b/);
     expect(erreurs).toEqual([]);
   });
 });

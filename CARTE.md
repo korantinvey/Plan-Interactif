@@ -124,9 +124,9 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-modeles.css` — 836 l. → demo.html, plan-smcl.html
 
-### `_styles-parcours.css` — 659 l. → demo.html, plan-smcl.html
+### `_styles-parcours.css` — 648 l. → demo.html, plan-smcl.html
 
-### `_styles-plan.css` — 1736 l. → demo.html, plan-smcl.html
+### `_styles-plan.css` — 1710 l. → demo.html, plan-smcl.html
 
 ### `_styles-vitrine.css` — 199 l. → demo.html, plan-smcl.html
 
@@ -424,25 +424,25 @@ Importé par :
 
 ecran-console · fiche-evenement
 
-### `modules/batiments.mjs` — 613 l. → plan-admin
+### `modules/batiments.mjs` — 616 l. → plan-admin
 
 - l.1 · 11 quinquies. Bâtiments de la bibliothèque
 
 Fonctions :
 
-`CLE_CALAGE` 67 · `bibliothequeDispo` 68 · `refBatiment` 85 · `refForme` 89
-`marqueBatiment` 92 · `batimentsPoses` 95 · `estBatiment` 102 · `hallsPoses` 105
-`lieuDuCalque` 111 · `poseCalage` 117 · `ouvreBibliotheque` 126 · `vueDuLieu` 228
-`lanceCalage` 270 · `effaceLeTempsDuCalage` 298 · `cadreCalage` 317 · `finCalage` 330
-`pivoteCalage` 342 · `degresCalage` 358 · `dessineCalage` 363 · `calagePointerDown` 389
-`calagePointerMove` 401 · `calagePointerUp` 417 · `reposeBatiment` 430
-`ajouteBatiments` 446 · `brancheBatiments` 499 · `boutonRecale` 541 · `pictoRecale` 550
-`calageRelu` 567 · `rouvreCalage` 593
+`CLE_CALAGE` 68 · `bibliothequeDispo` 69 · `refBatiment` 86 · `refForme` 90
+`marqueBatiment` 93 · `batimentsPoses` 96 · `estBatiment` 103 · `hallsPoses` 106
+`lieuDuCalque` 112 · `poseCalage` 118 · `ouvreBibliotheque` 127 · `vueDuLieu` 229
+`lanceCalage` 271 · `effaceLeTempsDuCalage` 301 · `cadreCalage` 320 · `finCalage` 333
+`pivoteCalage` 345 · `degresCalage` 361 · `dessineCalage` 366 · `calagePointerDown` 392
+`calagePointerMove` 404 · `calagePointerUp` 420 · `reposeBatiment` 433
+`ajouteBatiments` 449 · `brancheBatiments` 502 · `boutonRecale` 544 · `pictoRecale` 553
+`calageRelu` 570 · `rouvreCalage` 596
 
 Importe :
 
 calques-dessin · configuration · dessin · dom · donnees · fenetre · geste-tenu · mode-admin
-ordre-trace · outil-dessin · rendu · scene-edition · vue · webgl
+modes-edition · ordre-trace · outil-dessin · rendu · scene-edition · vue · webgl
 
 Importé par :
 
@@ -1310,9 +1310,10 @@ cadre-visible · dom · evenement · focus-fenetre · modeles
 Importé par :
 
 affiche-ici · batiments · borne · calage-carte · chaleur · enregistrement · fiche
-fiche-zone · installation · journee · lancement · mesure · ordre-calques · outil-dessin
-parcours-recu · partage · pile · rappels · reglage-sponsor · reglages · reprise-emplacements
-scan-parcours · suggestion · tiroir-parcours · tout-au-parcours · tutoriel · volets
+fiche-zone · installation · journee · lancement · mesure · modes-edition · ordre-calques
+outil-dessin · parcours-recu · partage · pile · rappels · reglage-sponsor · reglages
+reprise-emplacements · scan-parcours · suggestion · tiroir-parcours · tout-au-parcours
+tutoriel · volets
 
 ### `modules/fiche-detail.mjs` — 1408 l. → console
 
@@ -2050,17 +2051,21 @@ Importé par :
 
 fenetre · habillage · index-salon · polices-plan · reglage-fiche · volets
 
-### `modules/modes-edition.mjs` — 46 l. → plan-admin
+### `modules/modes-edition.mjs` — 74 l. → plan-admin
 
 - l.1 · Les trois modes d'édition — un seul à la fois
 
 Fonctions :
 
-`inscritMode` 35 · `quitteLesAutres` 41
+`inscritMode` 45 · `quitteLesAutres` 51 · `editionPossible` 64
+
+Importe :
+
+fenetre · svg-de-secours
 
 Importé par :
 
-outil-dessin · placement-libelles · reprise-emplacements
+batiments · outil-dessin · placement-libelles · reprise-emplacements
 
 ### `modules/mot-de-passe.mjs` — 211 l. → motdepasse
 
@@ -2352,7 +2357,7 @@ Importé par :
 
 gestes-admin · outil-foodtruck · reglage-comptoir · reglage-foodtrucks
 
-### `modules/outil-dessin.mjs` — 963 l. → plan-admin
+### `modules/outil-dessin.mjs` — 965 l. → plan-admin
 
 - l.1 · 11. Calques de dessin — l'outil de l'exploitant
 
@@ -2364,9 +2369,9 @@ Fonctions :
 `poseImage` 284 · `ditImagePosee` 307 · `importeImage` 315 · `dessinPointerDown` 348
 `dessinPointerMove` 433 · `dessinPointerUp` 471 · `termineTrace` 512 · `aide` 524
 `outilOffert` 554 · `choisitOutil` 568 · `enchaineStand` 599 · `proposeCouleurLigne` 617
-`montreTransport` 628 · `activeCalque` 637 · `cleVerrou` 691 · `verrouille` 692
-`basculeVerrou` 694 · `montreRoleIti` 737 · `creeCalque` 750 · `demandeNom` 763
-`renommeCalque` 788 · `brancheOutilDessin` 804
+`montreTransport` 628 · `activeCalque` 637 · `cleVerrou` 693 · `verrouille` 694
+`basculeVerrou` 696 · `montreRoleIti` 739 · `creeCalque` 752 · `demandeNom` 765
+`renommeCalque` 790 · `brancheOutilDessin` 806
 
 Importe :
 
@@ -2546,16 +2551,16 @@ Importé par :
 
 libelles
 
-### `modules/placement-libelles.mjs` — 248 l. → plan-admin
+### `modules/placement-libelles.mjs` — 250 l. → plan-admin
 
 - l.1 · Placer un libellé à la main — l'outil de l'exploitant
 
 Fonctions :
 
 `lacheLibelle` 43 · `choisi` 57 · `repeint` 70 · `posePlacement` 80
-`libelleAutomatique` 102 · `modePlacementLibelles` 111 · `majPaletteLibelle` 132
-`choisitLibelle` 157 · `pousseLibelle` 164 · `libellePointerDown` 172
-`libellePointerMove` 195 · `libellePointerUp` 205 · `branchePlacementLibelles` 218
+`libelleAutomatique` 102 · `modePlacementLibelles` 111 · `majPaletteLibelle` 134
+`choisitLibelle` 159 · `pousseLibelle` 166 · `libellePointerDown` 174
+`libellePointerMove` 197 · `libellePointerUp` 207 · `branchePlacementLibelles` 220
 
 Importe :
 
@@ -3006,23 +3011,23 @@ Importé par :
 cartouche-poi · dessin · edition · fiche-zone · itineraire · outil-dessin · points-interet
 socle-dessin · trajet · webgl
 
-### `modules/reprise-emplacements.mjs` — 783 l. → plan-admin
+### `modules/reprise-emplacements.mjs` — 785 l. → plan-admin
 
 - l.1 · Reprendre et ajouter des emplacements — l'outil de l'exploitant
 
 Fonctions :
 
 `lacheGeo` 78 · `cleVerrouGeo` 102 · `geoVerrouille` 103 · `basculeVerrouGeo` 105
-`boutonVerrouGeo` 120 · `modeGeometrie` 131 · `objetGeoSous` 155 · `groupeGeo` 165
-`choisitGeo` 173 · `cadreGeo` 190 · `prisesGeo` 210 · `curseurGeo` 222
-`dessinePoigneesGeo` 228 · `ecritDimensionsGeo` 245 · `nomSorteGeo` 257
-`majPaletteGeo` 259 · `finGesteGeo` 298 · `enregistreGeo` 316 · `geometrieOrigine` 330
-`retraceGeo` 345 · `pousseGeometrie` 360 · `appliqueDimensionGeo` 377
-`enregistreAjout` 392 · `ajouteEmplacement` 407 · `renommeAjout` 437 · `lieAjout` 471
-`ecritInfosAjout` 504 · `supprimeAjout` 536 · `choisitOutilGeo` 566 · `aideAjout` 573
-`fermeAjout` 583 · `ajoutPointerDown` 592 · `ajoutPointerMove` 608 · `ajoutPointerUp` 630
-`geometriePointerDown` 650 · `accrocheGeo` 682 · `geometriePointerMove` 684
-`geometriePointerUp` 735 · `brancheRepriseEmplacements` 752
+`boutonVerrouGeo` 120 · `modeGeometrie` 131 · `objetGeoSous` 157 · `groupeGeo` 167
+`choisitGeo` 175 · `cadreGeo` 192 · `prisesGeo` 212 · `curseurGeo` 224
+`dessinePoigneesGeo` 230 · `ecritDimensionsGeo` 247 · `nomSorteGeo` 259
+`majPaletteGeo` 261 · `finGesteGeo` 300 · `enregistreGeo` 318 · `geometrieOrigine` 332
+`retraceGeo` 347 · `pousseGeometrie` 362 · `appliqueDimensionGeo` 379
+`enregistreAjout` 394 · `ajouteEmplacement` 409 · `renommeAjout` 439 · `lieAjout` 473
+`ecritInfosAjout` 506 · `supprimeAjout` 538 · `choisitOutilGeo` 568 · `aideAjout` 575
+`fermeAjout` 585 · `ajoutPointerDown` 594 · `ajoutPointerMove` 610 · `ajoutPointerUp` 632
+`geometriePointerDown` 652 · `accrocheGeo` 684 · `geometriePointerMove` 686
+`geometriePointerUp` 737 · `brancheRepriseEmplacements` 754
 
 Importe :
 
@@ -3372,7 +3377,7 @@ evenement
 
 Importé par :
 
-apparence · rendu · webgl
+apparence · modes-edition · rendu · webgl
 
 ### `modules/synchronisation.mjs` — 324 l. → console
 

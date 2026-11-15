@@ -1042,7 +1042,7 @@ function marqueZoneTuto(z){
     g = document.createElementNS("http://www.w3.org/2000/svg", "g");
     g.id = "tutoZone";
     // au-dessus des couches et des marques, sous le trajet et les poignées
-    svg.insertBefore(g, svg.querySelector("#itin, #apercu, #poignees"));
+    svg.insertBefore(g, $("itin"));
   }
   g.dataset.id = z.id;
   g.innerHTML = "";

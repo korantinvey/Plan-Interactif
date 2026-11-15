@@ -318,6 +318,7 @@ l'importe, ses injections : `CARTE.md`. Son anglais : `outils/anglais/<module>.j
 | calques de dessin — données, tracé, outil | `modules/calques-dessin.mjs`, `modules/dessin.mjs`, `modules/outil-dessin.mjs` ; un seul mode d'édition `modules/modes-edition.mjs` |
 | choisir, déplacer, tourner une forme | `modules/edition.mjs` ; forme choisie `modules/forme-choisie.mjs` |
 | cote, aimants, grille, duplication | `modules/aimants.mjs` |
+| repères des outils sur le plan — poignées, cadres, cote, aimants, ébauche, calage, grille de marche ; l'édition exige le WebGL | `modules/scene-edition.mjs` (`poseReperes`), peints et visés par `modules/webgl.mjs` (`repereSousWebgl`) ; la garde `modules/modes-edition.mjs` `editionPossible` |
 | reprendre ou ajouter un stand, une zone | `modules/emplacements.mjs` (ce que le visiteur reçoit), `modules/reprise-emplacements.mjs` (l'outil) |
 | fiche d'une zone, salles, masquage | `modules/fiche-zone.mjs` ; nom d'une zone `modules/noms-zones.mjs` |
 | repères, transports en commun | `modules/reperes.mjs`, `modules/cartouche-poi.mjs`, `modules/points-interet.mjs` |
@@ -410,6 +411,12 @@ Ce qui ne se voit ni à la lecture d'un module ni dans la carte.
   dans ses propres shaders, réglé par ce qu'elle déclare en nombres
   (`fonduZoom`, `palettesFigurants`). Une extension neuve se refait donc aussi
   dans `moteur-gl-*.mjs`, sans quoi elle ne fait rien hors de `?moteur=deck`.
+- **Un repère d'outil de l'exploitant ne s'écrit pas dans le SVG** — poignée,
+  cadre, cote, contour : il se pose en données dans la scène d'édition
+  (`modules/scene-edition.mjs` `poseReperes`), avec son style et sa prise, et
+  se vise par `modules/webgl.mjs` `repereSousWebgl`. Écrit dans le SVG caché,
+  il ne se verrait nulle part : l'administration exige le WebGL, et un outil
+  qui s'ouvre passe par `modules/modes-edition.mjs` `editionPossible`.
 - **Une ressource d'une origine neuve** (police, script tiers) s'ajoute à
   `outils/genere.js` `poseCsp`, sans quoi la page la refuse et les essais
   échouent sur l'erreur de console. Un script en ligne y est permis par son

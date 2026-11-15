@@ -365,7 +365,7 @@ function calqueMarques(){
     // au-dessus des couches, sous le trajet et les poignées d'édition ; le
     // plan est le `svg` de `vue.mjs`, relu par son identifiant
     const svg = $("plan");
-    svg.insertBefore(g, svg.querySelector("#itin, #apercu, #poignees"));
+    svg.insertBefore(g, $("itin"));
   }
   return g;
 }

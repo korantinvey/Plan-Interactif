@@ -41,7 +41,7 @@ import { oublieGrilles, roleIti, ROLES_ITI, cleRoleIti } from "./itineraire.mjs"
 import { relance } from "./tiroir-itineraire.mjs";
 import { poseNappe, rafraichitApercu } from "./nappe.mjs";
 import { suitNuancier } from "./nuancier.mjs";
-import { inscritMode, quitteLesAutres } from "./modes-edition.mjs";
+import { inscritMode, quitteLesAutres, editionPossible } from "./modes-edition.mjs";
 import { SORTE_GEO } from "./emplacements.mjs";
 import { choisitGeo } from "./reprise-emplacements.mjs";
 import { ecritMetres, coteCadre, montreCote, montreAimants, aimante, DERNIERE,
@@ -642,6 +642,8 @@ export function activeCalque(id){
      plan, qui aboutissent tous ici. */
   const vise = trouveCalque(id);
   if (vise && verrouille(vise)) return;
+  // ouvrir un calque demande le WebGL, le refermer non (`modes-edition.mjs`)
+  if (id && calqueActif !== id && !editionPossible()) return;
   poseCalqueActif(calqueActif === id ? null : id);
   /* Les crayons du panneau — celui d'un calque, celui des textes, ceux de la
      reprise — ne peuvent pas être allumés ensemble : leurs glissers

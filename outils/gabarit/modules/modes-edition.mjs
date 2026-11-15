@@ -13,8 +13,18 @@
    ici, une fois : chaque outil inscrit en se chargeant de quoi se refermer,
    et appelle `quitteLesAutres` en s'ouvrant.
 
+   Chaque outil qui s'ouvre demande aussi `editionPossible` : l'édition exige
+   que le WebGL peigne le plan. Les poignées, les cotes, les aimants et les
+   contours des outils vivent dans la scène d'édition (`scene-edition.mjs`),
+   que seul le dessin peint et vise (décision du 15 novembre 2026,
+   `docs/migration-webgl.md`) ; quand le SVG montre le plan — un navigateur
+   sans carte graphique, `?rendu=svg` —, un outil ouvert n'aurait ni repère à
+   montrer ni prise à offrir. Il ne s'ouvre pas, et la fenêtre dit pourquoi.
+
    Un module de l'administration : le visiteur n'a aucun de ces outils.
    ============================================================ */
+import { svgPeint } from "./svg-de-secours.mjs";
+import { ouvreModale } from "./fenetre.mjs";
 
 /** @typedef {"dessin" | "libelles" | "reprise"} ModeEdition */
 
@@ -43,4 +53,22 @@ export function quitteLesAutres(moi){
     const sortie = mode !== moi && SORTIES.get(mode);
     if (sortie) sortie();
   }
+}
+
+/**
+ * L'outil qui s'ouvre peut-il servir ? Oui si le WebGL peint le plan ; sinon
+ * la fenêtre le dit, et l'outil reste fermé. Appelé par chaque entrée : le
+ * dessin, les libellés, la reprise, le calage d'un hall.
+ * @returns {boolean}
+ */
+export function editionPossible(){
+  if (!svgPeint()) return true;
+  ouvreModale("L'édition demande une carte graphique", corps => {
+    const p = document.createElement("p");
+    p.textContent = "Ce navigateur montre le plan sans carte graphique : les poignées et les repères " +
+      "des outils ne peuvent pas s'y dessiner. Ouvrez l'administration dans un navigateur à jour, " +
+      "ou activez l'accélération matérielle dans ses réglages.";
+    corps.appendChild(p);
+  }, [{ libelle: "Compris" }]);
+  return false;
 }

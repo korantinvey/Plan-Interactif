@@ -676,27 +676,11 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
   outline:2px solid var(--accent);outline-offset:3px}
 @media (prefers-reduced-motion:reduce){.dcal .forme.neuve{animation:none}}
 
-#apercu{fill:none;stroke:var(--accent);stroke-width:2;vector-effect:non-scaling-stroke;
-  stroke-dasharray:6 4;pointer-events:none}
-/* Le repère d'alignement dit d'où vient la ligne sur laquelle le point vient
-   de s'accrocher : sans lui, l'accrochage passe pour une main qui tremble. */
-#apercuGuide{fill:none;stroke:var(--accent);stroke-width:1;vector-effect:non-scaling-stroke;
-  stroke-dasharray:2 5;opacity:.55;pointer-events:none}
-/* Les points d'accrochage à portée du geste. Discrets : ils annoncent une
-   possibilité, ils ne désignent rien — c'est la croix du repère d'alignement
-   qui dit lequel a pris. */
-#aimantsVus{pointer-events:none}
-#aimantsVus circle{fill:var(--accent);fill-opacity:.6;stroke:var(--surface);
-  stroke-width:1px;vector-effect:non-scaling-stroke}
-/* Un cran de grille n'est qu'une graduation : il se voit sans disputer au
-   coin du stand le regard qu'on lui porte. */
-#aimantsVus .cran{fill-opacity:.3;stroke:none}
-/* La cote se lit par-dessus le fond de plan, qui porte déjà ses propres
-   cotes et ses hachures : le liseré de la couleur du fond la détache sans
-   qu'il faille lui poser un cartouche. */
-#cote{fill:var(--accent);stroke:var(--surface);stroke-width:3px;paint-order:stroke;
-  stroke-linejoin:round;vector-effect:non-scaling-stroke;font-weight:600;
-  pointer-events:none;user-select:none}
+/* Les repères des outils de l'exploitant — poignées et cadres, ébauche d'un
+   tracé, guide d'alignement, aimants, cote, contour d'un hall qu'on cale,
+   grille de marche — ne sont plus dans le SVG : le dessin les peint depuis la
+   scène d'édition (`modules/scene-edition.mjs`), chacun avec le style que lui
+   donne le module qui le pose. Une règle ici ne les atteindrait pas. */
 
 /* On travaille longtemps dans cette palette : elle est assez large pour que les
    libellés tiennent sur une ligne, et bornée en hauteur pour ne jamais sortir
@@ -925,7 +909,6 @@ html.sans-image-stand .outils #imageSoc{
 .outilsVoir{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-3);
   cursor:pointer}
 .outils .outilsVoir input{width:15px;height:15px;flex:none;padding:0;accent-color:var(--accent)}
-#nappe{pointer-events:none;image-rendering:pixelated;opacity:.55}
 .calq .rle{font-style:normal;font-size:10px;padding:1px 5px;border-radius:999px;
   background:var(--accent-soft);color:var(--accent);white-space:nowrap}
 .btnSup{color:var(--ink-3);font-size:13px;line-height:1;padding:1px 3px}
@@ -937,15 +920,6 @@ html.sans-image-stand .outils #imageSoc{
   background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
 .elemChamp .quart:hover{border-color:var(--accent);color:var(--accent)}
 
-/* Les poignées d'une forme dessinée et celles d'un emplacement repris se
-   ressemblent parce que c'est le même geste : chacune a son calque, les deux
-   modes ne s'ouvrant jamais ensemble. */
-#poignees,#poigneesGeo{pointer-events:none}
-#poignees .cadreSel,#poigneesGeo .cadreSel{fill:none;stroke:var(--accent);stroke-width:1;
-  stroke-dasharray:5 4;vector-effect:non-scaling-stroke;opacity:.8}
-#poignees .pgn,#poigneesGeo .pgn{fill:var(--surface);stroke:var(--accent);stroke-width:1.6;
-  vector-effect:non-scaling-stroke;pointer-events:auto}
-#poignees .pgn:hover,#poigneesGeo .pgn:hover{fill:var(--accent-soft)}
 .outilsPied{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--ink-3)}
 .calq .mv{width:15px;height:18px;border:none;color:var(--ink-3);font-size:11px;line-height:1;padding:0}
 .calq .mv:hover{color:var(--ink)}

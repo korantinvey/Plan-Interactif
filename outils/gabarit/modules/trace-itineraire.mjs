@@ -360,8 +360,8 @@ export function dessineItineraire(anime){
   if (!g){
     g = document.createElementNS("http://www.w3.org/2000/svg", "g");
     g.id = "itin";
-    // au-dessus des calques, sous les poignées d'édition et l'aperçu de tracé
-    svg.insertBefore(g, svg.querySelector("#apercu, #poignees"));
+    // au-dessus des calques ; la scène d'édition (`scene-edition.mjs`) se peint par-dessus tout
+    svg.appendChild(g);
   }
   const neuf = TRACE !== vuTrace || state.plan !== vuPlan;
   vuTrace = TRACE; vuPlan = state.plan;

@@ -67,7 +67,7 @@ export function dessineBorne(){
     g = document.createElementNS("http://www.w3.org/2000/svg", "g");
     g.id = "borneIci";
     // sous le trait de l'itinéraire, qui part justement d'ici
-    svg.insertBefore(g, svg.querySelector("#itin, #apercu, #poignees"));
+    svg.insertBefore(g, $("itin"));
   }
   rempliBorne(g);
   placePouls();

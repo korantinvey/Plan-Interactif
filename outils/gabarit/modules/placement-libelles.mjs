@@ -26,7 +26,7 @@ import { cleLibelle, PLACE_LIBELLES, libSel, poseModeLibelles, poseLibelleChoisi
 import { svg, versPlan } from "./vue.mjs";
 import { libelles } from "./libelles.mjs";
 import { CONF, enregistreConf } from "./configuration.mjs";
-import { inscritMode, quitteLesAutres } from "./modes-edition.mjs";
+import { inscritMode, quitteLesAutres, editionPossible } from "./modes-edition.mjs";
 
 /* Les réglages (`CONF`, que le changement de salon remplace), le calque de
    dessin ouvert et la couche reprise, importés, se lisent tels qu'ils sont à
@@ -109,6 +109,8 @@ function libelleAutomatique(){
 }
 
 export function modePlacementLibelles(on){
+  // entrer demande le WebGL, sortir non (`modes-edition.mjs`)
+  if (on && !PLACE_LIBELLES && !editionPossible()) return;
   poseModeLibelles(!!on && ADMIN);
   racine.classList.toggle("mode-libelles", PLACE_LIBELLES);
   /* Le placement, le dessin et la reprise d'une géométrie se disputeraient le

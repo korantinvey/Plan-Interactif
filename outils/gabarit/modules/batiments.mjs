@@ -39,6 +39,7 @@ import { PAVILLON_QUITTE } from "./rendu.mjs";
 import { ouvreModale, fermeModale } from "./fenetre.mjs";
 import { GL, repereSousWebgl } from "./webgl.mjs";
 import { poseReperes, anneauCercle } from "./scene-edition.mjs";
+import { editionPossible } from "./modes-edition.mjs";
 import { vue, changeVue, poseVue, cadrePlan, masque, versPlan, svg, injecteALaVue } from "./vue.mjs";
 import { mesCalques, nouvelId } from "./calques-dessin.mjs";
 import { dessineDessins } from "./dessin.mjs";
@@ -268,6 +269,8 @@ let gesteCalage = null;
 inscritGesteTenu(() => gesteCalage);
 
 function lanceCalage(lieu, halls, depart){
+  // le contour à caler et sa poignée n'ont que le dessin pour peintre (`modes-edition.mjs`)
+  if (!editionPossible()) return;
   activeCalque(null);
   const pts = halls.flatMap(b => b.contours.flat());
   const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);

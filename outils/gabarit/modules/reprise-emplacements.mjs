@@ -59,7 +59,7 @@ import { apercu, apercuGuide, etiquetteSociete } from "./dessin.mjs";
 import { CONF, conf, enregistreConf, optionActive } from "./configuration.mjs";
 import { construitPanneau } from "./ordre-trace.mjs";
 import { pictoVerrou, remplitListeSocietes, societeSaisie, fermeIci } from "./socle-dessin.mjs";
-import { inscritMode, quitteLesAutres } from "./modes-edition.mjs";
+import { inscritMode, quitteLesAutres, editionPossible } from "./modes-edition.mjs";
 import { poseRepris, estChoisi, cleEmplacement, signaleEmplacements } from "./etat-emplacements.mjs";
 
 const racine = document.documentElement;
@@ -129,6 +129,8 @@ export function boutonVerrouGeo(sorte){
    Entrer et sortir du mode
    ------------------------------------------------------------ */
 export function modeGeometrie(sorte){
+  // entrer demande le WebGL, sortir non (`modes-edition.mjs`)
+  if (sorte && sorte !== SORTE_GEO && !editionPossible()) return;
   const avant = SORTE_GEO;
   poseSorteGeo((ADMIN && sorte && !geoVerrouille(sorte)) ? sorte : null);
   racine.classList.toggle("mode-geo-stands", SORTE_GEO === "stands");

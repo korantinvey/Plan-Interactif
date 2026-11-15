@@ -179,9 +179,40 @@ pour le seul rendu de secours. `svg-de-secours.spec.js` éprouve le contrat :
 une classe posée à l'insu du modèle ne fait relire aucun bloc ; un choix dit
 au modèle relit celui des stands.
 
-Reste du guet : les calques de l'habillage, les calques dessinés, les
-surcouches et les outils de l'exploitant, qui s'écrivent encore dans le SVG
-caché et que le dessin y relit.
+Reste du guet : les calques de l'habillage, les calques dessinés et les
+surcouches, qui s'écrivent encore dans le SVG caché et que le dessin y relit.
+
+**Étape 4 — les outils de l'exploitant (15 novembre 2026).** Décidé :
+l'administration exige le WebGL (sur les onze jours d'avant, aucune des dix-
+neuf visites de l'administration n'en était privée). Les repères des outils
+n'ont donc qu'un peintre, le dessin, et quittent le SVG caché.
+
+- `modules/scene-edition.mjs` les tient en données, par jeu : aplats,
+  traits à l'épaisseur de l'écran, textes, images, chacun avec son style en
+  jetons de la racine et, s'il se saisit, sa prise (l'outil, ce qu'elle
+  désigne, son curseur). `webgl.mjs` en fait des blocs sans nœud
+  (`sceneGl`), relus quand leur jeu change (`SCENE_CHANGEE`) ; la visée rend
+  la prise (`repereSousWebgl`), et le curseur se lit dans la prise.
+- Y passent : les poignées et le cadre de la forme choisie, le cadre tourné
+  d'un texte et sa poignée de rotation (`edition.mjs`), ceux de l'emplacement
+  repris (`reprise-emplacements.mjs`), la cote et les aimants (`aimants.mjs`),
+  l'ébauche et le guide d'alignement (`dessin.mjs`), le contour d'un hall
+  qu'on cale (`batiments.mjs`), la grille de marche (`nappe.mjs`), posée par
+  ses coins tournés. `#poignees`, `#poigneesGeo`, `#cote`, `#aimantsVus`,
+  `#apercu`, `#apercuGuide`, `#calageApercu` et `#nappe` ne s'écrivent plus,
+  et leurs règles ont quitté la feuille.
+- Sans WebGL — un navigateur sans carte graphique, `?rendu=svg` —, un outil
+  ne s'ouvre pas : `modes-edition.mjs` `editionPossible` le dit dans la
+  fenêtre commune. Le dessin, les libellés, la reprise et le calage passent
+  par lui.
+- Essais : `scene-edition.spec.js` trace un rectangle, vise sa poignée par
+  la carte graphique et la tire ; `fenetres-admin.spec.js` édite en WebGL et
+  éprouve le refus en SVG ; l'essai hors page des aimants lit la scène.
+
+Restent à l'étape 4 les états posés sur la racine (`mode-edition`,
+`cale-deplace`…), qui ne sont pas des repères et que le dessin lit déjà
+comme un état, et les formes des calques dessinés, qui restent à la feuille
+par décision (étape 2).
 
 **Étape 2 — les surcouches, autrement que les stands.** Leur gain de
 performance est négligeable : quelques dizaines d'éléments. Reprendre leurs
@@ -508,7 +539,8 @@ téléphone, et l'imitation Windows (WARP) plutôt que SwiftShader.
    que pour le WebGL, sauf s'il porte du sens pour le visiteur (sélection,
    itinéraire, borne).
 3. **L'administration exige le WebGL.** Sans quoi le repli devrait aussi
-   peindre poignées, guides et cotes.
+   peindre poignées, guides et cotes. *Décidé le 15 novembre 2026 : oui* —
+   voir l'étape 4 dans l'avancement.
 4. **Où lire l'habillage** : dans la page, une fois par pavillon, ou à la
    synchronisation — qui change ce que sert `/api/plan` et demande de
    versionner son format.
