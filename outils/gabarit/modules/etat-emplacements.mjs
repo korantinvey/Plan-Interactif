@@ -56,7 +56,7 @@ import { creeEvenement } from "./evenement.mjs";
  * `zones` disent les blocs à relire ; `cles`, les emplacements qui viennent
  * d'être choisis ou de cesser de l'être, dont le volume part sans attendre
  * que le bloc soit relu (`webgl.mjs` `anticipeHausses`).
- * @type {ReturnType<typeof creeEvenement>}
+ * @type {import("./evenement.mjs").Evenement<[{ stands: boolean, zones: boolean, cles: string[] }]>}
  */
 export const EMPLACEMENTS_CHANGES = creeEvenement();
 

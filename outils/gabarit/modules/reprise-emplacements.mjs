@@ -36,7 +36,8 @@ import { DATA, TOUS, parId, poseDonnees, state, P } from "./donnees.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { confirme } from "./fenetre.mjs";
 import { anneauxGeo, traceGeo, empreinteGeo, boiteAnneaux, arrondiGeo } from "./forme.mjs";
-import { GL, cibleWebgl, priseWebgl } from "./webgl.mjs";
+import { GL, cibleWebgl, repereSousWebgl } from "./webgl.mjs";
+import { poseReperes, poigneeCarree, cadreChoisi } from "./scene-edition.mjs";
 import { designe } from "./designation.mjs";
 import { oublieGrilles } from "./itineraire.mjs";
 import { dessineMarques, estRetenuSurLePlan } from "./parcours.mjs";
@@ -221,26 +222,18 @@ function prisesGeo(o){
 const curseurGeo = (cadre, i) =>
   cadre ? ["nwse-resize", "nesw-resize", "nwse-resize", "nesw-resize"][i] : "move";
 
+/* Les poignées de l'emplacement repris, dans la scène d'édition
+   (`scene-edition.mjs`) : les mêmes que celles d'une forme dessinée, pour le
+   même geste. */
 export function dessinePoigneesGeo(){
-  let g = $("poigneesGeo");
-  if (!g){
-    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    g.id = "poigneesGeo";
-    svg.appendChild(g);
-  }
   const o = SORTE_GEO && geoSel && parId.get(geoSel);
-  if (!o || !ADMIN){ g.innerHTML = ""; return; }
+  if (!o || !ADMIN){ poseReperes("poigneesGeo", []); return; }
   const pr = prisesGeo(o);
   const r = cadrePlan();
   const t = Math.max(.15, vue().w / (r.width || 1) * 5);     // demi-côté, en mètres
-  const b = boiteAnneaux(pr.a);
-  g.innerHTML =
-    '<rect class="cadreSel" x="' + (b[0] - t) + '" y="' + (b[1] - t) +
-    '" width="' + (b[2] - b[0] + 2 * t) + '" height="' + (b[3] - b[1] + 2 * t) + '"/>' +
-    pr.mains.map((m, i) =>
-      '<rect class="pgn" data-i="' + i + '" style="cursor:' + curseurGeo(pr.cadre, i) + '"' +
-      ' x="' + (m.p[0] - t) + '" y="' + (m.p[1] - t) +
-      '" width="' + (2 * t) + '" height="' + (2 * t) + '"/>').join("");
+  poseReperes("poigneesGeo", [cadreChoisi(boiteAnneaux(pr.a), t),
+    ...pr.mains.map((/** @type {any} */ m, /** @type {number} */ i) =>
+      poigneeCarree(m.p, t, { outil: "reprise", i, curseur: curseurGeo(pr.cadre, i) }))]);
 }
 
 /* ------------------------------------------------------------
@@ -658,11 +651,12 @@ export function geometriePointerDown(e){
   if (!SORTE_GEO) return false;
   if (outilGeo) return ajoutPointerDown(e);
   const o = geoSel && parId.get(geoSel);
-  const pgn = GL.actif ? priseWebgl(e.clientX, e.clientY, ".pgn") : e.target.closest(".pgn");
+  // la poignée se demande à la carte graphique : elle n'existe que dans la scène d'édition
+  const pgn = GL.actif ? repereSousWebgl(e.clientX, e.clientY, "reprise") : null;
   if (pgn && o){
     e.preventDefault();
     const pr = prisesGeo(o);
-    glisseGeo = { o: o, type: "poignee", i: +pgn.dataset.i, depart: versPlan(e.clientX, e.clientY),
+    glisseGeo = { o: o, type: "poignee", i: +pgn.i, depart: versPlan(e.clientX, e.clientY),
                   a: pr.a, cadre: pr.cadre, mains: pr.mains };
     svg.style.cursor = curseurGeo(pr.cadre, glisseGeo.i);
     try { svg.setPointerCapture(e.pointerId); } catch (err) {}

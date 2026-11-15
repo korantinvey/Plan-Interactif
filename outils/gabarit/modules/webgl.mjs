@@ -36,6 +36,7 @@
 import { avive, eclate } from "./couleurs.mjs";
 import { $ } from "./dom.mjs";
 import { creeEvenement } from "./evenement.mjs";
+import { SCENE_CHANGEE, JEUX, reperes } from "./scene-edition.mjs";
 import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, anneau, rectArrondi,
   avecTrous, couleurGl } from "./trace.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
@@ -595,6 +596,13 @@ export function monteWebgl(){
        (`etat-emplacements.mjs`) : seul le bloc touché se relit, et le volume
        choisi part tout de suite. Un stand qui monte ou s'abaisse emporte ses
        marques, posées sur son dessus. */
+    // un jeu de la scène d'édition reposé par son outil : lui seul se relit
+    SCENE_CHANGEE.ecoute((/** @type {string} */ nom) => {
+      const b = BLOCS_SCENE.get(nom);
+      if (!GL.actif || !b) return;
+      GL.sales.add(b);
+      planifieWebgl();
+    });
     EMPLACEMENTS_CHANGES.ecoute((/** @type {{ stands: boolean, zones: boolean, cles: string[] }} */ c) => {
       if (!GL.actif) return;
       if (c.zones && $("zones")) GL.sales.add($("zones"));
@@ -939,9 +947,22 @@ function toutRepeindreWebgl(){
   planifieWebgl();
 }
 
+/* Les jeux de la scène d'édition (`scene-edition.mjs`) sont des blocs comme
+   les autres, sans nœud : un objet par jeu, gardé, auquel les couches se
+   rattachent. */
+/** @type {Map<string, { id: string, scene: string }>} */
+const BLOCS_SCENE = new Map(JEUX.map(n => [n, { id: "scene-" + n, scene: n }]));
+/** Les blocs dans l'ordre où ils se peignent : les calques, ce qui vit hors
+ *  d'eux dans le SVG, et la scène d'édition — la grille de marche sous le
+ *  trajet, le reste par-dessus tout. */
 function blocsDansLOrdre(){
   const couches = $("couches");
-  return [...couches.children, ...[...svg.children].filter(c => c !== couches)];
+  /** @type {any[]} */
+  const out = [...couches.children, ...[...svg.children].filter(c => c !== couches)];
+  const itin = $("itin"), i = itin ? out.indexOf(itin) : -1;
+  out.splice(i < 0 ? out.length : i, 0, BLOCS_SCENE.get("nappe"));
+  for (const n of JEUX) if (n !== "nappe") out.push(BLOCS_SCENE.get(n));
+  return out;
 }
 
 function repeintWebgl(){
@@ -1891,17 +1912,61 @@ function couchesTexte(id, items, famille, graisse, extra){
    coordonnées restent en mètres ; les styles sont ceux que la feuille de
    style a calculés, variables et classes résolues.
    ------------------------------------------------------------ */
-/** Ce que les outils saisissent : une poignée, une forme, le cadrage d'un bâtiment. */
-const PRISES = ".pgn, [data-f], #calageApercu .contour, #calageApercu .poignee";
+/* Ce que les outils saisissent dans le SVG : une forme des calques dessinés.
+   Les poignées, cadres et contours des outils sont dans la scène d'édition,
+   où chaque repère porte sa prise (`sceneGl`). */
+const PRISES = "[data-f]";
 const accVide = prises => ({ pleins: [], traitsPx: [], traitsM: [], traitsZ: [], textes: new Map(), images: [], phares: new Map(), prises,
   decor: [], jetons: new Map(), parent: null });
+/**
+ * Un jeu de la scène d'édition, en ce que `couchesDeBloc` peint : ses aplats,
+ * ses traits à l'épaisseur de l'écran, ses textes, ses images. Tout s'y
+ * saisit qui porte une prise — la prise elle-même, des données, revient à la
+ * visée (`repereSousWebgl`). Les jetons de couleur se lisent sur la racine à
+ * chaque conversion : un accent changé repeint tout le plan, la scène avec.
+ */
+function sceneGl(/** @type {string} */ nom){
+  const acc = accVide(true);
+  const cs = getComputedStyle(document.documentElement);
+  const teinte = (/** @type {string | undefined} */ c, /** @type {number} */ op) =>
+    !c ? null : couleurGl(c.startsWith("--") ? cs.getPropertyValue(c).trim() : c, op);
+  const famille = getComputedStyle(svg).fontFamily;
+  for (const r of reperes(nom)){
+    const op = r.opacite === undefined ? 1 : r.opacite, prise = r.prise || null;
+    const sw = r.epaisseur || 1;
+    // la bibliothèque mesure les tirets en demi-épaisseurs de trait
+    const dash = r.tirets ? [2 * r.tirets[0] / sw, 2 * r.tirets[1] / sw] : [0, 0];
+    const traitDe = (/** @type {number[][]} */ path) => {
+      const c = teinte(r.trait, op);
+      if (c && path.length > 1) acc.traitsPx.push({ path, couleur: c, largeur: sw, dash, el: null, prise, sur: null });
+    };
+    if (r.sorte === "aplat" && r.anneaux){
+      const c = teinte(r.plein, op);
+      if (c) for (const polygon of avecTrous(r.anneaux))
+        acc.pleins.push({ polygon, couleur: c, base: c, el: null, prise, haut: 0, hausse: null, sur: null });
+      for (const a of r.anneaux) traitDe([...a, a[0]]);
+    } else if (r.sorte === "trait" && r.chemin){
+      traitDe(r.ferme ? [...r.chemin, r.chemin[0]] : r.chemin);
+    } else if (r.sorte === "texte" && r.texte && r.position && r.taille){
+      const c = teinte(r.plein, op);
+      if (!c) continue;
+      const graisse = String(r.graisse || 400), cle = famille + "|" + graisse;
+      if (!acc.textes.has(cle)) acc.textes.set(cle, { famille, graisse, items: [] });
+      // la ligne de base au pied des lettres, comme en SVG : la bibliothèque centre le texte (`texteGl`)
+      acc.textes.get(cle).items.push({ text: r.texte, position: [r.position[0], r.position[1] - r.taille * .33],
+        taille: r.taille, angle: 0, ancre: "start", couleur: c, el: null, prise });
+    } else if (r.sorte === "image" && r.href && r.bornes){
+      const b = r.bornes;
+      acc.images.push({ href: r.href, bornes: [b[0], b[3], b[2], b[1]], op, el: null, prise });
+    }
+  }
+  return acc;
+}
+
 function convertitBloc(racine, cle){
-  // ce que l'éditeur attrape : le calque ouvert, et les poignées posées à la
-  // racine — celles d'une forme dessinée comme celles d'un emplacement repris
-  // le cadrage d'un bâtiment de la bibliothèque s'attrape aussi, calque ouvert ou non
-  const acc = accVide((_page.enEdition() && (racine.classList.contains("editable") ||
-      racine.id === "poignees" || racine.id === "poigneesGeo")) ||
-    racine.id === "calageApercu");
+  if (racine.scene) return couchesDeBloc(sceneGl(racine.scene), cle);
+  // ce que l'éditeur attrape dans le SVG : le calque ouvert
+  const acc = accVide(_page.enEdition() && racine.classList.contains("editable"));
   const avant = racine.id === "stands" ? cleChoisi() : null;
   if (avant !== null) CHOISI = null;
   // les couleurs de la page, lues une fois pour tous les stands ou toutes les zones du bloc
@@ -3800,7 +3865,8 @@ function couchesTuiles(couche, choisies){
 function poseCurseurWebgl(o){
   let c = "";
   if (o && PLACE_LIBELLES && o.lbl) c = "move";
-  else if (o && o.prise) c = getComputedStyle(o.prise).cursor;
+  // un repère de la scène dit son curseur ; une forme des calques le tient de la feuille
+  else if (o && o.prise) c = o.prise instanceof Element ? getComputedStyle(o.prise).cursor : o.prise.curseur || "";
   else if (o && o.el) c = "pointer";
   if (c === "auto" || c === "default") c = "";
   stage().classList.toggle("survol-gl", Boolean(c));
@@ -4197,6 +4263,14 @@ export function priseWebgl(x, y, selecteur){
   const o = objetSous(x, y, 3);
   const n = o && (o.prise || o.el);
   return n && n.closest ? n.closest(selecteur) : null;
+}
+/** Pour un outil de l'exploitant : la prise d'un de ses repères sous le
+ *  pointeur (`scene-edition.mjs`), ou rien. Trois pixels de tolérance : une
+ *  poignée est petite. */
+export function repereSousWebgl(/** @type {number} */ x, /** @type {number} */ y, /** @type {string} */ outil){
+  const o = objetSous(x, y, 3);
+  const p = o && o.prise;
+  return p && !(p instanceof Element) && p.outil === outil ? p : null;
 }
 export function libelleSousWebgl(x, y){
   const o = objetSous(x, y, 2);

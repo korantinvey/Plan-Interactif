@@ -27,7 +27,8 @@ import { P } from "./donnees.mjs";
 import { esc, COLLATION } from "./texte.mjs";
 import { ecritMinutes } from "./temps.mjs";
 import { ADMIN } from "./mode-admin.mjs";
-import { GL, priseWebgl } from "./webgl.mjs";
+import { GL, priseWebgl, repereSousWebgl, rectEcranBoite } from "./webgl.mjs";
+import { poseReperes, reperes, poigneeCarree, cadreChoisi, anneauRect, anneauCercle, tourne } from "./scene-edition.mjs";
 import { typeLiaison, nomRepere, lienEcrits, ecritLiens, annuaireLiaisons, liensDe } from "./itineraire.mjs";
 import { coteCadre, montreCote, coinsGeste, montreAimants, correction, aimante, retientTaille,
   ecritDimensions } from "./aimants.mjs";
@@ -68,29 +69,19 @@ function poignees(f){
   return f.pts;
 }
 
+/* Les poignées et le cadre de la forme choisie vivent dans la scène
+   d'édition (`scene-edition.mjs`), que le dessin peint et vise : chaque
+   poignée y porte son rang et son curseur. Leur taille est en mètres,
+   refaite à chaque vue pour rester la même à l'écran. */
 export function dessinePoignees(){
-  let g = $("poignees");
-  if (!g){
-    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    g.id = "poignees";
-    svg.appendChild(g);
-  }
   const cible = formeSel && formeParId(formeSel);
-  if (!cible || !ADMIN || outil !== "main" || !calqueActif){ g.innerHTML = ""; return; }
+  if (!cible || !ADMIN || outil !== "main" || !calqueActif){ poseReperes("poignees", []); return; }
   const f = cible.f;
   const r = cadrePlan();
   const t = Math.max(.15, vue().w / (r.width || 1) * 5);   // demi-côté, en mètres
-  const b = boite(f);
-  const marge = t;
-  const pgns = poignees(f).map((p, i) =>
-      '<rect class="pgn" data-i="' + i + '" style="cursor:' + curseurPoignee(f, i) + '"' +
-      ' x="' + (p[0] - t) + '" y="' + (p[1] - t) +
-      '" width="' + (2 * t) + '" height="' + (2 * t) + '"/>').join("");
-  if (f.t === "texte"){ g.innerHTML = cadreTexte(f, t) + pgns; return; }
-  g.innerHTML =
-    '<rect class="cadreSel" x="' + (b[0] - marge) + '" y="' + (b[1] - marge) +
-    '" width="' + (b[2] - b[0] + 2 * marge) + '" height="' + (b[3] - b[1] + 2 * marge) + '"/>' +
-    pgns;
+  const pgns = poignees(f).map((p, i) => poigneeCarree(p, t, { outil: "edition", i, curseur: curseurPoignee(f, i) }));
+  if (f.t === "texte"){ poseReperes("poignees", [...cadreTexte(f, t), ...pgns]); return; }
+  poseReperes("poignees", [cadreChoisi(boite(f), t), ...pgns]);
 }
 
 /**
@@ -103,21 +94,26 @@ export function dessinePoignees(){
  * et la tirer autour du point d'ancrage couche le texte dans la direction où
  * on l'emmène.
  */
-function cadreTexte(f, t){
-  const n = $("couches").querySelector('.forme[data-f="' + CSS.escape(f.id) + '"] text');
+/** @returns {import("./scene-edition.mjs").Repere[]} */
+function cadreTexte(/** @type {any} */ f, /** @type {number} */ t){
+  // le texte vit dans son calque, que le SVG porte encore : son étendue s'y mesure
+  const n = /** @type {SVGGraphicsElement | null} */ ($("couches").querySelector('.forme[data-f="' + CSS.escape(f.id) + '"] text'));
   let bb = null;
   try { bb = n && n.getBBox(); } catch (e) {}
   const x = f.pts[0][0], y = f.pts[0][1], taille = f.taille || 2;
   if (!bb || !(bb.width > 0))
     bb = { x: x - taille * f.txt.length * .28, y: y - taille * .8, width: taille * f.txt.length * .56, height: taille };
-  const tourne = ' transform="rotate(' + (+f.rot || 0) + " " + x + " " + y + ')"';
+  // tourné avec le texte autour de son point d'ancrage, comme `rotate(a x y)`
+  const a = +f.rot || 0, o = [x, y];
   const d = bb.x + bb.width + t, h = poigneeRotation(f, t);
-  return '<g' + tourne + '>' +
-    '<rect class="cadreSel" x="' + (bb.x - t) + '" y="' + (bb.y - t) +
-    '" width="' + (bb.width + 2 * t) + '" height="' + (bb.height + 2 * t) + '"/>' +
-    '<line class="cadreSel" x1="' + d + '" y1="' + h[1] + '" x2="' + (h[0] - t) + '" y2="' + h[1] + '"/>' +
-    '<circle class="pgn rot" data-i="rot" style="cursor:grab" cx="' + h[0] + '" cy="' + h[1] +
-    '" r="' + (1.2 * t) + '"/></g>';
+  const pointilles = { trait: "--accent", epaisseur: 1, tirets: [5, 4], opacite: .8 };
+  return [
+    { sorte: "trait", chemin: tourne(anneauRect([bb.x - t, bb.y - t, bb.x + bb.width + t, bb.y + bb.height + t]), a, o),
+      ferme: true, ...pointilles },
+    { sorte: "trait", chemin: tourne([[d, h[1]], [h[0] - t, h[1]]], a, o), ...pointilles },
+    { sorte: "aplat", anneaux: [tourne(anneauCercle(h, 1.2 * t), a, o)], plein: "--surface", trait: "--accent",
+      epaisseur: 1.6, prise: { outil: "edition", i: "rot", curseur: "grab" } },
+  ];
 }
 
 /** La place de la poignée de rotation dans le repère du texte, avant qu'il
@@ -166,10 +162,14 @@ export function replieOutils(oui){
    replie alors d'elle-même ; on la rend d'un clic. Ses côtés sont pris par le
    panneau des calques à droite : la déplacer ne ferait que couvrir autre chose. */
 function degageOutils(){
-  const o = $("outils"), g = $("poignees");
-  if (!o || !g || !o.classList.contains("open") || o.classList.contains("replie")) return;
-  const a = o.getBoundingClientRect(), b = g.getBoundingClientRect();
-  if (!b.width && !b.height) return;
+  const o = $("outils"), r = reperes("poignees");
+  if (!o || !r.length || !o.classList.contains("open") || o.classList.contains("replie")) return;
+  // la boîte des poignées, tirée de leurs données et portée à l'écran
+  const pts = r.flatMap(x => x.anneaux ? x.anneaux.flat() : x.chemin || []);
+  if (!pts.length) return;
+  const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
+  const b = rectEcranBoite([Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]);
+  const a = o.getBoundingClientRect();
   if (b.left < a.right && b.right > a.left && b.top < a.bottom && b.bottom > a.top) replieOutils(true);
 }
 
@@ -568,9 +568,9 @@ export function editionPointerDown(e){
   if (!ADMIN || outil !== "main") return false;
   const p = versPlan(e.clientX, e.clientY);
 
-  // en WebGL, la cible se demande à la carte graphique : le SVG ne suit pas la vue
-  const pgn = GL.actif ? priseWebgl(e.clientX, e.clientY, ".pgn") : e.target.closest(".pgn");
-  if (pgn && formeSel && pgn.dataset.i === "rot"){
+  // la poignée se demande à la carte graphique : elle n'existe que dans la scène d'édition
+  const pgn = GL.actif ? repereSousWebgl(e.clientX, e.clientY, "edition") : null;
+  if (pgn && formeSel && pgn.i === "rot"){
     const cible = formeParId(formeSel);
     if (cible && cible.f.t === "texte"){
       aMemoriser = true;
@@ -588,7 +588,7 @@ export function editionPointerDown(e){
     const cible = formeParId(formeSel);
     if (cible){
       aMemoriser = true;
-      geste = { type: "poignee", i: +pgn.dataset.i, depart: p,
+      geste = { type: "poignee", i: +pgn.i, depart: p,
                 pts: cible.f.pts.map(q => q.slice()), f: cible.f };
       svg.style.cursor = curseurPoignee(cible.f, geste.i);
       try { svg.setPointerCapture(e.pointerId); } catch (err) {}

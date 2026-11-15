@@ -11,34 +11,7 @@
  * La session de l'exploitant et la base sont simulées : rien ne sort.
  */
 const { test, expect } = require("@playwright/test");
-const { prepare, attendLaListe } = require("./aide");
-
-const BASE = "https://base.essai";
-
-/** Le plan d'administration, une session admise et une base qui acquitte. */
-async function ouvreAdmin(page, requete = "") {
-  const erreurs = await prepare(page);
-  await page.addInitScript((base) => {
-    localStorage.setItem("console-config", JSON.stringify({ url: base, anonKey: "anon" }));
-    localStorage.setItem("console-session", JSON.stringify({ access_token: "a.b.c" }));
-  }, BASE);
-  await page.route(BASE + "/**", (r) => {
-    const req = r.request();
-    const url = new URL(req.url());
-    if (url.pathname === "/auth/v1/user") return r.fulfill({ json: { id: "u1" } });
-    if (url.pathname === "/rest/v1/evenement") return r.fulfill({ json: [{ id: "e1" }] });
-    // les compteurs à effacer : sans eux, la remise à zéro se dit illisible
-    if (url.pathname === "/rest/v1/rpc/rapport_utilisation") {
-      return r.fulfill({ json: { depuis: "2026-01-01", visites: 3, visiteurs: 2,
-                                 recherches: 1, stands: { total: 4 } } });
-    }
-    if (req.method() !== "GET") return r.fulfill({ status: 204, body: "" });
-    return r.fulfill({ json: [] });
-  });
-  await page.goto("/plan-admin.html?plan=smcl-2026" + requete);
-  await attendLaListe(page);
-  return erreurs;
-}
+const { ouvreAdmin } = require("./aide");
 
 const fenetre = (page) => page.locator("#modale");
 

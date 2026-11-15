@@ -56,7 +56,8 @@ import { fragmentDuCode } from "./scan-parcours.mjs";
 import { jetonsEmplacements, styleEmplacement } from "./style-emplacements.mjs";
 import { etatEmplacement } from "./etat-emplacements.mjs";
 import { couleurGl } from "./trace.mjs";
-import { compareLectures } from "./webgl.mjs";
+import { compareLectures, repereSousWebgl, rectEcranBoite } from "./webgl.mjs";
+import { reperes } from "./scene-edition.mjs";
 
 globalThis.__essais = {
   SLUG, GL, rectEcranWebgl, CONTEXTE_PERDU, _lg, largeur, libelles, COMPTES_LOGOS,
@@ -66,6 +67,8 @@ globalThis.__essais = {
   qr: { qrTrame, qrSvg }, fragmentDuCode,
   emplacements: { jetonsEmplacements, styleEmplacement, etatEmplacement, couleurGl },
   compareLectures,
+  // la scène d'édition, telle que les outils l'ont posée et que le dessin la vise
+  scene: { reperes, repereSousWebgl, rectEcranBoite },
   get P_NOM(){ return P_NOM; },
   get P_CODE(){ return P_CODE; },
   get TUTO(){ return TUTO; },

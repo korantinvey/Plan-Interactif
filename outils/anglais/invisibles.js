@@ -6,6 +6,13 @@
    Chaque entrée dit pourquoi elle est là : une chaîne déclarée invisible à
    tort resterait en français sans que le contrôle le signale plus jamais. */
 module.exports = [
+  // `modules/scene-edition.mjs` : l'erreur d'un outil qui poserait ses repères
+  // sous un nom que la scène ne connaît pas — une faute de programmation,
+  // jamais montrée à l'exploitant
+  "Jeu de repères inconnu : ",
+  // `modules/webgl.mjs` : le sélecteur de ce que l'éditeur saisit dans les
+  // calques dessinés
+  "[data-f]",
   // `modules/reglage-foodtrucks.mjs` : un morceau de l'attribut « transform »
   // qui tourne un camion dans le champ de la fiche
   ") rotate(",
