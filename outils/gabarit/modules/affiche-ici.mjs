@@ -148,11 +148,12 @@ function lienIci(code){
  * zone, non : on est *dans* une zone, et son centre peut être à trente mètres
  * du totem — c'est alors l'endroit exact du doigt qui compte, comme sur le
  * fond de plan nu.
+ * @param {import("./designation.mjs").Designation | null} cible ce que le doigt désigne
  */
 function pointTouche(clientX, clientY, cible){
-  const id = cible ? cible.dataset.id : null;
-  if (cible && !id){
-    const rep = formeParId(cible.dataset.poi);
+  const id = cible ? cible.id : null;
+  if (cible && cible.sorte === "repere"){
+    const rep = formeParId(cible.poi);
     if (rep && rep.f.t === "repere") return pointRepere(rep.f, P());
   }
   const o = id ? parId.get(id) : null;
@@ -160,7 +161,8 @@ function pointTouche(clientX, clientY, cible){
   return pointLibre(versPlan(clientX, clientY));
 }
 
-/** Un appui sur le plan pendant qu'on cherche l'endroit d'une affiche. */
+/** Un appui sur le plan pendant qu'on cherche l'endroit d'une affiche.
+ *  @param {import("./designation.mjs").Designation | null} cible ce que le doigt désigne */
 export function codeIciAuPoint(clientX, clientY, cible){
   if (visee() !== "ici") return false;
   return ouvreCodeIci(pointTouche(clientX, clientY, cible));

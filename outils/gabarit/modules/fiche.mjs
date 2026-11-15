@@ -151,16 +151,16 @@ function noeud(id, iSoc){
 /* Trois façons d'atteindre un stand depuis le plan : sa forme, le logo que
    l'exploitant a posé dessus, ou le découpage qu'il y a dessiné. Le logo seul
    fait un chemin à part — les deux autres sont le plan tel qu'on le voit. */
-export function canalPlan(cible){
-  if (!cible || !cible.dataset.f) return "plan";
-  const c = formeParId(cible.dataset.f);
+export function canalPlan(/** @type {import("./designation.mjs").Designation | null} */ cible){
+  if (!cible || !cible.f) return "plan";
+  const c = formeParId(cible.f);
   return c && c.f.t === "image" ? "image" : "plan";
 }
 
-/** Le rang de la société désignée par un nœud du plan, s'il en désigne une :
- *  un stand dessiné nomme la sienne, une forme d'emplacement ne le fait pas. */
-export const rangSociete = (el) =>
-  el && el.dataset.soc !== undefined ? Number(el.dataset.soc) : undefined;
+/** Le rang de la société désignée sur le plan, s'il en désigne une : un
+ *  stand dessiné nomme la sienne, une forme d'emplacement ne le fait pas. */
+export const rangSociete = (/** @type {import("./designation.mjs").Designation | null} */ cible) =>
+  cible ? cible.soc : undefined;
 
 /**
  * `iSoc` désigne la société qu'on vient voir sur un stand partagé. Absent, la

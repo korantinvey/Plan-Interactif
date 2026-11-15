@@ -132,6 +132,13 @@ export function poseChaleurs(/** @type {Map<string, string> | null} */ couleurs)
 export function poseRepris(/** @type {string | null} */ id){ E.repris = id; }
 export function poseCibleTuto(/** @type {string | null} */ cle){ E.cibleTuto = cle; }
 
+/* Ce que le modèle dit d'une clé, pour qui désigne au lieu de lire la classe
+   du groupe (`designation.mjs`) : la recherche, le cartouche. */
+/** La recherche retire-t-elle cet emplacement ? */
+export const estRetire = (/** @type {string} */ cle) => E.retires.has(cle);
+/** Le cartouche met-il cette zone en avant ? */
+export const estMisEnAvant = (/** @type {string} */ cle) => E.phares.has(cle);
+
 /** La clé d'un groupe du plan, s'il est celui d'un stand ou d'une zone. */
 export function cleDuGroupe(/** @type {Element | null} */ g){
   const p = g && /** @type {Element | null} */ (g.parentNode);

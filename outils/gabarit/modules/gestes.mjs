@@ -19,6 +19,13 @@
    Tout ce qu'il appelle s'importe ; la vue se lit par `view` et se remplace
    par `changeVue`, comme partout ailleurs.
 
+   Ce qu'un appui touche n'est pas un nœud du SVG : c'est une désignation
+   (`designation.mjs`), que rend la carte graphique (`webgl.mjs`
+   `cibleWebgl`) ou, dans le rendu de secours et au clavier, le nœud que le
+   navigateur a touché, traduit dès qu'il arrive. Tout ce que la chaîne
+   prévient la reçoit telle quelle ; le retrait de la recherche et la mise en
+   avant du cartouche se jugent chez ceux qui les décident.
+
    L'écoute de la langue y est aussi, parce qu'elle se posait au même endroit
    (`brancheLangue`) : elle refait ce que le plan a mesuré dans la langue
    d'avant.
@@ -33,8 +40,9 @@ import { recul } from "./environs.mjs";
 import { GL, cibleWebgl, injecteAuWebgl, monteALAppui, rendLAppui, viseEnAvance } from "./webgl.mjs";
 import { svg, view, changeVue, emp, cadrePlan, figeTextes, rafraichitVue, poseVue, stoppeZoom, zoom, fit,
   redresse, retiensVue } from "./vue.mjs";
-import { filtre, retraitLeve, oublieRetrait, reposeRetrait, appliqueFiltre, basculeCriteres, videCriteres,
-  fermeCriteres, majVideQ, videRecherche, reprendRecherche, liste } from "./recherche.mjs";
+import { filtre, retraitLeve, oublieRetrait, estRetiree, reposeRetrait, appliqueFiltre, basculeCriteres,
+  videCriteres, fermeCriteres, majVideQ, videRecherche, reprendRecherche, liste } from "./recherche.mjs";
+import { designe } from "./designation.mjs";
 import { dernierAppuiTactile, poseAppuiTactile, select, canalPlan, rangSociete, ferme } from "./fiche.mjs";
 import { oublieChoixPoi, ouvrePoi, oublieReperes } from "./points-interet.mjs";
 import { poseBorneIci } from "./borne.mjs";
@@ -54,8 +62,8 @@ import { nomDeLaZone } from "./noms-zones.mjs";
  * @property {(e: PointerEvent) => boolean} suit le doigt qui bouge, pris par un outil
  * @property {(e: PointerEvent) => boolean} leve le doigt levé, pris par un outil
  * @property {() => void} annule le geste annulé : ce que les outils tenaient se lâche
- * @property {(x: number, y: number, cible: any) => boolean} codeIci l'appui qui désigne
- *   l'endroit d'un code « Vous êtes ici »
+ * @property {(x: number, y: number, cible: import("./designation.mjs").Designation | null) => boolean} codeIci
+ *   l'appui qui désigne l'endroit d'un code « Vous êtes ici »
  * @property {(e: KeyboardEvent, saisie: boolean) => boolean} clavier les raccourcis et les
  *   flèches de l'éditeur, avant tout le reste
  * @property {() => boolean} echap Échap, qui referme d'abord les modes de l'éditeur
@@ -300,7 +308,8 @@ const DOIGT = 32;
    leurs marges se chevauchent plus qu'elles n'aident. */
 const MAX_ELARGIS = 150;
 
-function cibleElargie(x, y){
+/** @returns {import("./designation.mjs").Designation | null} */
+function cibleElargie(/** @type {number} */ x, /** @type {number} */ y){
   if (!dernierAppuiTactile || !filtre() || retraitLeve) return null;
   if (GL.actif) return cibleWebgl(x, y, DOIGT / 2);
   const allumes = svg.querySelectorAll("#stands g:not(.dim), #zones g:not(.dim)," +
@@ -319,7 +328,7 @@ function cibleElargie(x, y){
     const d = Math.max(dx, dy);
     if (d < mieux){ mieux = d; choix = g; }
   });
-  return choix;
+  return designe(choix);
 }
 
 /* Une recherche n'est pas une frappe. On attend que la main s'arrête, et on
@@ -395,12 +404,13 @@ export function brancheGestes(){
     const ecran = [e.clientX, e.clientY], touche = e.target;
     const tactile = e.pointerType === "touch" || e.pointerType === "pen";
     /* Au doigt, la carte graphique est interrogée dès l'appui, sans
-       l'attendre : le relâché trouve la réponse prête (`viseEnAvance`). Un
-       stand redessiné entre-temps hors de la page ne compte plus. */
+       l'attendre : le relâché trouve la réponse prête (`viseEnAvance`). Elle
+       désigne par clé : un stand redessiné entre-temps reste celui qu'on a
+       touché. */
     const avance = tactile ? viseEnAvance(ecran[0], ecran[1]) : null;
-    const vise = () => avance && avance.fini && (!avance.el || avance.el.isConnected) ? avance.el
+    const vise = () => avance && avance.fini ? avance.cible
       : GL.actif ? cibleWebgl(ecran[0], ecran[1])
-      : touche instanceof Element ? touche.closest("[data-id],[data-poi]") : null;
+      : designe(touche instanceof Element ? touche : null);
     /* Au doigt, ce qu'on touche ne se cherche que si l'on choisit. Le chercher
        demande une image à la carte graphique — vingt à cinquante
        millisecondes sur un téléphone, en vue immersive —, et le stand appuyé
@@ -475,7 +485,7 @@ export function brancheGestes(){
     /* Ce que l'appui désigne. Un appui qui porte sur un objet allumé garde le
        sien — il a touché ce qu'il visait ; les autres reviennent au résultat de
        recherche dont ils débordent la marge, s'il y en a un. */
-    const cible = d.cible && !d.cible.classList.contains("dim")
+    const cible = d.cible && !estRetiree(d.cible)
       ? d.cible : (cibleElargie(d.x, d.y) || d.cible);
     /* Le clic dit ce qu'on regarde maintenant : il lève donc la mise en avant
        du cartouche, sauf s'il porte justement sur ce qu'elle éclaire. */
@@ -498,17 +508,18 @@ export function brancheGestes(){
          mais il a un nom, et c'est ce qu'on vient lui demander. */
       // le doigt a pris quelque chose : il le sent
       vibre(PRISE, e.pointerType);
-      if (!cible.dataset.id){
-        if (visePoi(cible.dataset.poi)) return;
-        ouvrePoi(cible.dataset.poi, cible);
+      if (cible.id === undefined){
+        const poi = cible.poi || "";
+        if (visePoi(poi)) return;
+        ouvrePoi(poi);
         return;
       }
-      if (viseItineraire(cible.dataset.id)) return;
+      if (viseItineraire(cible.id)) return;
       /* Le plan ne bouge pas sous le doigt : on a choisi ce qu'on regarde, et
          le recentrer à chaque appui — essayé, en glissant puis en volant —
          donnait la nausée à l'usage. La liste et la recherche, elles, viennent
          de loin et amènent le plan sur le stand. */
-      select(cible.dataset.id, false, canalPlan(cible), rangSociete(cible));
+      select(cible.id, false, canalPlan(cible), rangSociete(cible));
     } else { ferme(); finVisee(); }
   });
   svg.addEventListener("pointercancel", e => {
@@ -536,19 +547,23 @@ export function brancheGestes(){
          (ex - r.left) / r.width, (ey - r.top) / r.height);
   }, { passive: false });
   svg.addEventListener("keydown", e => {
-    const g = e.target.closest("[data-id],[data-poi]");
+    /* Le clavier parcourt les groupes du SVG, qui restent la couche
+       accessible du plan : le nœud qui a le focus se traduit en désignation,
+       comme le doigt dans le rendu de secours. */
+    const g = designe(e.target instanceof Element ? e.target : null);
     if (g && (e.key === "Enter" || e.key === " ")){
       e.preventDefault();
       // le plan se parcourt aussi au clavier : la visée, la mise en avant et le
       // retrait doivent y répondre pareil
       oublieChoixPoi(g);
       oublieRetrait(g);
-      if (!g.dataset.id){
-        if (!visePoi(g.dataset.poi)) ouvrePoi(g.dataset.poi, g);
+      if (g.id === undefined){
+        const poi = g.poi || "";
+        if (!visePoi(poi)) ouvrePoi(poi);
         return;
       }
-      if (!viseItineraire(g.dataset.id))
-        select(g.dataset.id, false, canalPlan(g), rangSociete(g));
+      if (!viseItineraire(g.id))
+        select(g.id, false, canalPlan(g), rangSociete(g));
     }
   });
   document.addEventListener("keydown", e => {

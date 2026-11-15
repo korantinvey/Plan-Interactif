@@ -49,8 +49,7 @@ import { poseChoisi } from "./etat-emplacements.mjs";
  */
 export function vaAuRepere(id, p){
   changePlan(p);
-  ouvrePoi(id, $("couches").querySelector('.repere[data-poi="' + CSS.escape(id) + '"]'),
-           true);
+  ouvrePoi(id, true);
 }
 
 
@@ -65,12 +64,13 @@ export function vaAuRepere(id, p){
  *
  * La fiche est celle des stands, remplie autrement : elle partage la même
  * bande que le parcours et l'itinéraire, et deux fiches ouvertes en même
- * temps ne se liraient pas. Elle en reprend donc le contrat : « depuis » est
- * la pastille d'où la fiche s'étire — le nœud, mesuré à la fin — et
+ * temps ne se liraient pas. Elle en reprend donc le contrat : elle s'étire
+ * depuis la pastille du repère — son nœud, cherché ici et mesuré à la fin,
+ * de sorte que le doigt n'a qu'à dire quel repère il désigne — et
  * « recentrer » demande que le plan vienne sur le repère, ce qui n'a de sens
  * qu'une fois la fiche posée, seule à savoir ce qu'elle masque.
  */
-export function ouvrePoi(id, depuis, recentrer){
+export function ouvrePoi(id, recentrer){
   const cible = formeParId(id);
   if (!cible || cible.f.t !== "repere") return;
   const f = cible.f, p = P();
@@ -130,7 +130,7 @@ export function ouvrePoi(id, depuis, recentrer){
   $("voile").classList.add("on");
   ecarteClicFantome();
   if (recentrer) centrePoint(f.pts[0]);
-  anime(() => rectVisee(depuis), 1);
+  anime(() => rectVisee(noeudPoi), 1);
 }
 
 

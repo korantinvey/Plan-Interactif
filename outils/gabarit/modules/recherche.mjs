@@ -59,7 +59,7 @@ import { libelles } from "./libelles.mjs";
 import { dessineDessins } from "./dessin.mjs";
 import { view } from "./vue.mjs";
 import { poseToutAuParcours } from "./tout-au-parcours.mjs";
-import { poseRetires, emplacements, groupeEmplacement } from "./etat-emplacements.mjs";
+import { poseRetires, emplacements, groupeEmplacement, estRetire } from "./etat-emplacements.mjs";
 
 
 /* Le secteur n'est offert comme critère que là où le plan sectorise et le
@@ -608,15 +608,31 @@ export function appliqueFiltre(){
 }
 
 /**
+ * Ce que le doigt désigne est-il retiré par la recherche ? La même règle que
+ * « marqueRetrait », qui éteint les uns et les autres : le modèle pour un
+ * emplacement, la société pour un stand dessiné. Une image liée ou un repère
+ * ne s'éteignent jamais.
+ * @param {import("./designation.mjs").Designation | null | undefined} des
+ */
+export function estRetiree(des){
+  if (!des) return false;
+  if (des.sorte === "stand" || des.sorte === "zone") return estRetire(des.cle);
+  if (des.sorte !== "dessine" || des.id === undefined) return false;
+  const o = parId.get(des.id);
+  return !!o && !visibleSociete(o, Number(des.soc));
+}
+
+/**
  * Le retrait ne survit pas au clic qui l'ignore.
  *
  * Ce qui est resté allumé fait exception : l'ouvrir, c'est se servir du
- * résultat, pas en sortir. On reconnaît l'un de l'autre à la marque que
- * « marqueRetrait » leur a posée — celle-là même qui les éteint.
+ * résultat, pas en sortir. On reconnaît l'un de l'autre à la règle même qui
+ * les éteint (`estRetiree`).
+ * @param {import("./designation.mjs").Designation | null} cible
  */
 export function oublieRetrait(cible){
   if (retraitLeve || !filtre() || !cible) return;
-  if (!cible.classList.contains("dim")) return;
+  if (!estRetiree(cible)) return;
   leveRetrait();
   appliqueFiltre();
 }

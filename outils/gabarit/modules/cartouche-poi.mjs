@@ -28,7 +28,7 @@ import { DESSINS, mesCalques } from "./calques-dessin.mjs";
 import { PICTOS, nomTypeRepere, typeZone, pictoForme, glypheRepere, pastillePoi } from "./reperes.mjs";
 import { majFondus } from "./bandes.mjs";
 import { formeParId } from "./forme-choisie.mjs";
-import { posePhares, emplacements, groupeEmplacement } from "./etat-emplacements.mjs";
+import { posePhares, emplacements, groupeEmplacement, estMisEnAvant } from "./etat-emplacements.mjs";
 
 /**
  * Les repères, en objets de recherche.
@@ -338,12 +338,17 @@ export function retenusParPoi(){
  *
  * Un repère ou une zone déjà mis en avant font exception : les ouvrir, c'est
  * se servir de la mise en avant, pas en sortir. On reconnaît les uns et les
- * autres à la marque qu'« eclairePoi » leur a posée — la même qui les tient
- * en pleine lumière.
+ * autres à la règle d'« eclairePoi », qui les tient en pleine lumière : le
+ * modèle pour une zone, le repère lui-même pour un repère.
+ * @param {import("./designation.mjs").Designation | null} cible ce que le doigt désigne
  */
 export function oublieChoixPoi(cible){
   if (!poiChoisi) return;
-  if (cible && cible.classList.contains("phare")) return;
+  if (cible && cible.sorte === "zone" && estMisEnAvant(cible.cle)) return;
+  if (cible && cible.sorte === "repere"){
+    const rep = formeParId(cible.f || cible.poi || "");
+    if (phareRepere(rep && rep.f)) return;
+  }
   poiChoisi = null;
   cartouchePoi();
 }

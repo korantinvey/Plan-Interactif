@@ -194,10 +194,11 @@ function remetLeDepart(){
  * la borne en prend le nom. Partout ailleurs — une allée, un carrefour, la
  * cloison d'un stand qu'on frôle — c'est l'endroit exact du doigt qui compte,
  * et non ce qui se trouvait dessous.
+ * @param {import("./designation.mjs").Designation | null} cible ce que le doigt désigne
  */
 export function poseBorneIci(clientX, clientY, cible){
   if (visee !== "borne") return false;
-  const id = cible && !cible.dataset.id ? cible.dataset.poi : null;
+  const id = cible && cible.sorte === "repere" ? cible.poi : null;
   const rep = id ? formeParId(id) : null;
   return poseLaBorne(rep && rep.f.t === "repere" ? pointRepere(rep.f, P())
                                                  : pointLibre(versPlan(clientX, clientY)));

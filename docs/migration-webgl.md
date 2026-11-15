@@ -121,8 +121,18 @@ emplacement s'il est construit (`groupeEmplacement`). Fait :
 
 Reste, avant le pas 3b :
 
-- **la désignation et la fiche** : `gestes.mjs` (la cible rendue par
-  `cibleWebgl`, les stands allumés près du doigt), `fiche.mjs` (`noeud`, la
+- *Fait (15 novembre 2026)* : **la désignation des gestes**. `cibleWebgl` et
+  `viseEnAvance` rendent une désignation — la sorte, la clé et les
+  identifiants de ce qui est visé (`modules/designation.mjs`) — et non plus
+  le groupe peint. `gestes.mjs` et tous ceux qu'il prévient (recherche,
+  cartouche, borne, code « Vous êtes ici », fiche, reprise d'un
+  emplacement) la reçoivent ; le retrait et la mise en avant se jugent au
+  modèle et aux données (`recherche.mjs` `estRetiree`, `cartouche-poi.mjs`
+  `oublieChoixPoi`), plus sur une classe. Le nœud ne se lit plus qu'à deux
+  frontières : le dessin qui traduit ce qu'il a peint, le rendu de secours
+  et le clavier ce que le navigateur a touché. Aucun gain de vitesse
+  attendu : c'est un préalable au pas 3b ;
+- **la désignation et la fiche** (le reste) : `fiche.mjs` (`noeud`, la
   géométrie que `ouvre` cadre, `rangSociete`, `canalPlan`), `dessin.mjs`
   `decoupeStand` (les ajouts liés), `reprise-emplacements.mjs` (sa visée et
   `.geopick`), le curseur du survol, `rectEcranWebgl` — la désignation devra

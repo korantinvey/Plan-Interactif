@@ -40,7 +40,8 @@ import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, ann
   avecTrous, couleurGl } from "./trace.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
 import { jetonsEmplacements, styleEmplacement } from "./style-emplacements.mjs";
-import { etatEmplacement } from "./etat-emplacements.mjs";
+import { etatEmplacement, groupeEmplacement } from "./etat-emplacements.mjs";
+import { designe } from "./designation.mjs";
 import { jetonsHabillage, styleSousCalque, styleSansSousCalque, styleElementHabillage, opaciteElement } from "./style-habillage.mjs";
 import { copieDuCalque } from "./calque-detache.mjs";
 import { styleParAttributs } from "./style-attributs.mjs";
@@ -2979,9 +2980,14 @@ function anticipeHausses(notes){
  */
 /** @type {Element | null} */
 let _monteALAppui = null;
-export function monteALAppui(/** @type {Element | null} */ g){
-  if (!GL.actif || !GL.camera || !g || !g.classList || g.classList.contains("sel")) return;
-  if (!g.classList.contains("stand") && !g.classList.contains("zone")) return;
+/* Les gestes disent ce qu'ils désignent (`designation.mjs`) ; le volume qui
+   monte, le dessin le range encore par le groupe qu'il a peint, et le
+   retrouve d'après la clé. Seuls les emplacements montent : un stand
+   dessiné, une image ou un repère n'ont pas de volume. */
+export function monteALAppui(/** @type {import("./designation.mjs").Designation | null | undefined} */ cible){
+  if (!GL.actif || !GL.camera || !cible || (cible.sorte !== "stand" && cible.sorte !== "zone")) return;
+  const g = groupeEmplacement(cible.cle);
+  if (!g || g.classList.contains("sel")) return;
   const el = g.firstElementChild, haut = el ? hauteurVolume(el) : 0;
   // un emplacement libre, ou un stand abaissé sous un trajet, ne monte pas au choix
   if (!haut || haut === HAUTEUR_LIBRE || haut === HAUTEUR_ABAISSEE) return;
@@ -4017,10 +4023,13 @@ function logosSurLesToits(/** @type {any} */ c){
 
    Le SVG caché ne sait plus où ses formes tombent à l'écran : sa « viewBox »
    ne suit plus la vue. On demande donc à la carte graphique ce qui est sous le
-   doigt — elle rend l'élément du SVG qu'elle a peint, et tout le reste du
-   code le reçoit comme avant — et l'on situe une forme par sa boîte, projetée
-   avec la même règle que la vue.
+   doigt, et l'on situe une forme par sa boîte, projetée avec la même règle
+   que la vue. Elle rend l'élément du SVG qu'elle a peint : les gestes du
+   visiteur n'en reçoivent que la désignation, une clé (`designation.mjs`) ;
+   les outils de l'exploitant, qui cherchent encore une poignée ou une forme
+   par sélecteur (`priseWebgl`), le nœud lui-même.
    ------------------------------------------------------------ */
+/** @typedef {import("./designation.mjs").Designation} Designation */
 /** Ce qui est sous un point de l'écran : l'élément qui ouvre une fiche, celui
  *  que l'éditeur saisit, le libellé qu'on place. */
 function objetSous(x, y, rayon){
@@ -4080,13 +4089,17 @@ async function objetSousDiffere(/** @type {number} */ x, /** @type {number} */ y
  * 2026). Le relâché vient un dixième de seconde plus tard ou davantage ; la
  * réponse l'attend. Rien sans relecture différée : le relâché demande alors
  * comme avant.
- * @returns {{ fini: boolean, el: Element | null, promesse: Promise<Element | null | undefined> } | null}
+ *
+ * La réponse est une désignation, lue dès qu'elle arrive : un stand
+ * redessiné entre l'appui et le relâché garde sa clé, là où le nœud détaché
+ * qu'on gardait ne désignait plus rien et faisait redemander.
+ * @returns {{ fini: boolean, cible: Designation | null, promesse: Promise<Designation | null | undefined> } | null}
  */
 export function viseEnAvance(/** @type {number} */ x, /** @type {number} */ y){
   if (!GL.actif || !lectureDifferee()) return null;
-  /** @type {{ fini: boolean, el: Element | null, promesse: Promise<Element | null | undefined> }} */
-  const a = { fini: false, el: null, promesse: Promise.resolve(undefined) };
-  a.promesse = objetSousDiffere(x, y, 0).then(o => { a.el = o ? o.el : null; a.fini = true; return a.el; },
+  /** @type {{ fini: boolean, cible: Designation | null, promesse: Promise<Designation | null | undefined> }} */
+  const a = { fini: false, cible: null, promesse: Promise.resolve(undefined) };
+  a.promesse = objetSousDiffere(x, y, 0).then(o => { a.cible = designe(o && o.el); a.fini = true; return a.cible; },
     () => { _lectureDifferee = false; return undefined; });
   return a;
 }
@@ -4095,12 +4108,14 @@ function lisObjet(/** @type {any} */ o){
   const d = o.object || {}, p = (o.layer && o.layer.props) || {};
   return { el: d.el || p.el || null, prise: d.prise || p.prise || null, lbl: d.lbl || null };
 }
-export function cibleWebgl(x, y, rayon){
+/** Ce que désigne un point de l'écran, pour les gestes et la reprise d'un
+ *  emplacement : une clé, et non le nœud peint. */
+export function cibleWebgl(/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ rayon = 0){
   // la souris immobile depuis son survol : il a déjà demandé
   const s = _survolVu;
-  if (s && s.epoque === _epoqueSurvol && s.x === x && s.y === y && s.rayon === (rayon || 0)) return s.o ? s.o.el : null;
+  if (s && s.epoque === _epoqueSurvol && s.x === x && s.y === y && s.rayon === rayon) return designe(s.o && s.o.el);
   const o = objetSous(x, y, rayon);
-  return o ? o.el : null;
+  return designe(o && o.el);
 }
 /** Pour l'éditeur : le plus proche ancêtre de ce qui est visé qui réponde au
  *  sélecteur — « .pgn », « .dcal .forme » —, là où il lisait la cible du

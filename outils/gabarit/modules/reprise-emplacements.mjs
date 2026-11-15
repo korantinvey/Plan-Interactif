@@ -37,6 +37,7 @@ import { ADMIN } from "./mode-admin.mjs";
 import { confirme } from "./fenetre.mjs";
 import { anneauxGeo, traceGeo, empreinteGeo, boiteAnneaux, arrondiGeo } from "./forme.mjs";
 import { GL, cibleWebgl, priseWebgl } from "./webgl.mjs";
+import { designe } from "./designation.mjs";
 import { oublieGrilles } from "./itineraire.mjs";
 import { dessineMarques } from "./parcours.mjs";
 import { ecritMetres, coteCadre, montreCote, oublieAimantsDuPlan, coinsGeste, montreAimants, correction,
@@ -152,11 +153,11 @@ export function modeGeometrie(sorte){
 /** L'emplacement sous le pointeur, s'il est de la sorte qu'on reprend. */
 function objetGeoSous(e){
   if (!SORTE_GEO) return null;
-  const g = GL.actif ? cibleWebgl(e.clientX, e.clientY)
-                     : e.target.closest("#stands > g[data-id], #zones > g[data-id]");
-  if (!g || !g.parentNode || g.parentNode.id !== SORTE_GEO) return null;
-  // un stand ajouté et lié porte en « data-id » l'exposant, en « data-aj » lui-même
-  return parId.get(g.dataset.aj || g.dataset.id) || null;
+  const cible = GL.actif ? cibleWebgl(e.clientX, e.clientY)
+    : designe(e.target.closest("#stands > g[data-id], #zones > g[data-id]"));
+  if (!cible || cible.sorte !== (SORTE_GEO === "zones" ? "zone" : "stand")) return null;
+  // un stand ajouté et lié désigne l'exposant par « id », lui-même par « aj »
+  return parId.get(cible.aj || cible.id || "") || null;
 }
 
 /** Le groupe qui porte le tracé d'un emplacement du pavillon affiché. */
