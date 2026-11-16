@@ -75,7 +75,7 @@ Pendant un choix de stand, l'ancienne lecture appelait `getComputedStyle`
 481 fois, la nouvelle 4. L'interrupteur `?emplacements=feuille`, qui rendait
 l'ancienne lecture sur un même déploiement le temps de comparer, est retiré
 depuis la clôture de l'étape 2 : les essais comparent les deux lectures sans
-lui (`webgl.mjs` `compareLectures`).
+lui (`outils/essais/navigateur/lecture-svg.js`, depuis le retrait du lecteur).
 
 **Étape 1, deuxième pas — l'état des emplacements (14 novembre 2026).**
 Le dessin ne lit plus l'état d'un emplacement sur son groupe SVG :
@@ -244,13 +244,37 @@ le lecteur du SVG comme le reste.
   sortes de formes, de marques et de rôles, et compare pour quarante-huit
   états de la racine le style résolu au style calculé, pièce par pièce, focus
   du clavier compris ; puis ce que le dessin tire des pièces à ce qu'il tirait
-  du SVG (`compareLectures`). Cette seconde comparaison part avec l'ancien
-  lecteur.
+  du SVG (`compareLectures`, devenue depuis la lecture de référence des
+  essais).
 
-Reste du guet : l'ordre des calques (l'ordre des nœuds de `#couches`), et le
-style calculé du groupe `#stands` (son retrait sous le cartouche ou la visite
-guidée), que `parcoursGl` lit encore — le lot suivant, avec le retrait du
-lecteur.
+**Le retrait du lecteur (16 novembre 2026).** Le dessin ne lit plus rien
+dans le SVG caché, hors des poignées : la clé d'un groupe, le focus du
+clavier, l'ordre des couches.
+
+- *Le guet est retiré.* Chaque bloc dit ce qui y change : `EMPLACEMENTS_CHANGES`,
+  `CALQUE_CHANGE`, `CALQUES_PEINTS`, `SCENE_CHANGEE`, et l'ordre des couches
+  par la pile (`ordre-trace.mjs` `COUCHES_RANGEES`, à chaque `ordonneDom`, que
+  le montage, l'arrivée de l'habillage et les calques posés à neuf
+  traversent). Ce qu'il attrapait de plus — le curseur posé sur le SVG
+  pendant un geste, `--trait-f` au zoom — ne demandait rien au dessin, et lui
+  coûtait un réassemblage. Reste l'observateur de la racine (ses classes et
+  ses jetons), qui n'est pas le SVG.
+- *Le dernier style calculé.* Le retrait du groupe `#stands` sous la visite
+  guidée et sous le cartouche se résout dans `style-emplacements.mjs`
+  `opaciteDuGroupe`, que `style-emplacements.spec.js` compare à la feuille ; le
+  curseur d'une forme se dit sur ses données (`webgl.mjs` `curseurForme`).
+- *Ce qui part de `webgl.mjs`.* `blocDe`, `parcoursGl`, `accDe`, `poseJeton`
+  lu sur les nœuds, `imageGl`, `socleImage`, `estEmplacement` et le repli des
+  emplacements vers la feuille, `auDessusDuSol` et la marque relue sur son
+  nœud, `PRISES`, `JETONS`. `formeGl` et `texteGl` ne servent plus qu'à
+  l'habillage, lu dans sa copie détachée.
+- *Essais.* L'ancienne lecture du SVG vivant est passée dans le code des essais
+  (`outils/essais/navigateur/lecture-svg.js`) : injectée dans la page le temps
+  de la mesure, elle reste la référence à laquelle `habillage.spec.js`,
+  `surcouches.spec.js` et `style-calques.spec.js` comparent ce que le dessin tire
+  des données (`lectureDonnees`). `fraicheur.spec.js` éprouve que le dessin
+  suit, sans guet, chaque geste du visiteur : après chacun, il compare ce qui
+  est peint à ce que peindrait une reconversion complète.
 
 **Étape 4 — les outils de l'exploitant (15 novembre 2026).** Décidé :
 l'administration exige le WebGL (sur les onze jours d'avant, aucune des dix-
@@ -505,6 +529,9 @@ curseur qu'on y pose, aujourd'hui hérité par les six mille éléments du
 pavillon, ne restyle plus rien.
 
 ## Étape 5 — retrait du lecteur
+
+*Fait le 16 novembre 2026 (voir l'avancement).* Ce qui suit est l'inventaire
+d'origine, dont les numéros de ligne ont vieilli.
 
 Dans `webgl.mjs`, ce qui ne sert qu'à relire le SVG et part à la fin :
 

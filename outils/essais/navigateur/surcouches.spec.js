@@ -2,9 +2,9 @@
  * Les surcouches du visiteur, posées en données dans la scène du plan
  * (`modules/scene.mjs`), ont deux peintres : le dessin, et le SVG de secours
  * (`modules/scene-svg.mjs`), qui les écrit en attributs — et la feuille ne les
- * peint plus. Ce qu'on éprouve en rendu SVG : ce que le dessin tirerait du
- * SVG ainsi peint, style calculé compris, est ce qu'il tire des données
- * (`webgl.mjs` `compareLectures`).
+ * peint plus. Ce qu'on éprouve en rendu SVG : ce que la lecture d'autrefois
+ * tire du SVG ainsi peint, style calculé compris (`lecture-svg.js`), est ce
+ * que le dessin tire des données (`webgl.mjs` `lectureDonnees`).
  *
  * Les marques des distinctions écrivent leur couleur, leur trait et leur
  * retrait en attributs (`modules/distinctions.mjs` `traceDist`), la zone que
@@ -19,6 +19,7 @@
  * bien la teinte réglée, et le retrait d'une recherche.
  */
 const { test, expect } = require("@playwright/test");
+const { installeLecture } = require("./lecture-svg.js");
 const { prepare, attendLaListe, avecUnProgramme, commenceLaVisite, standAViser, DONNEES } = require("./aide.js");
 
 /** SMCL 2026, des nouveaux venus et des adhérents, et ces deux marques sur le plan. */
@@ -42,6 +43,7 @@ for (const [modeNeuf, modeAdherent, couleur, ambiance] of CAS) {
   test("les marques des distinctions se lisent dans leurs attributs — " + modeNeuf + " et " + modeAdherent +
     (couleur ? ", teinte réglée" : "") + (ambiance ? ", en tuiles" : ""), async ({ page }) => {
     const erreurs = await prepare(page);
+    await installeLecture(page);
     const corps = JSON.stringify(avecDistinctions(modeNeuf, modeAdherent, couleur));
     await page.route("**/api/plan*", (r) => new URL(r.request().url()).searchParams.get("entete")
       ? r.fulfill({ json: { v: "essai-surcouches" } })
@@ -51,7 +53,7 @@ for (const [modeNeuf, modeAdherent, couleur, ambiance] of CAS) {
     const lignes = await attendLaListe(page);
     await expect.poll(() => page.evaluate(() => document.querySelectorAll("#dists .dM").length)).toBeGreaterThan(10);
 
-    const compare = () => page.evaluate(() => globalThis.__essais.compareLectures(document.getElementById("dists")));
+    const compare = () => page.evaluate(() => globalThis.__lectureSvg(document.getElementById("dists")));
     const r = await compare();
     expect(r.ecarts, JSON.stringify(r.ecarts, null, 1)).toEqual([]);
     expect(r.formes).toBeGreaterThan(10);
@@ -89,11 +91,12 @@ test("la zone que désigne la visite guidée se lit dans ses attributs", async (
   await page.emulateMedia({ reducedMotion: "reduce" });
   // en SVG : on compare deux lectures du même bloc, sans attendre le dessin
   const erreurs = await commenceLaVisite(page, { adresse: "/plan?plan=smcl-2026&rendu=svg", donnees: avecUnProgramme() });
+  await installeLecture(page);
   await page.waitForFunction(() => {
     const TUTO = /** @type {any} */ (globalThis).__essais.TUTO;
     return TUTO && TUTO.cle === "zones:zone" && document.querySelector("#tutoZone path");
   }, null, { polling: 250, timeout: 60_000 });
-  const r = await page.evaluate(() => globalThis.__essais.compareLectures(document.getElementById("tutoZone")));
+  const r = await page.evaluate(() => globalThis.__lectureSvg(document.getElementById("tutoZone")));
   expect(r.ecarts, JSON.stringify(r.ecarts, null, 1)).toEqual([]);
   // le halo et le trait : deux aplats et deux traits au plus, selon que la zone a un ou plusieurs anneaux
   expect(r.formes).toBeGreaterThanOrEqual(2);
@@ -112,6 +115,7 @@ for (const ambiance of ["", "&ambiance=tuiles"]) {
   test("les liserés de la sélection et du parcours se lisent dans leurs attributs" +
     (ambiance ? ", en tuiles" : ""), async ({ page }) => {
     const erreurs = await prepare(page);
+    await installeLecture(page);
     // trois stands retenus, comme le plan les aurait gardés
     const retenus = DONNEES.plans[0].stands.slice(0, 3).map((s) => s.id);
     await page.addInitScript((ids) => {
@@ -122,7 +126,7 @@ for (const ambiance of ["", "&ambiance=tuiles"]) {
     const lignes = await attendLaListe(page);
     await expect.poll(() => page.evaluate(() => document.querySelectorAll("#marques .parc").length)).toBe(3);
     const compare = async (n) => {
-      const r = await page.evaluate(() => globalThis.__essais.compareLectures(document.getElementById("marques")));
+      const r = await page.evaluate(() => globalThis.__lectureSvg(document.getElementById("marques")));
       expect(r.ecarts, JSON.stringify(r.ecarts, null, 1)).toEqual([]);
       expect(r.formes).toBeGreaterThanOrEqual(n);
     };
@@ -198,6 +202,7 @@ test.describe("le trajet se lit dans ses attributs", () => {
 
   test("d'un stand à un autre", async ({ page }) => {
     const erreurs = await prepare(page);
+    await installeLecture(page);
     // en SVG : on compare deux lectures du même bloc, sans attendre le dessin
     await page.goto("/plan?plan=smcl-2026&rendu=svg");
     const lignes = await attendLaListe(page);
@@ -211,7 +216,7 @@ test.describe("le trajet se lit dans ses attributs", () => {
     await expect.poll(() => page.evaluate(() => document.querySelectorAll("#itin .iBout").length)).toBe(2);
 
     const compare = async () => {
-      const r = await page.evaluate(() => globalThis.__essais.compareLectures(document.getElementById("itin")));
+      const r = await page.evaluate(() => globalThis.__lectureSvg(document.getElementById("itin")));
       expect(r.ecarts, JSON.stringify(r.ecarts, null, 1)).toEqual([]);
       expect(r.formes).toBeGreaterThan(4);
     };
@@ -239,6 +244,7 @@ test.describe("le trajet se lit dans ses attributs", () => {
 
   test("une journée organisée, ses étapes numérotées", async ({ page }) => {
     const erreurs = await prepare(page);
+    await installeLecture(page);
     // quatre stands retenus, comme le plan les aurait gardés
     const retenus = DONNEES.plans[0].stands.slice(0, 4).map((s) => s.id);
     await page.addInitScript((ids) => {
@@ -252,7 +258,7 @@ test.describe("le trajet se lit dans ses attributs", () => {
     await expect.poll(() => page.evaluate(() => document.querySelectorAll("#itin .iNum").length), { timeout: 30_000 })
       .toBeGreaterThan(1);
 
-    const r = await page.evaluate(() => globalThis.__essais.compareLectures(document.getElementById("itin")));
+    const r = await page.evaluate(() => globalThis.__lectureSvg(document.getElementById("itin")));
     expect(r.ecarts, JSON.stringify(r.ecarts, null, 1)).toEqual([]);
     const a = await accent(page);
     const surface = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--surface").trim());
@@ -271,6 +277,7 @@ test.describe("le trajet se lit dans ses attributs", () => {
      du salon, et le chiffre disparaissait dans sa propre pastille. */
   test("une conférence pour prochaine étape garde son chiffre lisible", async ({ page }) => {
     const erreurs = await prepare(page);
+    await installeLecture(page);
     const corps = avecUnProgramme();
     await page.route("**/api/plan*", (r) => new URL(r.request().url()).searchParams.get("entete")
       ? r.fulfill({ json: { v: "essai-conference" } })
@@ -294,7 +301,7 @@ test.describe("le trajet se lit dans ses attributs", () => {
     const bout = f.find((x) => x.sorte === "iBout num conf proche"), chiffre = f.find((x) => x.sorte === "iNum conf proche");
     expect(bout.fill).toBe(await accent(page));
     expect(chiffre.fill, "le chiffre ne doit pas prendre la couleur de sa pastille").not.toBe(bout.fill);
-    const r = await page.evaluate(() => globalThis.__essais.compareLectures(document.getElementById("itin")));
+    const r = await page.evaluate(() => globalThis.__lectureSvg(document.getElementById("itin")));
     expect(r.ecarts, JSON.stringify(r.ecarts, null, 1)).toEqual([]);
     expect(erreurs).toEqual([]);
   });

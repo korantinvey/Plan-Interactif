@@ -71,6 +71,20 @@ export function fonce(/** @type {string} */ c, /** @type {number} */ part){
 }
 
 /**
+ * L'opacité du groupe qui porte tous les stands, ou toutes les zones : les
+ * stands reculent en bloc sous la visite guidée et sous le cartouche
+ * (`html.tuto-retrait #stands`, plus fort car écrit après, puis
+ * `html.poi-actif #stands`) ; les zones, elles, s'effacent une par une
+ * (`styleEmplacement`), et leur groupe garde toute sa présence.
+ * @param {boolean} zones
+ * @param {ReturnType<typeof jetonsEmplacements>} j
+ */
+export function opaciteDuGroupe(zones, j){
+  if (zones) return 1;
+  return j.tutoRetrait ? .22 : j.poiActif ? .16 : 1;
+}
+
+/**
  * Le style d'un stand ou d'une zone : l'opacité de son groupe, et ce que son
  * tracé prendrait de la feuille — sous la forme que `webgl.mjs` `formeGl`
  * lit dans un style calculé.

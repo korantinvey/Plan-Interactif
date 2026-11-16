@@ -425,6 +425,13 @@ Ce qui ne se voit ni à la lecture d'un module ni dans la carte.
   se vise par `modules/webgl.mjs` `repereSousWebgl`. Écrit dans le SVG caché,
   il ne se verrait nulle part : l'administration exige le WebGL, et un outil
   qui s'ouvre passe par `modules/modes-edition.mjs` `editionPossible`.
+- **Le dessin ne guette plus le SVG caché** : ce qu'on y écrit, il ne le
+  voit pas. Un module qui change ce qui se peint le dit au bloc qui le tient —
+  `modules/etat-emplacements.mjs` `signaleEmplacements` et ses `pose…`,
+  `modules/etat-formes.mjs` `poseMarques`, `modules/scene.mjs` `poseReperes`,
+  `modules/style-habillage.mjs` `CALQUE_CHANGE`, `modules/ordre-trace.mjs`
+  `ordonneDom` pour l'ordre des couches. Oublié, rien n'échoue : le plan
+  reste tel qu'il était (`outils/essais/navigateur/fraicheur.spec.js`).
 - **Une ressource d'une origine neuve** (police, script tiers) s'ajoute à
   `outils/genere.js` `poseCsp`, sans quoi la page la refuse et les essais
   échouent sur l'erreur de console. Un script en ligne y est permis par son

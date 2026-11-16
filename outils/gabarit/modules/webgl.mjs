@@ -41,7 +41,7 @@ import { SCENE_CHANGEE, JEUX, reperes } from "./scene.mjs";
 import { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, anneau, rectArrondi,
   avecTrous, couleurGl } from "./trace.mjs";
 import { PLACE_LIBELLES } from "./libelle-place.mjs";
-import { jetonsEmplacements, styleEmplacement } from "./style-emplacements.mjs";
+import { jetonsEmplacements, styleEmplacement, opaciteDuGroupe } from "./style-emplacements.mjs";
 import { etatEmplacement, groupeEmplacement, cleDuGroupe, donneeDuGroupe, estChoisi, comptoirEnMain, camionEnMain,
   boiteEmplacement, EMPLACEMENTS_CHANGES } from "./etat-emplacements.mjs";
 import { traceStand } from "./tuiles.mjs";
@@ -51,6 +51,8 @@ import { jetonsHabillage, styleSousCalque, styleSansSousCalque, styleElementHabi
 import { copieDuCalque } from "./calque-detache.mjs";
 import { poseSvgPeint } from "./svg-de-secours.mjs";
 import { CALQUES_PEINTS, calquePeint, marquee } from "./etat-formes.mjs";
+import { COUCHES_RANGEES } from "./ordre-trace.mjs";
+import { formeSel } from "./forme-choisie.mjs";
 import { jetonsCalques, styleGroupeForme, stylePiece } from "./style-calques.mjs";
 import { MODES_TRANSPORT } from "./reperes.mjs";
 import { svg, vue as vueDuPlan, cadrePlan } from "./vue-etat.mjs";
@@ -546,30 +548,17 @@ export function monteWebgl(){
      pas bougé. */
   if (!GL.branche){
     GL.branche = true;
-    /* Ce qui change le dessin passe par le SVG caché : on le guette plutôt que
-       d'appeler le peintre depuis chaque fonction qui touche au plan. Seule la
-       vue n'y passe pas — elle ne s'écrit plus dans la « viewBox ». */
-    new MutationObserver(notes => {
-      let neuf = false;
-      for (const n of notes){
-        const b = blocDe(n.target);
-        /* Les stands et les zones ne se guettent plus : le modèle dit ce qui
-           y change (`EMPLACEMENTS_CHANGES`, plus bas). Leurs groupes ne sont
-           que la couche du clavier, et du rendu de secours. */
-        if (b && b !== "ordre" && (b.id === "stands" || b.id === "zones")) continue;
-        // les calques de l'habillage non plus : leur réglage se dit par `CALQUE_CHANGE`
-        if (b && b !== "ordre" && estHabillage(b)) continue;
-        // ni les calques dessinés : leurs données se disent par `CALQUES_PEINTS`
-        if (b && b !== "ordre" && b.classList.contains("dcal")) continue;
-        neuf = true;
-        if (b === "ordre") GL.ordre = true;
-        else if (b) GL.sales.add(b);
-      }
-      if (!neuf) return;
-      // ouvrir un calque se lit ici : c'est lui qui prend la classe « editable »
-      majEditionWebgl();
+    /* Le dessin ne guette plus le SVG caché : chaque bloc dit lui-même ce
+       qui y change — les emplacements par leur modèle (`EMPLACEMENTS_CHANGES`),
+       l'habillage par son réglage (`CALQUE_CHANGE`), les calques dessinés par
+       leurs données (`CALQUES_PEINTS`), la scène par ses jeux
+       (`SCENE_CHANGEE`), l'ordre des couches par la pile (`COUCHES_RANGEES`).
+       Le SVG n'est plus que la couche du clavier, et du rendu de secours. */
+    COUCHES_RANGEES.ecoute(() => {
+      if (!GL.actif) return;
+      GL.ordre = true;
       planifieWebgl();
-    }).observe(svg, { subtree: true, childList: true, attributes: true, characterData: true });
+    });
     // le mode carte de chaleur, un calque de noms éteint, une couleur réglée :
     // autant de classes et de jetons posés sur la racine, que la feuille lit
     /* Une écriture qui repose la même valeur n'est pas un changement, mais le
@@ -903,22 +892,10 @@ export function vueWebgl(enGeste = false){
 }
 
 /* ------------------------------------------------------------
-   Le SVG caché, découpé en blocs : un par calque de la pile, puis ce qui vit
-   hors des calques (marques, itinéraire). Chaque bloc garde ses couches
-   deck.gl tant que rien n'y bouge.
+   Les blocs du plan : un par calque de la pile — l'habillage, les zones, les
+   stands, les noms, les calques dessinés —, et les jeux de la scène. Chaque
+   bloc garde ses couches deck.gl tant que rien n'y bouge.
    ------------------------------------------------------------ */
-function blocDe(n){
-  if (n === svg) return "ordre";
-  const couches = $("couches");
-  if (n === couches) return "ordre";
-  let x = n.nodeType === 1 ? n : n.parentNode;
-  // le nom d'un stand dessiné, que le SVG réécrit à chaque vue, est peint à part
-  if (x && x.closest && x.closest(".lab")) return null;
-  while (x && x.parentNode !== couches && x.parentNode !== svg) x = x.parentNode;
-  if (!x || x.id === "labels") return null;
-  return x;
-}
-
 /** Entrer ou sortir de l'édition change ce qui s'attrape : tout se repeint. */
 export function majEditionWebgl(){
   if (!GL.actif) return;
@@ -1939,14 +1916,11 @@ function couchesTexte(id, items, famille, graisse, extra){
 }
 
 /* ------------------------------------------------------------
-   Du SVG aux primitives : formes pleines, traits, textes, images. Les
-   coordonnées restent en mètres ; les styles sont ceux que la feuille de
-   style a calculés, variables et classes résolues.
+   Des données aux primitives : formes pleines, traits, textes, images. Les
+   coordonnées restent en mètres ; les styles sont résolus sans la feuille,
+   bloc par bloc — la scène, les calques dessinés, les emplacements,
+   l'habillage. Rien ne se relit dans le SVG caché.
    ------------------------------------------------------------ */
-/* Ce que les outils saisissent dans le SVG : une forme des calques dessinés.
-   Les poignées, cadres et contours des outils sont dans la scène d'édition,
-   où chaque repère porte sa prise (`sceneGl`). */
-const PRISES = "[data-f]";
 const accVide = prises => ({ pleins: [], traitsPx: [], traitsM: [], traitsZ: [], textes: new Map(), images: [], phares: new Map(), prises,
   decor: [], jetons: new Map(), parent: null });
 /**
@@ -1999,7 +1973,7 @@ function sceneGl(/** @type {string} */ nom){
       acc.textes.get(cle).items.push({ text: r.texte, position: sol ? [pos[0], pos[1], sol] : pos,
         taille: r.taille, angle: 0, ancre: centre ? "middle" : r.ancre || "start", couleur: c, el: null, prise });
     } else if (r.sorte === "image" && r.href && (r.coins || r.bornes)){
-      // une boîte droite comme `imageGl` la pose, ou quatre coins, que la bibliothèque prend aussi
+      // une boîte droite comme `imageDeForme` la pose, ou quatre coins, que la bibliothèque prend aussi
       const b = r.bornes;
       acc.images.push({ href: r.href, bornes: r.coins || (b && [b[0], b[3], b[2], b[1]]), op, el: null, prise });
     }
@@ -2016,23 +1990,27 @@ function convertitBloc(racine, cle){
   // un calque dessiné : ses pièces, et non son balisage
   if (racine.classList.contains("dcal")) return couchesCalque(racine, cle);
   const acc = accVide(false);
+  if (estHabillage(racine)) habillageGl(racine, acc);
+  else if (racine.id === "stands" || racine.id === "zones") emplacementsGl(racine, acc);
+  // rien d'autre ne vit dans le SVG caché : un groupe inconnu ne se peint pas
+  const out = couchesDeBloc(acc, cle);
+  let i = 0;
+  // les zones que le cartouche met en avant battent à part
+  for (const [el, sous] of acc.phares) out.push(...couchesPhare(el, sous, cle + "-phare-" + (i++)));
+  return out;
+}
+
+/** Tous les stands, ou toutes les zones, depuis leurs données : le groupe qui
+ *  les porte n'en donne que la liste, et son retrait se résout sans la feuille. */
+function emplacementsGl(/** @type {Element} */ racine, /** @type {any} */ acc){
   const avant = racine.id === "stands" ? cleChoisi() : null;
   if (avant !== null) CHOISI = null;
   // les couleurs de la page, lues une fois pour tous les stands ou toutes les zones du bloc
-  JETONS = racine.id === "stands" || racine.id === "zones" ? jetonsEmplacements(racine) : null;
-  try {
-    if (estHabillage(racine)) habillageGl(racine, acc);
-    else parcoursGl(racine, M_ID, 1, acc);
-  }
-  finally { JETONS = null; }
+  const j = jetonsEmplacements(racine);
+  const op = opaciteDuGroupe(racine.id === "zones", j);
+  if (op > .003) for (const g of racine.children) if (g.localName === "g") emplacementGl(g, M_ID, op, acc, j);
   // un autre stand choisi, ou le même à une autre hauteur : d'autres noms passent derrière lui
   if (avant !== null && cleChoisi() !== avant) GL.couchesLibelles = null;
-  const out = couchesDeBloc(acc, cle);
-  let i = 0;
-  for (const [el, sous] of acc.phares) out.push(...couchesPhare(el, sous, cle + "-phare-" + (i++)));
-  out.push(...couchesJetons(acc.jetons, cle));
-  // les marques des distinctions suivent leur stand qui monte (`marquesSurLesToits`)
-  return racine.id === "dists" && GL.camera ? out.map(c => c.clone({ marques: true })) : out;
 }
 
 /* ------------------------------------------------------------
@@ -2196,14 +2174,9 @@ function imageDeForme(/** @type {import("./etat-formes.mjs").Piece} */ p, /** @t
    tenir à jour le style de tout le SVG caché, et chaque conversion relisait
    le tracé de chaque emplacement, chiffre par chiffre. Le style se résout
    donc ici sans la feuille (`style-emplacements.mjs`), sur les couleurs de la
-   page lues une fois pour le bloc (`JETONS`, posées par `convertitBloc`), et
-   le tracé se lit une fois pour toutes : la même chaîne rend le même tracé,
-   et la sélection, la recherche ou les secteurs ne le changent pas.
-
-   Un groupe qui sortirait de la règle — une transformation, un enfant
-   inconnu — repasse par la feuille, comme avant. */
-/** @type {ReturnType<typeof jetonsEmplacements> | null} */
-let JETONS = null;
+   page lues une fois pour le bloc (`emplacementsGl`), et le tracé se lit une
+   fois pour toutes : la même chaîne rend le même tracé, et la sélection, la
+   recherche ou les secteurs ne le changent pas. */
 /** @type {Map<string, any[]>} */
 const TRACES = new Map();
 /* Au-delà, la mémoire des tracés repart de zéro : quatre pavillons de neuf
@@ -2218,11 +2191,6 @@ function tracesDe(/** @type {string} */ d){
   }
   return t;
 }
-const estEmplacement = (/** @type {Element} */ el) => {
-  const p = el.parentNode;
-  return el.localName === "g" && !!p && (/** @type {Element} */ (p).id === "stands" || /** @type {Element} */ (p).id === "zones") &&
-    !el.hasAttribute("transform");
-};
 /* Un stand ou une zone se peint depuis ses données : son tracé tel que
    l'ambiance le dessine (`tuiles.mjs` `traceStand`), son état au modèle
    (`etat-emplacements.mjs`), son style par `style-emplacements.mjs`, son décor
@@ -2231,12 +2199,13 @@ const estEmplacement = (/** @type {Element} */ el) => {
    (`hausses`) — et ne porte plus de tracé quand le WebGL peint
    (`svg-de-secours.mjs`). On n'y lit que sa clé et le focus du clavier, que
    seul le navigateur connaît. */
-function emplacementGl(/** @type {Element} */ g, /** @type {number[]} */ m, /** @type {number} */ op, /** @type {any} */ acc){
+function emplacementGl(/** @type {Element} */ g, /** @type {number[]} */ m, /** @type {number} */ op, /** @type {any} */ acc,
+  /** @type {ReturnType<typeof jetonsEmplacements>} */ j){
   const o = donneeDuGroupe(g);
   if (!o || !o.d) return;
   const d = /** @type {SVGElement} */ (g).dataset;
   const etat = etatEmplacement(d.id, d.aj, o.kind === "zone", g.matches(":focus-visible"));
-  const st = styleEmplacement(etat, /** @type {ReturnType<typeof jetonsEmplacements>} */ (JETONS));
+  const st = styleEmplacement(etat, j);
   op *= st.opacite;
   if (!(op > .003)) return;
   formeEmplacementGl(g, o, etat, st.trace, m, op, tracesDe(traceStand(o.d)), acc);
@@ -2285,55 +2254,6 @@ function formeEmplacementGl(/** @type {Element} */ g, /** @type {any} */ o,
       (fixe ? acc.traitsPx : acc.traitsM).push({ path, couleur: trait, largeur, dash, el: g, prise: null, sur: null });
     }
   }
-}
-
-/* Ce que le cartouche met en avant se range à part : il bat, et seules ses
-   couches changent d'une image à l'autre. */
-function accDe(el, acc){
-  // un repère de la vue immersive : un jeton, à part, que sa matrice dresse (`couchesJeton`)
-  const r = GL.camera && acc.jetons && el.closest(".repere[data-poi]");
-  if (r){
-    if (!acc.jetons.has(r)){
-      // le repère a pu bouger, changer de taille ou d'objet depuis la conversion d'avant
-      jetonsPoses.delete(r);
-      acc.jetons.set(r, { ...accVide(acc.prises), phares: null, jetons: null, parent: acc });
-    }
-    return acc.jetons.get(r);
-  }
-  const ph = acc.phares && el.closest(".phare");
-  if (!ph) return acc;
-  if (!acc.phares.has(ph)) acc.phares.set(ph, accVide(acc.prises));
-  return acc.phares.get(ph);
-}
-
-function parcoursGl(el, m, op, acc){
-  if (JETONS && estEmplacement(el)){ emplacementGl(el, m, op, acc); return; }
-  const cs = getComputedStyle(el);
-  if (cs.display === "none") return;
-  const tr = el.getAttribute("transform");
-  if (tr) m = mulM(m, lisTransform(tr));
-  op *= parseFloat(cs.opacity);
-  if (!(op > .003)) return;
-  const tag = el.localName;
-  // le nom d'un stand dessiné : « libellesWebgl » le prépare avec ses seuils de zoom
-  if (tag === "g" && el.classList.contains("lab")) return;
-  if (tag === "g" || tag === "a"){ for (const c of el.children) parcoursGl(c, m, op, acc); return; }
-  if (tag === "svg"){
-    const vb = (el.getAttribute("viewBox") || "").split(/[\s,]+/).map(Number);
-    const x = num(el, "x"), y = num(el, "y"), w = num(el, "width"), h = num(el, "height");
-    let n = [1, 0, 0, 1, x, y];
-    if (vb.length === 4 && vb[2] > 0 && vb[3] > 0 && w > 0 && h > 0){
-      const s = Math.min(w / vb[2], h / vb[3]);
-      n = [s, 0, 0, s, x + (w - vb[2] * s) / 2 - vb[0] * s, y + (h - vb[3] * s) / 2 - vb[1] * s];
-    }
-    const m2 = mulM(m, n);
-    for (const c of el.children) parcoursGl(c, m2, op, acc);
-    return;
-  }
-  if (tag === "text"){ texteGl(el, cs, m, op, acc); return; }
-  if (tag === "image"){ imageGl(el, m, op, acc); return; }
-  const traces = tracesDeForme(el, tag);
-  if (traces) formeGl(el, cs, m, op, traces, acc);
 }
 
 /** Le tracé d'une forme du SVG, en anneaux ou en lignes, dans son repère. */
@@ -2399,36 +2319,45 @@ function parcoursHabillage(/** @type {Element} */ el, /** @type {number[]} */ m,
   const st = styleElementHabillage(el, sous, s, j);
   if (tag === "text"){ texteGl(el, st, m, op, acc); return; }
   const traces = tracesDeForme(el, tag);
-  if (traces) formeGl(el, st, m, op, traces, acc);
+  if (traces) formeGl(st, m, op, traces, acc);
 }
 
 /**
  * Pour les essais des lectures sans la feuille (`habillage.spec.js`,
- * `surcouches.spec.js`) : ce que le dessin tire d'un bloc par la lecture du
- * SVG — le groupe dans la page et son style calculé — et par la sienne — la
- * copie détachée d'un calque, ou les données d'un jeu de la scène que le SVG
- * de secours a peint —, et ce qui diffère.
+ * `surcouches.spec.js`, `style-calques.spec.js`) : ce que le dessin tire d'un
+ * bloc par sa lecture — la copie détachée d'un calque de l'habillage, les
+ * données d'un jeu de la scène, les pièces d'un calque dessiné —, résumé.
+ * L'essai le compare à ce qu'il tire lui-même du SVG que le rendu de secours
+ * a peint, style calculé compris (`outils/essais/navigateur/lecture-svg.js`) :
+ * cette lecture-là a quitté la page.
  * @param {Element} racine le groupe du bloc, rempli dans la page
  */
-export function compareLectures(racine){
-  const ancien = accVide(false);
-  let nouveau = accVide(false);
-  parcoursGl(racine, M_ID, 1, ancien);
-  if (estHabillage(racine)) habillageGl(racine, nouveau);
-  // un jeu de la scène, peint par le SVG de secours : ses données, telles que le dessin les peint
-  else if (BLOCS_SCENE.has(racine.id)) nouveau = sceneGl(racine.id);
-  // un calque dessiné : ses pièces, son style résolu sans la feuille
+export function lectureDonnees(racine){
+  let acc = accVide(false);
+  if (estHabillage(racine)) habillageGl(racine, acc);
+  else if (BLOCS_SCENE.has(racine.id)) acc = sceneGl(racine.id);
   else if (racine.classList.contains("dcal")){
     const c = calquePeint(/** @type {SVGElement} */ (racine).dataset.dcal || "");
-    if (c) calqueGl(c, racine, nouveau);
+    if (c) calqueGl(c, racine, acc);
   }
-  // ce qui bat à part se compare avec le reste
-  const aplatis = (/** @type {any} */ a) => { for (const sous of a.phares.values()) for (const k of ["pleins", "traitsPx", "traitsM", "traitsZ", "images"])
-    a[k].push(...sous[k]); for (const sous of a.phares.values()) for (const [k, v] of sous.textes){
-      if (!a.textes.has(k)) a.textes.set(k, { ...v, items: [] }); a.textes.get(k).items.push(...v.items); } };
-  aplatis(ancien); aplatis(nouveau);
+  return resumeLecture(acc);
+}
+
+/** Une lecture, ligne par ligne : chaque aplat, chaque trait, chaque texte,
+ *  chaque image, avec ce qui se peint d'eux. Ce qui bat à part s'y range
+ *  avec le reste. */
+export function resumeLecture(/** @type {any} */ acc){
+  const a = { pleins: [...acc.pleins], traitsPx: [...acc.traitsPx], traitsM: [...acc.traitsM], traitsZ: [...acc.traitsZ],
+    images: [...acc.images], textes: new Map([...acc.textes].map(([k, v]) => [k, { items: [...v.items] }])) };
+  for (const sous of acc.phares.values()){
+    for (const k of /** @type {const} */ (["pleins", "traitsPx", "traitsM", "traitsZ", "images"])) a[k].push(...sous[k]);
+    for (const [k, v] of sous.textes){
+      if (!a.textes.has(k)) a.textes.set(k, { items: [] });
+      /** @type {any} */ (a.textes.get(k)).items.push(...v.items);
+    }
+  }
   const r = (/** @type {number} */ x) => Math.round(x * 1e4) / 1e4;
-  const resume = (/** @type {any} */ a) => [
+  return [
     ...a.pleins.map((/** @type {any} */ p) => "plein " + JSON.stringify([p.polygon.map((/** @type {any} */ an) => an.map((/** @type {any} */ q) => q.map(r))), p.couleur])),
     ...[...a.traitsPx, ...a.traitsM, ...a.traitsZ].map((/** @type {any} */ t) =>
       "trait " + JSON.stringify([t.path.map((/** @type {any} */ q) => q.map(r)), t.couleur, r(t.largeur), t.dash.map(r)])),
@@ -2436,11 +2365,6 @@ export function compareLectures(racine){
       "texte " + JSON.stringify([k, i.text, i.position.map(r), r(i.taille), r(i.angle), i.ancre, i.couleur]))),
     ...a.images.map((/** @type {any} */ i) => "image " + JSON.stringify([i.href.slice(0, 40), i.bornes.map(r), r(i.op)])),
   ];
-  const A = resume(ancien), N = resume(nouveau);
-  const ecarts = [];
-  for (let i = 0; i < Math.max(A.length, N.length) && ecarts.length < 5; i++)
-    if (A[i] !== N[i]) ecarts.push({ rang: i, feuille: (A[i] || "").slice(0, 300), donnees: (N[i] || "").slice(0, 300) });
-  return { formes: A.length, ecarts };
 }
 
 /* La hauteur d'une forme en vue immersive : celle d'un stand ou d'une zone
@@ -2490,26 +2414,13 @@ CAMERA_CHANGEE.ecoute(() => { if (GL.actif && GL.camera) toutRepeindreWebgl(); }
    sol, il en partageait la profondeur : vue de biais, la carte graphique ne
    départageait plus les deux, et le trajet se hachait de traînées pâles. */
 const SOL_ITINERAIRE = .08;
-const auDessusDuSol = (el) => !GL.camera ? 0 : el.closest("#itin") ? SOL_ITINERAIRE : surSonStand(el);
-
 /* Le coin corné, la pastille, le liseré d'une distinction se posent sur le
    dessus du stand qu'ils marquent : laissés au sol, ils restaient dans le
    volume, que ses façades cachaient — la vue immersive perdait les nouveaux
    exposants et les adhérents. Ils suivent la hauteur du stand, abaissé sous
    un trajet ou haussé au choix, un rien au-dessus pour ne pas se hacher avec
-   son dessus. */
+   son dessus (`sceneGl`, par `sur`). */
 const AU_DESSUS_DU_TOIT = .02;
-function surSonStand(/** @type {Element} */ el){
-  const g = standDeLaMarque(el);
-  return g ? hauteurVolume(g) + AU_DESSUS_DU_TOIT : 0;
-}
-/** Le stand qu'une marque de distinction désigne, ou rien. */
-function standDeLaMarque(/** @type {Element} */ el){
-  const m = el.closest("#dists [data-sur]");
-  if (!m) return null;
-  const id = m.getAttribute("data-sur") || "";
-  return $("stands").querySelector('g.stand[data-id="' + CSS.escape(id) + '"]');
-}
 
 /* La marque se convertit à la hauteur d'arrivée de son stand, mais le stand
    y va en une seconde : posée là d'emblée, elle sautait en haut au clic et
@@ -2595,7 +2506,7 @@ const TONS_DECOR = {
    chaque image, sans fin, et l'ouverture d'une fiche saccadait. Immobile, il
    ne coûte plus rien entre deux gestes.
 
-   Le repère se convertit à plat, dans son propre accumulateur (`accDe`),
+   Le repère se convertit à plat, dans son propre accumulateur (`accDeForme`),
    comme le SVG le dessine ; une matrice par couche le dresse et l'épaissit
    (`matriceJeton`). Il se plante au sol, à l'endroit qu'il désigne, ou sur
    l'escalier, l'escalator ou l'ascenseur qu'il surmonte (`decor.mjs`
@@ -2614,34 +2525,10 @@ const ECHELLE_JETON = .75;
    barres du tram — reste face à l'œil, à la même taille. */
 const GLYPHES_MINCES = new Set(["transport", ...MODES_TRANSPORT.map(m => m.v)]);
 
-/* Ce qu'on sait de chaque repère pendant la conversion. L'aplat de la
-   pastille, son premier enfant, le pose : son centre, sa taille, où il se
-   plante, et la plaque elle-même. */
+/* Ce qu'on sait de chaque repère pendant la conversion, par son nœud : son
+   centre, sa taille, où il se plante, et la plaque elle-même. */
 /** @type {WeakMap<Element, any>} */
 const jetonsPoses = new WeakMap();
-function poseJeton(el, polygon, couleur, acc){
-  const r = acc.parent && el.closest(".repere[data-poi]");
-  if (!r || r.firstElementChild !== el || !polygon || !polygon[0] || jetonsPoses.has(r)) return;
-  const xs = polygon[0].map(p => p[0]), ys = polygon[0].map(p => p[1]);
-  const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-  const cote = Math.max(...ys) - Math.min(...ys);
-  const glyphe = r.getAttribute("data-glyphe") || "";
-  let ancre = [cx, cy], z = .02, E = ECHELLE_JETON;
-  if (OBJETS_REPERE.includes(glyphe)){
-    /* Le sens où il monte, et s'il est tenu par l'exploitant
-       (`outil-escalier.mjs`) : il bleuit alors et sort sa poignée. */
-    const enMain = r.hasAttribute("data-objet-choisi");
-    const obj = objetRepere(glyphe, cx, cy, cote, Number(r.getAttribute("data-sens")) || 0, enMain);
-    // l'objet reste au sol du bloc : seul le jeton se dresse
-    for (const p of obj.pieces) acc.parent.decor.push({ polygon: p.polygon, haut: p.haut,
-      couleur: enMain && (p.role === "marche" || p.role === "cabine") ? TONS_DECOR["comptoir-choisi"] : TONS_DECOR[p.role] });
-    if (obj.pieces.length){ ancre = obj.ancre; z = obj.dessus; E = ECHELLE_PASTILLE; }
-  }
-  const mince = GLYPHES_MINCES.has(glyphe);
-  jetonsPoses.set(r, { cx, cy, demi: cote / 2, ancre, z, E, mince, e: mince ? 0 : cote * EPAISSEUR_JETON,
-    polygon, couleur: opaque(couleur), el: r, phare: r.classList.contains("phare") });
-}
-
 /* Le jeton d'un repère peint depuis ses pièces : sa pastille le pose, ses
    données disent son pictogramme, son sens et s'il est tenu. */
 function poseJetonForme(/** @type {Element | null} */ r, /** @type {import("./etat-formes.mjs").FormePeinte} */ f,
@@ -3079,54 +2966,31 @@ function opaque(couleur){
   return [0, 1, 2].map(i => Math.round(couleur[i] * a + sol[i] * (1 - a))).concat(255);
 }
 
-function formeGl(el, cs, m, op, traces, acc){
-  const cible = el.closest("[data-id],[data-poi]");
-  acc = accDe(el, acc);
+/* Un élément de l'habillage de Klipso, lu dans la copie détachée de son
+   calque, sur le style que `style-habillage.mjs` lui résout : à plat, sans
+   rien à désigner ni à saisir. */
+function formeGl(/** @type {any} */ cs, /** @type {number[]} */ m, /** @type {number} */ op, /** @type {any[]} */ traces,
+  /** @type {any} */ acc){
   const plein = couleurGl(cs.fill, parseFloat(cs.fillOpacity) * op);
   if (plein){
-    const anneaux = traces.filter(t => t.pts.length >= 3).map(t => t.pts.map(p => appM(m, p)));
-    /* Les volumes, le choix qui s'allume et le décor sont aux emplacements
-       (`formeEmplacementGl`) : une forme des calques reste à plat. */
-    const prise = el.closest(PRISES), couleur = plein;
-    const sol = auDessusDuSol(el), sur = sol ? standDeLaMarque(el) : null;
-    for (const polygon of avecTrous(anneaux)){
-      poseJeton(el, polygon, couleur, acc);
-      const monte = sol ? (/** @type {number[]} */ p) => [p[0], p[1], sol] : null;
-      acc.pleins.push({ polygon: monte ? polygon.map(a => a.map(monte)) : polygon, couleur, base: couleur, el: cible,
-        prise, haut: 0, hausse: null, sur });
-    }
-  } else if (acc.prises && cs.pointerEvents === "all"){
-    /* Un contour seul s'attrape par son intérieur : c'est ce que
-       « pointer-events: all » donne en SVG au calque ouvert. Un aplat
-       d'opacité infime le rend visable sans rien montrer. */
-    const anneaux = traces.filter(t => t.pts.length >= 3).map(t => t.pts.map(p => appM(m, p)));
-    const prise = el.closest(PRISES);
-    if (prise) for (const polygon of avecTrous(anneaux)) acc.pleins.push({ polygon, couleur: [0, 0, 0, 1], el: cible, prise });
+    const anneaux = traces.filter(t => t.pts.length >= 3).map(t => t.pts.map((/** @type {number[]} */ p) => appM(m, p)));
+    for (const polygon of avecTrous(anneaux))
+      acc.pleins.push({ polygon, couleur: plein, base: plein, el: null, prise: null, haut: 0, hausse: null, sur: null });
   }
   const trait = couleurGl(cs.stroke, parseFloat(cs.strokeOpacity) * op);
   const sw = parseFloat(cs.strokeWidth);
-  if (trait && sw > 0){
-    const fixe = cs.vectorEffect === "non-scaling-stroke";
-    /* Le trait d'une forme dessinée s'amincit quand on recule : la feuille de
-       style l'a multiplié par le facteur de la vue où le SVG a été posé, on
-       retrouve donc l'épaisseur réglée, que les couches « traits-z » bornent
-       elles-mêmes au fil du zoom (`chemin-forme.mjs` `facteurTrait`). */
-    const amincit = fixe && el.classList.contains("trait");
-    const largeur = amincit ? Math.round(sw / (parseFloat(cs.getPropertyValue("--trait-f")) || 1) * 100) / 100
-      : fixe ? sw : sw * echelleM(m);
-    const tirets = cs.strokeDasharray && cs.strokeDasharray !== "none"
-      ? cs.strokeDasharray.split(/[\s,]+/).map(parseFloat).filter(Number.isFinite) : null;
-    // la bibliothèque mesure les tirets en demi-épaisseurs de trait
-    const dash = tirets && tirets.length >= 2 ? [2 * tirets[0] / sw, 2 * tirets[1] / sw] : [0, 0];
-    const sol = auDessusDuSol(el), sur = sol ? standDeLaMarque(el) : null;
-    const monte = sol ? (/** @type {number[]} */ p) => [p[0], p[1], sol] : null;
-    for (const t of traces){
-      if (t.pts.length < 2) continue;
-      const pts = t.pts.map(p => appM(m, p)), path = monte ? pts.map(monte) : pts;
-      if (t.ferme) path.push(path[0]);
-      (amincit ? acc.traitsZ : fixe ? acc.traitsPx : acc.traitsM).push({ path, couleur: trait, largeur, dash, el: cible,
-        prise: el.closest(PRISES), sur });
-    }
+  if (!trait || !(sw > 0)) return;
+  const fixe = cs.vectorEffect === "non-scaling-stroke";
+  const largeur = fixe ? sw : sw * echelleM(m);
+  const tirets = cs.strokeDasharray && cs.strokeDasharray !== "none"
+    ? cs.strokeDasharray.split(/[\s,]+/).map(parseFloat).filter(Number.isFinite) : null;
+  // la bibliothèque mesure les tirets en demi-épaisseurs de trait
+  const dash = tirets && tirets.length >= 2 ? [2 * tirets[0] / sw, 2 * tirets[1] / sw] : [0, 0];
+  for (const t of traces){
+    if (t.pts.length < 2) continue;
+    const path = t.pts.map((/** @type {number[]} */ p) => appM(m, p));
+    if (t.ferme) path.push(path[0]);
+    (fixe ? acc.traitsPx : acc.traitsM).push({ path, couleur: trait, largeur, dash, el: null, prise: null, sur: null });
   }
 }
 
@@ -3158,8 +3022,9 @@ function corpsDeclare(el){
   return 0;
 }
 
-function texteGl(el, cs, m, op, acc){
-  acc = accDe(el, acc);
+/* Un texte de l'habillage, lu dans sa copie détachée. */
+function texteGl(/** @type {Element} */ el, /** @type {any} */ cs, /** @type {number[]} */ m, /** @type {number} */ op,
+  /** @type {any} */ acc){
   const texte = el.textContent;
   if (!texte || !texte.trim()) return;
   const coul = couleurGl(cs.fill, parseFloat(cs.fillOpacity) * op);
@@ -3176,39 +3041,10 @@ function texteGl(el, cs, m, op, acc){
   const cle = famille + "|" + graisse;
   if (!acc.textes.has(cle)) acc.textes.set(cle, { famille, graisse, items: [] });
   acc.textes.get(cle).items.push({
-    // dans un jeton, au ras de sa face : la hauteur de la position le dit à `positionTexte`
-    text: texte, position: acc.parent ? [pos[0], pos[1], 0] : pos, taille: taille * echelleM(m), angle: -angle,
+    text: texte, position: pos, taille: taille * echelleM(m), angle: -angle,
     ancre: cs.textAnchor === "middle" ? "middle" : cs.textAnchor === "end" ? "end" : "start",
-    couleur: coul, el: el.closest("[data-id],[data-poi]"), prise: el.closest("[data-f]"),
+    couleur: coul, el: null, prise: null,
   });
-}
-
-function imageGl(el, m, op, acc){
-  acc = accDe(el, acc);
-  const href = el.getAttribute("href") || el.getAttribute("xlink:href");
-  if (!href) return;
-  let x = num(el, "x"), y = num(el, "y"), w = num(el, "width"), h = num(el, "height");
-  /* « meet » : l'image garde ses proportions dans sa boîte. Sa taille n'est
-     connue qu'une fois chargée ; en attendant elle ne se dessine pas, puis
-     son bloc se repeint. */
-  const nat = GL.tailles.get(href);
-  if (!nat){
-    GL.tailles.set(href, "attente");
-    const i = new Image();
-    i.onload = () => { GL.tailles.set(href, [i.naturalWidth, i.naturalHeight]); toutRepeindreWebgl(); };
-    i.src = href;
-    return;
-  }
-  if (nat === "attente") return;
-  if ((el.getAttribute("preserveAspectRatio") || "xMidYMid meet") !== "none" && nat[0] > 0 && nat[1] > 0){
-    const s = Math.min(w / nat[0], h / nat[1]);
-    const w2 = nat[0] * s, h2 = nat[1] * s;
-    x += (w - w2) / 2; y += (h - h2) / 2; w = w2; h = h2;
-  }
-  const a = appM(m, [x, y]), b = appM(m, [x + w, y + h]);
-  const bornes = [Math.min(a[0], b[0]), Math.max(a[1], b[1]), Math.max(a[0], b[0]), Math.min(a[1], b[1])];
-  acc.images.push({ href, bornes: GL.camera ? imageDressee(bornes, socleImage(el)) : bornes,
-    op, el: el.closest("[data-id],[data-poi]"), prise: el.closest("[data-f]") });
 }
 
 /* ------------------------------------------------------------
@@ -3235,15 +3071,6 @@ function imageDressee(/** @type {number[]} */ b, /** @type {number} */ z){
   const pt = (/** @type {number} */ u, /** @type {number} */ v) =>
     [cx + droite[0] * u + haut[0] * v, cy + droite[1] * u + haut[1] * v, z + haut[2] * v];
   return [pt(-w / 2, 0), pt(-w / 2, h), pt(w / 2, h), pt(w / 2, 0)];
-}
-
-/** Où une image se plante : sur le dessus du stand qu'elle désigne — au sol,
- *  ses façades la couperaient —, au sol sinon. */
-function socleImage(/** @type {Element} */ el){
-  const lie = el.closest("[data-id]");
-  if (!lie) return 0;
-  const g = $("stands").querySelector('g.stand[data-id="' + CSS.escape(lie.getAttribute("data-id") || "") + '"]');
-  return g ? hauteurVolume(g) + .02 : 0;
 }
 
 /* Une forme qui ne désigne rien laisse passer le clic, comme en SVG où les
@@ -3358,7 +3185,8 @@ export function rendLAppui(){
 
 /** Le volume quitte les couches peintes de son bloc pour une couche de mouvement. */
 function detacheVolume(g, h){
-  const b = blocDe(g), couches = b && GL.blocs.get(b);
+  // le bloc d'un stand ou d'une zone : le groupe qui les porte tous
+  const b = g.parentNode, couches = b && GL.blocs.get(b);
   if (!couches) return;
   const out = [];
   for (const c of couches){
@@ -4032,6 +3860,14 @@ function couchesTuiles(couche, choisies){
   }
   return out;
 }
+/** Le curseur d'une forme des calques dessinés, sous la souris : le
+ *  déplacement sur la forme choisie du calque ouvert, la main sur tout ce qui
+ *  s'ouvre ou se choisit — la règle de la feuille (`.dcal.editable .forme`,
+ *  `.pick`, `.dcal .repere`, `.dcal .forme.lie`), dite sur ses données. */
+function curseurForme(/** @type {Element} */ n){
+  const g = n.closest(".dcal"), c = g && calquePeint(/** @type {SVGElement} */ (g).dataset.dcal || "");
+  return c && c.editable && formeSel === n.getAttribute("data-f") ? "move" : "pointer";
+}
 /** Le curseur que la feuille de style donne à ce qui est visé — la main sur un
  *  stand, la flèche de redimensionnement d'une poignée, le déplacement d'une
  *  forme choisie. La racine du SVG, seule sous la souris, le porte ; un geste
@@ -4040,7 +3876,7 @@ function poseCurseurWebgl(o){
   let c = "";
   if (o && PLACE_LIBELLES && o.lbl) c = "move";
   // un repère de la scène dit son curseur ; une forme des calques le tient de la feuille
-  else if (o && o.prise) c = o.prise instanceof Element ? getComputedStyle(o.prise).cursor : o.prise.curseur || "";
+  else if (o && o.prise) c = o.prise instanceof Element ? curseurForme(o.prise) : o.prise.curseur || "";
   else if (o && o.el) c = "pointer";
   if (c === "auto" || c === "default") c = "";
   stage().classList.toggle("survol-gl", Boolean(c));

@@ -56,10 +56,10 @@ import "./scene-svg.mjs";
    gestes remplacent sans cesse. */
 import { qrTrame, qrSvg } from "./qr.mjs";
 import { fragmentDuCode } from "./scan-parcours.mjs";
-import { jetonsEmplacements, styleEmplacement } from "./style-emplacements.mjs";
+import { jetonsEmplacements, styleEmplacement, opaciteDuGroupe } from "./style-emplacements.mjs";
 import { etatEmplacement } from "./etat-emplacements.mjs";
-import { couleurGl } from "./trace.mjs";
-import { compareLectures, repereSousWebgl, rectEcranBoite } from "./webgl.mjs";
+import { lectureDonnees, resumeLecture, repereSousWebgl, rectEcranBoite } from "./webgl.mjs";
+import { couleurGl, M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, anneau, rectArrondi, avecTrous } from "./trace.mjs";
 import { reperes, boiteDuJeu } from "./scene.mjs";
 import { modelesLibelles, SORTES_LIBELLES, SORTES_PHARE } from "./style-libelles.mjs";
 import { calquesPeints, poseMarques } from "./etat-formes.mjs";
@@ -72,8 +72,11 @@ globalThis.__essais = {
   /* de quoi fabriquer un code QR quelconque, et ce que le lecteur du parcours
      en accepte (`scan-parcours.mjs`) */
   qr: { qrTrame, qrSvg }, fragmentDuCode,
-  emplacements: { jetonsEmplacements, styleEmplacement, etatEmplacement, couleurGl },
-  compareLectures,
+  emplacements: { jetonsEmplacements, styleEmplacement, opaciteDuGroupe, etatEmplacement, couleurGl },
+  /* ce que le dessin tire d'un bloc, et les outils dont l'essai relit le SVG
+     peint par le secours pour le lui comparer (`lecture-svg.js`) */
+  lectures: { donnees: lectureDonnees, resume: resumeLecture,
+    outils: { M_ID, mulM, appM, echelleM, lisTransform, lisTrace, lisPoints, num, anneau, rectArrondi, avecTrous, couleurGl } },
   // la scène d'édition, telle que les outils l'ont posée et que le dessin la vise
   scene: { reperes, boiteDuJeu, repereSousWebgl, rectEcranBoite },
   // le style des noms résolu sans la feuille, que `style-libelles.spec.js` compare à elle

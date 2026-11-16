@@ -1,7 +1,8 @@
 /**
  * L'habillage de Klipso, lu dans ses données (`modules/webgl.mjs` « L'habillage
  * de Klipso, lu dans ses données », `modules/style-habillage.mjs`), contre la
- * lecture d'avant : le groupe du calque posé dans la page, et son style calculé.
+ * lecture d'avant : le groupe du calque posé dans la page, et son style calculé,
+ * relu par l'essai (`lecture-svg.js`) — le dessin, lui, ne lit plus le SVG.
  *
  * Le dessin ne relit plus les calques de Klipso dans le SVG caché : il les lit
  * dans une copie détachée de leur balisage, et en résout le style sans la
@@ -14,6 +15,7 @@
  * calque, couleur, remplissage et extinction d'un sous-calque.
  */
 const { test, expect } = require("@playwright/test");
+const { installeLecture } = require("./lecture-svg.js");
 const { prepare, attendLaListe, DONNEES } = require("./aide.js");
 
 /* En SVG : les deux lectures se comparent sans attendre le dessin, et le
@@ -74,6 +76,7 @@ for (const [nom, donnees] of [["tel quel", () => DONNEES], ["réglé par l'explo
   test("l'habillage lu dans ses données dessine ce que la feuille dessinait — " + nom, async ({ page }) => {
     test.slow();
     const erreurs = await prepare(page);
+    await installeLecture(page);
     const corps = JSON.stringify(donnees());
     await page.route("**/api/plan*", (r) => new URL(r.request().url()).searchParams.get("entete")
       ? r.fulfill({ json: { v: "essai-habillage" } })
@@ -97,7 +100,7 @@ for (const [nom, donnees] of [["tel quel", () => DONNEES], ["réglé par l'explo
         await page.evaluate((poi) => document.documentElement.classList.toggle("poi-actif", poi), poi);
         const r = await page.evaluate(() => [...document.querySelectorAll("#couches .cal")]
           .filter((g) => g.childElementCount)
-          .map((g) => ({ cle: g.dataset.cle, ...globalThis.__essais.compareLectures(g) })));
+          .map((g) => ({ cle: g.dataset.cle, ...globalThis.__lectureSvg(g) })));
         for (const c of r) {
           expect(c.ecarts, "pavillon " + (i + 1) + (poi ? ", cartouche ouvert" : "") + ", calque " + c.cle + " : " +
             JSON.stringify(c.ecarts, null, 1)).toEqual([]);

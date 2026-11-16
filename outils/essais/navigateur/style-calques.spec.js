@@ -13,9 +13,12 @@
  * modules qui les décident, et au modèle : choisie, écartée, mise en avant,
  * ouverte, calée, teinte du secteur ou de la chaleur de son hôte. Puis, pour
  * chaque état de la racine, il compare, nœud par nœud, ce que la feuille
- * donne et ce que le module résout.
+ * donne et ce que le module résout ; puis ce que le dessin tire des pièces
+ * (`webgl.mjs` `lectureDonnees`) à ce que la lecture d'autrefois tire du SVG
+ * des calques (`lecture-svg.js`).
  */
 const { test, expect } = require("@playwright/test");
+const { installeLecture } = require("./lecture-svg.js");
 const { prepare, attendLaListe, DONNEES } = require("./aide.js");
 
 const PIXEL = "data:image/png;base64," +
@@ -73,6 +76,7 @@ const MARQUES = {
 
 async function ouvre(page) {
   const erreurs = await prepare(page);
+  await installeLecture(page);
   const donnees = JSON.parse(JSON.stringify(DONNEES));
   const hotes = donnees.plans[0].stands.slice(0, 6).map((s) => s.id);
   donnees.plans[0].dessins = calques(hotes);
@@ -222,7 +226,7 @@ test("le dessin peint les calques comme il les lisait dans le SVG", async ({ pag
   const { erreurs, webgl } = await ouvre(page);
   test.skip(!webgl, "pas de carte graphique");
   // l'image se mesure une fois chargée : une première lecture la demande
-  await page.evaluate(() => { for (const g of document.querySelectorAll("#couches .dcal")) globalThis.__essais.compareLectures(g); });
+  await page.evaluate(() => { for (const g of document.querySelectorAll("#couches .dcal")) globalThis.__lectureSvg(g); });
   await page.waitForTimeout(300);
   const r = await page.evaluate((ETATS) => {
     const racine = document.documentElement, out = [];
@@ -231,7 +235,7 @@ test("le dessin peint les calques comme il les lisait dans le SVG", async ({ pag
       if ((m & 16) && !(m & 8)) continue;
       ETATS.forEach((c, i) => racine.classList.toggle(c, Boolean(m & (1 << i))));
       for (const g of document.querySelectorAll("#couches .dcal")) {
-        const c = globalThis.__essais.compareLectures(g);
+        const c = globalThis.__lectureSvg(g);
         formes += c.formes;
         if (c.ecarts.length && out.length < 10) out.push({ calque: g.dataset.dcal, etats: racine.className, ecarts: c.ecarts });
       }

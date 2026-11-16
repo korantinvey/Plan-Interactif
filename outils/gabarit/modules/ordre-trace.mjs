@@ -55,6 +55,11 @@ function groupe(k){
   return $(k.slice(5));
 }
 
+/** Les couches ont pris leur rang — une pile réordonnée, l'habillage ou les
+ *  calques dessinés posés à neuf. Le dessin (`webgl.mjs`) peint dans l'ordre
+ *  des groupes de `#couches` : il l'écoute, au lieu de guetter le SVG. */
+export const COUCHES_RANGEES = creeEvenement();
+
 /* déplacer les nœuds plutôt que tout reconstruire : réordonner est instantané */
 export function ordonneDom(){
   const c = $("couches");
@@ -64,6 +69,7 @@ export function ordonneDom(){
      laisserait derrière, au fond du plan. */
   const d = $("dists");
   if (d) $("stands").after(d);
+  COUCHES_RANGEES.emet();
 }
 
 /** Le panneau des calques est à refaire : `pile.mjs` l'écoute chez

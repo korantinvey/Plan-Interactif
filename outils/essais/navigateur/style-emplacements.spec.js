@@ -46,7 +46,7 @@ function compare() {
   };
   const proches = (a, b) => (a === null || b === null) ? a === b
     : a.length === b.length && a.every((x, i) => Math.abs(x - b[i]) <= 1);
-  const pareils = (a, b) => a.op === b.op && proches(a.plein, b.plein) && proches(a.trait, b.trait) &&
+  const pareils = (a, b) => a.op === b.op && Math.abs(a.groupe - b.groupe) < 1e-3 && proches(a.plein, b.plein) && proches(a.trait, b.trait) &&
     (a.sw === null ? b.sw === null : Math.abs(a.sw - b.sw) < 1e-3) && a.fixe === b.fixe &&
     JSON.stringify(a.dash) === JSON.stringify(b.dash);
 
@@ -64,9 +64,11 @@ function compare() {
   const verifie = (g, etiquette) => {
     const path = g.querySelector(":scope > path") ||
       g.insertBefore(document.createElementNS("http://www.w3.org/2000/svg", "path"), g.firstChild);
-    const calcule = lu(getComputedStyle(g).opacity, getComputedStyle(path));
-    const st = G.styleEmplacement(etatDuGroupe(g), G.jetonsEmplacements(g.parentNode));
-    const resolu = lu(st.opacite, st.trace);
+    const j = G.jetonsEmplacements(g.parentNode);
+    // l'opacité de l'emplacement, et celle de son groupe, que le dessin ne lit plus dans la feuille
+    const calcule = { ...lu(getComputedStyle(g).opacity, getComputedStyle(path)), groupe: parseFloat(getComputedStyle(g.parentNode).opacity) };
+    const st = G.styleEmplacement(etatDuGroupe(g), j);
+    const resolu = { ...lu(st.opacite, st.trace), groupe: G.opaciteDuGroupe(g.classList.contains("zone"), j) };
     vus++;
     if (g.matches(":focus-visible")) focusVu = true;
     if (!pareils(calcule, resolu) && ecarts.length < 12)
