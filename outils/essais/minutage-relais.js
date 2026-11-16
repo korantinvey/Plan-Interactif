@@ -2,9 +2,10 @@
  * Le minutage du relais (`src/index.mjs` `minute`), sur le vrai Worker.
  *
  * Ce que la page doit pouvoir lire sur tout ce qu'il sert : son temps (`w`),
- * son point de présence (`cf`) quand Cloudflare le nomme, et ce que son cache a
- * rendu (`cache`, la valeur d'`X-Cache`). Rien d'autre n'y passe : une valeur
- * qui n'a pas la forme attendue n'est pas recopiée dans l'en-tête.
+ * son point de présence (`cf`) quand Cloudflare le nomme, ce que son cache a
+ * rendu (`cache`, la valeur d'`X-Cache`), et l'heure de sa réponse (`t`). Rien
+ * d'autre n'y passe : une valeur qui n'a pas la forme attendue n'est pas
+ * recopiée dans l'en-tête.
  *
  *   node outils/essais/minutage-relais.js     (lancé par `npm run essais`)
  */
@@ -38,6 +39,8 @@ const dit = (ok, q, d) => {
   dit(/(^|, )w;dur=\d+(,|$)/.test(st), "le temps du relais est dit", st);
   dit(st.includes('cf;desc="CDG"'), "son point de présence aussi", st);
   dit(st.includes('cache;desc="hit"'), "et ce que son cache a rendu", st);
+  const t = Number((/t;desc="(\d+)"/.exec(st) || [])[1]);
+  dit(Math.abs(t - Date.now() / 1000) < 5, "et l'heure de sa réponse, en secondes", st);
 
   const sans = (await worker.fetch(demande(null), env, {})).headers.get("Server-Timing") || "";
   dit(/^w;dur=\d+/.test(sans) && !sans.includes("cf;"), "sans point de présence nommé, le temps seul", sans);

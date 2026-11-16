@@ -124,7 +124,8 @@ test.describe("la sonde silencieuse", { tag: "@base" }, () => {
     // posée après celle de `prepare`, cette route passe devant elle
     await page.route("**/api/plan?slug=*", (r) => r.fulfill({
       status: 200, contentType: "application/json",
-      headers: { "X-Version": "essai", "Server-Timing": 'w;dur=12, cf;desc="CDG", cache;desc="hit"' },
+      headers: { "X-Version": "essai",
+        "Server-Timing": 'w;dur=12, t;desc="' + Math.floor(Date.now() / 1000) + '", cf;desc="CDG", cache;desc="hit"' },
       body: PLANS,
     }));
     await page.goto("/plan?plan=smcl-2026");
@@ -132,7 +133,9 @@ test.describe("la sonde silencieuse", { tag: "@base" }, () => {
     await affiche(page);
     await expect.poll(() => envois.length, { timeout: 15_000 }).toBeGreaterThan(0);
     const c = envois[0].resume.chargement;
+    // fraîche, datée de l'instant : le minutage est celui de cette visite
     expect(c.trajets.donnees).toMatchObject({ relaisMs: 12, cf: "CDG", cache: "hit" });
+    expect(c.trajets.donnees.rejoue).toBeUndefined();
     expect(c.trajets.donnees.attenteMs).toBeGreaterThanOrEqual(0);
     expect(c.trajets.page.attenteMs).toBeGreaterThan(0);
     expect(c.contexteMs).toBeGreaterThanOrEqual(0);

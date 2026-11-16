@@ -185,24 +185,62 @@ export function trajet(/** @type {any} */ e){
 /**
  * Ce que le relais et le service de second plan disent d'une réponse, par son
  * entête `Server-Timing` : le temps du relais (`relaisMs`), son point de
- * présence (`cf`), ce que son cache a rendu (`cache`) — `src/index.mjs`
- * `minute` —, et si le service l'a sortie de sa copie (`garde`, `_sw.js`
- * `gardee`). Une copie porte encore le minutage de la première fois : il ne
- * décrit pas cette visite-ci, et n'est pas rendu.
+ * présence (`cf`), ce que son cache a rendu (`cache`), l'heure où il l'a
+ * rendue (`t`, en secondes) — `src/index.mjs` `minute` —, et si le service
+ * l'a sortie de sa copie (`garde`, `_sw.js` `gardee`).
  *
  * Ce qui ne porte pas la forme attendue est ignoré : l'entête arrive de qui
  * sert la réponse, et rien n'en sort qu'un nombre ou un mot de sa liste.
  */
 export function minutage(/** @type {any} */ e){
-  /** @type {{ garde?: boolean, relaisMs?: number, cf?: string, cache?: string }} */
+  /** @type {{ garde?: boolean, relaisMs?: number, cf?: string, cache?: string, t?: number }} */
   const m = {};
   for (const s of e && Array.isArray(e.serverTiming) ? e.serverTiming : []){
     if (s.name === "sw" && s.description === "cache") m.garde = true;
     else if (s.name === "w" && s.duration >= 0) m.relaisMs = Math.round(s.duration);
     else if (s.name === "cf" && /^[A-Z]{3}$/.test(s.description)) m.cf = s.description;
     else if (s.name === "cache" && /^[a-z]{1,12}$/.test(s.description)) m.cache = s.description;
+    else if (s.name === "t" && /^\d{9,11}$/.test(s.description)) m.t = Number(s.description);
   }
-  return m.garde ? { garde: true } : m;
+  return m;
+}
+
+/* Au-delà de cet écart entre l'heure du relais et celle de la page, en
+   secondes, le minutage n'est pas celui de cette visite : une copie, ou une
+   horloge de visiteur trop décalée pour qu'on le sache. Deux minutes couvrent
+   le trajet et le décalage ordinaire d'une horloge réglée par le réseau. */
+export const AGE_MAX_MINUTAGE = 120;
+
+/**
+ * Le minutage du relais décrit-il cette demande-ci, ou une précédente que
+ * quelque cache resert ? Une copie garde l'entête de la première fois : un
+ * relais qui avait mis deux secondes semblerait les avoir mises encore,
+ * quand il n'a pas même été sollicité.
+ *
+ * Quatre signes, dont un seul suffit :
+ *   — la marque du service de second plan (`garde`) ;
+ *   — hors du service, zéro octet transféré pour un corps lu : le cache HTTP
+ *     du navigateur. Sous le service, ce signe ne vaut rien — Chromium y
+ *     annonce zéro octet et une livraison « cache » pour une réponse venue du
+ *     réseau (voir `trajet`) ;
+ *   — l'heure du relais (`t`), à plus de `AGE_MAX_MINUTAGE` de celle de la
+ *     réponse, d'un côté ou de l'autre : une copie vieillie, ou une horloge
+ *     qu'on ne peut pas croire — une mesure perdue plutôt que mal lue ;
+ *   — un relais plus long que l'attente de la page : une copie plus récente
+ *     que le seuil se trahit ainsi, s'il avait été lent. Récente et rapide,
+ *     elle passe — elle ne dit alors rien de faux sur le relais.
+ * Sans heure — un relevé servi par un relais d'avant elle —, seuls les autres
+ * signes jugent. `origine` est l'heure d'ouverture de la page, en
+ * millisecondes (`performance.timeOrigin`).
+ */
+export function minutageRejoue(/** @type {any} */ e, /** @type {any} */ m, /** @type {number} */ origine){
+  if (m.garde) return true;
+  if (!(e.workerStart > 0) && e.transferSize === 0 && e.decodedBodySize > 0) return true;
+  if (!(e.responseStart > 0)) return false;
+  if (m.t !== undefined && Math.abs((origine + e.responseStart) / 1000 - m.t) > AGE_MAX_MINUTAGE) return true;
+  const depart = e.startTime > 0 ? e.startTime : 0;
+  // l'horloge d'un Worker s'arrondit : une marge, pour ne pas prendre une demande fraîche pour une copie
+  return m.relaisMs !== undefined && m.relaisMs > e.responseStart - depart + 50;
 }
 
 /**
@@ -214,14 +252,21 @@ export function minutage(/** @type {any} */ e){
  * séparent ce que les relevés confondaient : quatre ouvertures ont attendu
  * leur premier octet deux à quatre secondes le 16 novembre 2026, et rien ne
  * disait si c'était le poste, le réseau ou Cloudflare.
+ *
+ * Un minutage resservi par un cache (`minutageRejoue`) n'est pas rendu :
+ * `rejoue` le dit, et `garde` si c'est le service qui l'a sorti de sa copie.
  */
-export function trajetDecoupe(/** @type {any} */ e){
+export function trajetDecoupe(/** @type {any} */ e, origine = performance.timeOrigin){
   if (!e) return undefined;
   const depart = e.startTime > 0 ? e.startTime : 0;
+  const m = minutage(e);
+  const relais = minutageRejoue(e, m, origine)
+    ? { rejoue: true, garde: m.garde || undefined }
+    : { relaisMs: m.relaisMs, cf: m.cf, cache: m.cache };
   return {
     serviceMs: e.workerStart > 0 && e.fetchStart >= e.workerStart ? Math.round(e.fetchStart - e.workerStart) : undefined,
     attenteMs: e.responseStart > 0 ? Math.round(e.responseStart - depart) : undefined,
-    ...minutage(e),
+    ...relais,
   };
 }
 

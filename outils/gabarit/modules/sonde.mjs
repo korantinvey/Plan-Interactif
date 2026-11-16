@@ -69,7 +69,9 @@
          poste, le réseau et le relais : le trajet du document et de l'appel
          du plan (`chargement.trajets`), la création du contexte WebGL
          (`chargement.contexteMs`), et, dans un gel, le temps passé avant son
-         premier script (`avantMs`) et en pauses (`pauseMs`).
+         premier script (`avantMs`) et en pauses (`pauseMs`). Le minutage du
+         relais qu'un cache resert n'y entre pas : `rejoue` le dit
+         (`mesures-page.mjs` `minutageRejoue`).
    ============================================================ */
 import { API, SLUG, PLAN_ADMIN, BORNE, entetesApi, configProjet } from "./salon.mjs";
 import { GL, RENDU_WEBGL, REPEINT_FINI, CONTEXTE_PERDU, COMPTES_DECK, IMAGE_DECK, TOILE_PRETE, carteDuWebgl, sousPixelOffert } from "./webgl.mjs";
