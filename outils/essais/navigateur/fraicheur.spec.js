@@ -37,10 +37,15 @@ function peint() {
  *  fait tout reconvertir — une classe posée sur la racine, que la feuille ne
  *  regarde pas — et relève encore. */
 async function compare(page, geste) {
+  /* Rien en attente de peinture, et la vue immobile depuis une demi-seconde :
+     une fiche recadre le plan, et ce qui garde sa taille à l'écran — la
+     pointe d'une flèche — ne se refait qu'à la fin du mouvement. */
   const calme = () => page.waitForFunction(() => {
-    const GL = /** @type {any} */ (globalThis).__essais.GL;
-    return !GL.image;
-  }, null, { timeout: 15_000 }).then(() => page.waitForTimeout(400));
+    const E = /** @type {any} */ (globalThis).__essais, v = E.view, k = v ? [v.x, v.y, v.w].join() : "";
+    const t = performance.now(), m = /** @type {any} */ (globalThis).__calme || (globalThis.__calme = { k: "", t });
+    if (m.k !== k){ m.k = k; m.t = t; }
+    return !E.GL.image && t - m.t > 500;
+  }, null, { timeout: 15_000, polling: 100 }).then(() => page.waitForTimeout(200));
   await calme();
   const avant = await page.evaluate(peint);
   await page.evaluate(() => document.documentElement.classList.toggle("essai-fraicheur"));
