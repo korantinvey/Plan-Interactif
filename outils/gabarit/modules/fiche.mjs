@@ -50,6 +50,7 @@ import { poseDistsFiche } from "./distinctions.mjs";
 import { decoupeStand, marqueStandsDessines } from "./dessin.mjs";
 import { montePlan, chargeFond, PAVILLON_QUITTE } from "./rendu.mjs";
 import { poseChoisi, emplacementPour, boiteEmplacement, groupeEmplacement } from "./etat-emplacements.mjs";
+import { poseMarques } from "./etat-formes.mjs";
 
 /**
  * Ce que la fiche emprunte aux modules qui l'importent : le montage du plan
@@ -210,6 +211,8 @@ export function select(id, recentrer, canal, iSoc){
     chargeFond(o.p);
   }
   document.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
+  // la fiche d'un stand remplace celle d'un repère, qui ne se cerne plus
+  poseMarques("ouvert", []);
   state.sel = id;
   state.selSoc = iSoc === undefined ? -1 : iSoc;
   const ici = surLePlan(id, state.selSoc);
@@ -1181,6 +1184,7 @@ export function ferme(){
      qu'un remplissage, jamais le contour qui la donne. */
   const depuis = ouvert && id ? surLePlan(id, state.selSoc).depuis : null;
   document.querySelectorAll(".sel").forEach(x => x.classList.remove("sel"));
+  poseMarques("ouvert", []);
   poseChoisi(null);
   state.sel = null; state.selSoc = -1;
   dessineMarques();

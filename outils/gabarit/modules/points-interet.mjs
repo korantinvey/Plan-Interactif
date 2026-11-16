@@ -30,6 +30,7 @@ import { formeParId } from "./forme-choisie.mjs";
 import { reperesCherchables, oublieReperes, cartouchePoi, phareRepere, phareZone, oublieChoixPoi }
   from "./cartouche-poi.mjs";
 import { poseChoisi } from "./etat-emplacements.mjs";
+import { poseMarques } from "./etat-formes.mjs";
 
 
 /**
@@ -81,6 +82,8 @@ export function ouvrePoi(id, recentrer){
   poseChoisi(null);
   const noeudPoi = $("couches").querySelector('.repere[data-poi="' + CSS.escape(id) + '"]');
   if (noeudPoi) noeudPoi.classList.add("sel");
+  // le repère ouvert, que le dessin cerne (`etat-formes.mjs`)
+  poseMarques("ouvert", [id]);
 
   const type = pictoForme(f);
   const dit = String(f.txt || "").trim();

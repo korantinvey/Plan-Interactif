@@ -56,7 +56,7 @@ import { montreTiroir, mesureTiroir, hisseTiroir } from "./tiroirs.mjs";
 import { fermeCriteres, poseRelecturePanneau, relisPanneauCrit } from "./panneau-criteres.mjs";
 import { largeur, remesureTextes } from "./texte-plan.mjs";
 import { libelles } from "./libelles.mjs";
-import { dessineDessins } from "./dessin.mjs";
+import { dessineDessins, retireStandsDessines } from "./dessin.mjs";
 import { view } from "./vue.mjs";
 import { poseToutAuParcours } from "./tout-au-parcours.mjs";
 import { poseRetires, emplacements, groupeEmplacement, estRetire } from "./etat-emplacements.mjs";
@@ -589,10 +589,8 @@ export function marqueRetrait(){
     if (g) g.classList.toggle("dim", !vu);
   }
   poseRetires(retires);
-  document.querySelectorAll("#couches .dcal .sdes[data-id]").forEach(g => {
-    const o = parId.get(g.dataset.id);
-    g.classList.toggle("dim", !!o && !visibleSociete(o, Number(g.dataset.soc)));
-  });
+  // les stands dessinés suivent leur société, sur leur nœud et au modèle
+  retireStandsDessines();
   // les marques des distinctions vivent hors des stands : le retrait ne les
   // atteint pas tout seul
   dessineDists();

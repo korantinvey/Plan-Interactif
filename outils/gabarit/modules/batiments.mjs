@@ -42,6 +42,7 @@ import { poseReperes, anneauCercle } from "./scene.mjs";
 import { editionPossible } from "./modes-edition.mjs";
 import { vue, changeVue, poseVue, cadrePlan, masque, versPlan, svg, injecteALaVue } from "./vue.mjs";
 import { mesCalques, nouvelId } from "./calques-dessin.mjs";
+import { poseMarques } from "./etat-formes.mjs";
 import { dessineDessins } from "./dessin.mjs";
 import { activeCalque, memorise, cleVerrou, enregistreDessins } from "./outil-dessin.mjs";
 import { CONF, conf, enregistreConf } from "./configuration.mjs";
@@ -301,11 +302,16 @@ function lanceCalage(lieu, halls, depart){
 function effaceLeTempsDuCalage(halls){
   const refs = new Set(halls.map(refBatiment));
   const hote = $("couches");
+  /** @type {string[]} */
+  const cales = [];
   mesCalques().forEach(c => (c.formes || []).forEach(f => {
     if (!refs.has(refForme(f))) return;
+    cales.push(f.id);
     const n = hote.querySelector('.forme[data-f="' + CSS.escape(f.id) + '"]');
     if (n) n.dataset.cale = "1";
   }));
+  // le dessin l'efface aussi ; le prochain tracé des calques le rend (`dessin.mjs`)
+  poseMarques("cale", cales);
 }
 
 /**

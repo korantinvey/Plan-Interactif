@@ -315,7 +315,7 @@ l'importe, ses injections : `CARTE.md`. Son anglais : `outils/anglais/<module>.j
 | vibration au toucher | `modules/toucher.mjs`, appelé par `modules/gestes.mjs` |
 | fenêtre des réglages et ses volets | `modules/reglages.mjs` `ouvreReglages`, `modules/volets.mjs` |
 | enregistrement pour tous, publication, oubli du cache | `modules/enregistrement.mjs` ; retenu pendant un geste par `modules/geste-tenu.mjs` (`inscritGesteTenu`) |
-| calques de dessin — données, tracé, outil | `modules/calques-dessin.mjs`, `modules/dessin.mjs`, `modules/outil-dessin.mjs` ; un seul mode d'édition `modules/modes-edition.mjs` |
+| calques de dessin — données, tracé, outil | `modules/calques-dessin.mjs`, `modules/dessin.mjs`, `modules/outil-dessin.mjs` ; un seul mode d'édition `modules/modes-edition.mjs` ; ce que le dessin en peint — pièces et marques des formes — `modules/etat-formes.mjs` (`poseMarques`), leur style sans la feuille `modules/style-calques.mjs` |
 | choisir, déplacer, tourner une forme | `modules/edition.mjs` ; forme choisie `modules/forme-choisie.mjs` |
 | cote, aimants, grille, duplication | `modules/aimants.mjs` |
 | repères des outils sur le plan — poignées, cadres, cote, aimants, ébauche, calage, grille de marche ; l'édition exige le WebGL | `modules/scene.mjs` (`poseReperes`), peints et visés par `modules/webgl.mjs` (`repereSousWebgl`) ; la garde `modules/modes-edition.mjs` `editionPossible` |
@@ -376,7 +376,12 @@ Ce qui ne se voit ni à la lecture d'un module ni dans la carte.
   (`outils/essais/navigateur/habillage.spec.js` compare ce que le dessin tire
   des deux). Le style des noms du plan : les règles `#labels` de
   `_styles-plan.css` et `modules/style-libelles.mjs` `modelesLibelles`
-  (`outils/essais/navigateur/style-libelles.spec.js` compare les deux).
+  (`outils/essais/navigateur/style-libelles.spec.js` compare les deux). Le
+  style des calques dessinés, peints depuis leurs pièces : les règles `.dcal`
+  de `_styles-plan.css` et `modules/style-calques.mjs` `stylePiece`
+  (`outils/essais/navigateur/style-calques.spec.js` compare les deux). Et une
+  marque posée sur le nœud d'une forme (`.sel`, `.dim`, `.phare`…) ne se voit
+  qu'en SVG : elle se dit aussi à `modules/etat-formes.mjs` `poseMarques`.
 - **Le seuil de concentration n'est pas une capacité** : le compteur ne voit
   que les journées organisées depuis le plan. C'est un prix, jamais un refus
   (`modules/ordonnanceur.mjs` `peineDeCharge`). La clé de configuration

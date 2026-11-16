@@ -40,6 +40,7 @@ import { formeSel, boite } from "./forme-choisie.mjs";
 import { ordonneDom } from "./ordre-trace.mjs";
 import { lisTrace } from "./trace.mjs";
 import { poseReperes } from "./scene.mjs";
+import { poseCalquesPeints, poseFormePeinte, poseCouleurCalque, poseMarques } from "./etat-formes.mjs";
 
 /* ------------------------------------------------------------
    La mention de la source
@@ -139,7 +140,12 @@ export function rafraichitFleches(){
     for (const f of cal.formes) if (f.fleche) par.set(f.id, f);
   pointes.forEach(p => {
     const f = par.get(p.parentNode.dataset.f);
-    if (f) p.setAttribute("d", cheminFleche(f));
+    if (!f) return;
+    const d = cheminFleche(f);
+    if (p.getAttribute("d") === d) return;
+    p.setAttribute("d", d);
+    // la pointe que le dessin peint, reprise à la même taille
+    poseFormePeinte(formePeinte(f));
   });
 }
 
@@ -158,6 +164,41 @@ function traceForme(f){
     : '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + esc(f.id) +
       '"><path' + styleTrait(f) + ' d="' + cheminForme(f) + '"/>' +
       marqueFleche(f) + '</g>';
+}
+
+/**
+ * Ce que le dessin peint d'une forme (`etat-formes.mjs`) : ce que le style en
+ * regarde, et ses pièces, tirées des mêmes calculs que son balisage —
+ * `cheminForme`, `cheminFleche`, `geometrieRepere`, `cheminStandDessine`.
+ * Le SVG n'est pas relu : les deux sortent de la même géométrie.
+ * @returns {import("./etat-formes.mjs").FormePeinte}
+ */
+function formePeinte(/** @type {any} */ f){
+  const l = societeDeForme(f);
+  /** @type {import("./etat-formes.mjs").FormePeinte} */
+  const o = { id: f.id, t: f.t, pieces: [], lie: null, ep: f.ep > 0 ? f.ep : EPAISSEUR_TRAIT, pointille: Boolean(f.pointille),
+    teinte: null, encre: null, plaque: false, anneau: false, glyphe: "", sens: +f.rot || 0 };
+  if (f.t === "repere"){
+    const geo = geometrieRepere(f);
+    Object.assign(o, { teinte: geo.teinte, encre: geo.encre, plaque: geo.plaque, anneau: geo.anneau,
+      glyphe: geo.glyphe, pieces: piecesRepere(geo) });
+  } else if (f.t === "image"){
+    // le rang n'est porté que si la forme le porte, comme son attribut
+    if (l) o.lie = { id: l.o.id, soc: Number.isInteger(f.soc) ? f.soc : null };
+    o.pieces = [{ sorte: "image", role: "image", href: f.src, x: f.pts[0][0], y: f.pts[0][1],
+      w: f.pts[1][0] - f.pts[0][0], h: f.pts[1][1] - f.pts[0][1] }];
+  } else if (f.t === "stand"){
+    if (l) o.lie = { id: l.o.id, soc: l.i };
+    o.pieces = [{ sorte: "trace", role: "stand", d: cheminStandDessine(f).d }];
+  } else if (f.t === "texte"){
+    o.pieces = [{ sorte: "texte", role: "texte", x: f.pts[0][0], y: f.pts[0][1], taille: f.taille || 2,
+      texte: String(f.txt || ""), rot: +f.rot || 0 }];
+  } else {
+    o.pieces = [{ sorte: "trace", role: "corps", d: cheminForme(f) }];
+    const d = cheminFleche(f);
+    if (d) o.pieces.push({ sorte: "trace", role: "fleche", d });
+  }
+  return o;
 }
 
 /** Un texte pivote autour de son point d'ancrage, celui qu'on a cliqué pour
@@ -184,6 +225,15 @@ export function dessineDessins(){
     g.innerHTML = cal.formes.map(traceForme).join("");
     c.appendChild(g);
   }
+  /* Ce que le dessin peint, tiré des mêmes calculs. Le hall qu'on calait
+     reparaît : ses nœuds renaissent sans la marque, et la sienne s'en va avec
+     eux (`batiments.mjs` la repose s'il le faut). */
+  poseMarques("cale", []);
+  poseCalquesPeints(mesCalques().map(cal => ({ id: cal.id, couleur: cal.couleur || "var(--accent)",
+    plein: Boolean(cal.rempli), role: roleIti(cal), visible: cal.visible !== false,
+    editable: cal.id === calqueActif && ADMIN, formes: cal.formes.map(formePeinte) })));
+  // la sélection ne dépend pas de la vue : elle se dit même avant la première
+  marqueStandsDessines();
   ordonneDom();
   /* Un contour qui perce le fond de carte vient peut-être d'être tracé,
      déplacé ou effacé : le gabarit de découpe suit le dessin, et lui seul sait
@@ -218,6 +268,7 @@ export function redessineForme(f){
   const neuf = hote.firstElementChild;
   if (!neuf){ dessineDessins(); return; }
   g.replaceWith(neuf);
+  poseFormePeinte(formePeinte(f));
   /* La mise en avant d'un point d'intérêt est posée par « eclairePoi », que
      l'on ne rappelle pas : le nœud neuf la reprend ici, sans quoi le repère
      qu'on déplace s'éteindrait sous le doigt. */
@@ -237,6 +288,7 @@ export function redessineForme(f){
 export function peintCalque(cal){
   const g = $("couches").querySelector('.dcal[data-dcal="' + CSS.escape(cal.id) + '"]');
   if (g) g.style.color = cal.couleur || "var(--accent)";
+  poseCouleurCalque(cal.id, cal.couleur || "var(--accent)");
 }
 
 /* La conversion écran → repère du plan, `versPlan` : `modules/vue.mjs`. */
@@ -272,7 +324,7 @@ export const TAILLE_REPERE = 4;
  * « WC ». Tout est en mètres, comme le reste du plan : le repère grandit donc
  * avec le zoom, à l'inverse d'une épingle d'interface.
  */
-function traceRepere(f){
+function geometrieRepere(f){
   const t = f.taille || 2;
   /* Le repère répond au clic comme un stand : le plan ne montre plus que le
      pictogramme, et c'est la fiche qui dit son nom. Le rôle et le libellé
@@ -298,27 +350,18 @@ function traceRepere(f){
      plus sur le champ mais dans la pastille de l'indice, qui est à la couleur
      de la ligne — blanc dans le vert du 12, noir dans le jaune du 1. */
   const anneau = Boolean(estTransport(f) && modeDit(f.mode).anneau);
-  const teinte = fond
-    ? ' style="color:' + fond +
-      (plaque ? "" : ';--encre-poi:' + encreRepere(fond)) + '"' : "";
-  const tete = '<g class="forme repere' + (plaque ? " plaque" : "") +
-               (anneau ? " anneau" : "") +
-               (f.id === formeSel ? " pick" : "") +
-               '" data-f="' + esc(f.id) + '" data-poi="' + esc(f.id) +
-               /* Le pictogramme, que la vue immersive lit pour monter un
-                  escalier ou un ascenseur sous la pastille (`decor.mjs`). */
-               '" data-glyphe="' + esc(glypheRepere(f) || "") +
-               /* Et le sens où il monte, que l'exploitant a tourné : la
-                  pastille, elle, reste droite. */
-               (+f.rot ? '" data-sens="' + (+f.rot) : "") +
-               '" tabindex="0" role="button" aria-label="' +
-               esc(nom + (type && dit ? " — " + nomTypeRepere(type) : "")) + '"' +
-               teinte + '>';
+  const geo = { nom, dit, type, teinte: fond || null, encre: fond && !plaque ? encreRepere(fond) : null,
+    plaque, anneau, glyphe: glypheRepere(f) || "",
+    /** @type {{ x: number, y: number, w: number, h: number, rx: number }} */ pastille: null,
+    /** @type {{ x: number, y: number, w: number, h: number, rx: number }[]} */ barres: [],
+    /** @type {{ x: number, y: number, k: number, vb: string, d: string } | null} */ picto: null,
+    /** @type {{ x: number, y: number, w: number, h: number, rx: number } | null} */ rond: null,
+    /** @type {{ x: number, y: number, taille: number, texte: string } | null} */ texte: null };
 
   /* Un pictogramme se pose dans un <svg> imbriqué : il porte sa propre grille,
      et le navigateur se charge du cadrage — plus sûr qu'une transformation
      calculée à la main. */
-  const g = PICTOS[glypheRepere(f)];
+  const g = PICTOS[geo.glyphe];
   if (g){
     /* La pastille ne porte que le pictogramme — et le numéro de la ligne,
      * quand c'est un arrêt.
@@ -352,34 +395,19 @@ function traceRepere(f){
     const li = rond || lt;
     const w = cote + ecart + li;
     const x = f.pts[0][0] - w / 2, y = f.pts[0][1] - cote / 2;
+    geo.pastille = { x: au(x), y: au(y), w: au(w), h: au(cote), rx: au(cote * .2) };
     /* Les barres se retirent des bords : à ras, leurs angles dépasseraient des
-       coins arrondis de la plaque. Elles s'arrondissent comme sur le quai, et
-       se groupent pour que les liserés de sélection, qui ne visent que les
-       enfants directs de la pastille, les laissent tranquilles. */
-    const barre = (by) => '<rect x="' + (x + retrait).toFixed(2) +
-      '" y="' + by.toFixed(2) + '" width="' + (w - 2 * retrait).toFixed(2) +
-      '" height="' + hBarre.toFixed(2) + '" rx="' + (hBarre / 2).toFixed(2) + '"/>';
-    /* L'indice : le numéro seul partout, et dans sa pastille au métro. Celle-ci
-       se groupe avec lui, comme les barres du tram et pour la même raison — le
-       liseré de sélection ne vise que les enfants directs de la pastille, et
-       cernerait sinon le rond au lieu du repère. */
-    const indice = (cx) => !ligne ? "" :
-      (rond ? '<g class="indice"><rect x="' + (cx - rond / 2).toFixed(2) +
-        '" y="' + (f.pts[0][1] - k / 2).toFixed(2) + '" width="' + rond.toFixed(2) +
-        '" height="' + k.toFixed(2) + '" rx="' + (k / 2).toFixed(2) + '"/>' : "") +
-      '<text x="' + cx.toFixed(2) + '" y="' + (f.pts[0][1] + corps * .35).toFixed(2) +
-      '" font-size="' + corps.toFixed(2) + '">' + esc(ligne) + '</text>' +
-      (rond ? '</g>' : "");
-    return tete +
-      '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + w.toFixed(2) +
-      '" height="' + cote.toFixed(2) + '" rx="' + (cote * .2).toFixed(2) + '"/>' +
-      (plaque ? '<g class="barres">' + barre(y + retrait) +
-        barre(y + cote - retrait - hBarre) + '</g>' : "") +
-      '<svg class="glyphe" x="' + (x + m).toFixed(2) + '" y="' + (y + m).toFixed(2) +
-      '" width="' + k.toFixed(2) + '" height="' + k.toFixed(2) +
-      '" viewBox="' + g.vb + '">' + g.d + '</svg>' +
-      indice(x + cote - m + ecart + li / 2) +
-      '</g>';
+       coins arrondis de la plaque. Elles s'arrondissent comme sur le quai. */
+    if (plaque) for (const by of [y + retrait, y + cote - retrait - hBarre])
+      geo.barres.push({ x: au(x + retrait), y: au(by), w: au(w - 2 * retrait), h: au(hBarre), rx: au(hBarre / 2) });
+    geo.picto = { x: au(x + m), y: au(y + m), k: au(k), vb: g.vb, d: g.d };
+    /* L'indice : le numéro seul partout, et dans sa pastille au métro. */
+    if (ligne){
+      const cx = x + cote - m + ecart + li / 2;
+      if (rond) geo.rond = { x: au(cx - rond / 2), y: au(f.pts[0][1] - k / 2), w: au(rond), h: au(k), rx: au(k / 2) };
+      geo.texte = { x: au(cx), y: au(f.pts[0][1] + corps * .35), taille: au(corps), texte: ligne };
+    }
+    return geo;
   }
 
   /* Sans pictogramme, le libellé est tout ce que le repère a à montrer : le
@@ -387,11 +415,73 @@ function traceRepere(f){
   const l = largeur(nom, P_NOM) * t;
   const w = l + t * 1.1, ht = t * 1.65;
   const x = f.pts[0][0] - w / 2, y = f.pts[0][1] - ht / 2;
-  return tete +
-    '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + w.toFixed(2) +
-    '" height="' + ht.toFixed(2) + '" rx="' + (ht / 2).toFixed(2) + '"/>' +
-    '<text x="' + f.pts[0][0] + '" y="' + (f.pts[0][1] + t * .35).toFixed(2) +
-    '" font-size="' + t.toFixed(2) + '">' + esc(nom) + '</text></g>';
+  geo.pastille = { x: au(x), y: au(y), w: au(w), h: au(ht), rx: au(ht / 2) };
+  geo.texte = { x: f.pts[0][0], y: au(f.pts[0][1] + t * .35), taille: au(t), texte: nom };
+  return geo;
+}
+
+/* Les mesures d'un repère, arrondies au centimètre comme le balisage les
+   écrit : le dessin et le SVG lisent les mêmes nombres. */
+const au = (/** @type {number} */ v) => +v.toFixed(2);
+
+/** Un rectangle du repère, en balisage. */
+const rectDe = (/** @type {{ x: number, y: number, w: number, h: number, rx: number }} */ r) =>
+  '<rect x="' + r.x + '" y="' + r.y + '" width="' + r.w + '" height="' + r.h + '" rx="' + r.rx + '"/>';
+
+function traceRepere(f){
+  const geo = geometrieRepere(f);
+  const teinte = geo.teinte
+    ? ' style="color:' + geo.teinte + (geo.encre ? ';--encre-poi:' + geo.encre : "") + '"' : "";
+  const tete = '<g class="forme repere' + (geo.plaque ? " plaque" : "") +
+               (geo.anneau ? " anneau" : "") +
+               (f.id === formeSel ? " pick" : "") +
+               '" data-f="' + esc(f.id) + '" data-poi="' + esc(f.id) +
+               /* Le pictogramme, que la vue immersive lit pour monter un
+                  escalier ou un ascenseur sous la pastille (`decor.mjs`). */
+               '" data-glyphe="' + esc(geo.glyphe) +
+               /* Et le sens où il monte, que l'exploitant a tourné : la
+                  pastille, elle, reste droite. */
+               (+f.rot ? '" data-sens="' + (+f.rot) : "") +
+               '" tabindex="0" role="button" aria-label="' +
+               esc(geo.nom + (geo.type && geo.dit ? " — " + nomTypeRepere(geo.type) : "")) + '"' +
+               teinte + '>';
+  const texte = geo.texte ? '<text x="' + geo.texte.x + '" y="' + geo.texte.y +
+    '" font-size="' + geo.texte.taille + '">' + esc(geo.texte.texte) + '</text>' : "";
+  if (!geo.picto) return tete + rectDe(geo.pastille) + texte + '</g>';
+  const p = geo.picto;
+  /* Les barres et la pastille de l'indice se groupent : les liserés de
+     sélection, qui ne visent que les enfants directs de la pastille, les
+     laissent tranquilles et ne cernent que le repère. */
+  return tete + rectDe(geo.pastille) +
+    (geo.barres.length ? '<g class="barres">' + geo.barres.map(rectDe).join("") + '</g>' : "") +
+    '<svg class="glyphe" x="' + p.x + '" y="' + p.y + '" width="' + p.k + '" height="' + p.k +
+    '" viewBox="' + p.vb + '">' + p.d + '</svg>' +
+    (geo.rond ? '<g class="indice">' + rectDe(geo.rond) + texte + '</g>' : texte) +
+    '</g>';
+}
+
+/**
+ * Les pièces d'un repère, dans l'ordre du balisage : la pastille, les barres
+ * du tram, les tracés du pictogramme posés par la matrice que le `<svg>`
+ * imbriqué leur donne (`xMidYMid meet` sur sa grille), le rond du métro,
+ * l'indice ou le libellé.
+ * @returns {import("./etat-formes.mjs").Piece[]}
+ */
+function piecesRepere(/** @type {ReturnType<typeof geometrieRepere>} */ geo){
+  /** @type {import("./etat-formes.mjs").Piece[]} */
+  const out = [{ sorte: "rect", role: "pastille", ...geo.pastille }];
+  for (const b of geo.barres) out.push({ sorte: "rect", role: "barre", ...b });
+  const p = geo.picto;
+  if (p){
+    const vb = p.vb.split(/[\s,]+/).map(Number);
+    const s = Math.min(p.k / vb[2], p.k / vb[3]);
+    const m = [s, 0, 0, s, p.x + (p.k - vb[2] * s) / 2 - vb[0] * s, p.y + (p.k - vb[3] * s) / 2 - vb[1] * s];
+    for (const [, d] of p.d.matchAll(/<path d="([^"]*)"/g)) out.push({ sorte: "trace", role: "glyphe", d, m });
+  }
+  if (geo.rond) out.push({ sorte: "rect", role: "rond", ...geo.rond });
+  if (geo.texte) out.push({ sorte: "texte", role: p ? "indice" : "nom", x: geo.texte.x, y: geo.texte.y,
+    taille: geo.texte.taille, texte: geo.texte.texte, rot: 0 });
+  return out;
 }
 
 /* ------------------------------------------------------------
@@ -543,7 +633,7 @@ function traceStandDessine(f){
     (l ? ' data-id="' + esc(l.o.id) + '" data-soc="' + l.i +
          '" tabindex="0" role="button" aria-label="' +
          esc(nom || ("Stand " + (l.o.code || "")).trim()) + '"' : "") +
-    '>' + cheminStandDessine(f) + '<g class="lab"></g></g>';
+    '>' + balisageStandDessine(f) + '<g class="lab"></g></g>';
 }
 
 /**
@@ -562,8 +652,11 @@ function cheminStandDessine(f){
     : f.pts;
   const classique = cheminForme(f);
   const poly = "M" + pts.map(p => p[0] + " " + p[1]).join("L") + "Z";
-  return '<path d="' + (tuilesPosees() ? traceStand(poly) : classique) +
-    '" data-classique="' + classique + '" data-poly="' + poly + '"/>';
+  return { d: tuilesPosees() ? traceStand(poly) : classique, classique, poly };
+}
+function balisageStandDessine(f){
+  const c = cheminStandDessine(f);
+  return '<path d="' + c.d + '" data-classique="' + c.classique + '" data-poly="' + c.poly + '"/>';
 }
 
 /**
@@ -639,6 +732,25 @@ export function marqueStandsDessines(){
     g.classList.toggle("sel", g.dataset.id === state.sel &&
                               Number(g.dataset.soc) === state.selSoc);
   });
+  // ce que le dessin peint : décidé sur les données, comme le gabarit le fait
+  poseMarques("sel", standsDessines().filter(x => x.l && x.l.o.id === state.sel && x.l.i === state.selSoc).map(x => x.f.id));
+}
+
+/** Les stands dessinés du pavillon, et ce que chacun désigne. */
+const standsDessines = () => mesCalques().flatMap(c => c.formes)
+  .filter(f => f.t === "stand").map(f => ({ f, l: societeDeForme(f) }));
+
+/**
+ * Le fondu que le filtre pose sur les stands dessinés qu'il écarte : sur leur
+ * nœud, pour le rendu de secours, et au modèle, pour le dessin. Le montage
+ * des calques et la recherche le reposent tous deux.
+ */
+export function retireStandsDessines(){
+  $("couches").querySelectorAll(".dcal .sdes[data-id]").forEach(g => {
+    const o = parId.get(g.dataset.id);
+    g.classList.toggle("dim", !!o && !visibleSociete(o, Number(g.dataset.soc)));
+  });
+  poseMarques("dim", standsDessines().filter(x => x.l && !visibleSociete(x.l.o, x.l.i)).map(x => x.f.id));
 }
 
 /**
@@ -653,10 +765,7 @@ function rafraichitStandsDessines(){
   const view = vue();
   if (!DATA || !view) return;
   coloreSecteurs();
-  $("couches").querySelectorAll(".dcal .sdes[data-id]").forEach(g => {
-    const o = parId.get(g.dataset.id);
-    g.classList.toggle("dim", !!o && !visibleSociete(o, Number(g.dataset.soc)));
-  });
+  retireStandsDessines();
   const r = cadrePlan();
   poseLibellesDessines((r.width || 1) / view.w);
 }

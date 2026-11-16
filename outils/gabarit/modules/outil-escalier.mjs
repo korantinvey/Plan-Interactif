@@ -34,6 +34,7 @@ import { cameraEnJeu } from "./camera.mjs";
 import { ADMIN } from "./mode-admin.mjs";
 import { inscritGesteTenu } from "./geste-tenu.mjs";
 import { formeParId } from "./forme-choisie.mjs";
+import { poseMarques } from "./etat-formes.mjs";
 import { memorise, enregistreDessins } from "./socle-dessin.mjs";
 import { verrouille } from "./outil-dessin.mjs";
 import { redessineForme } from "./dessin.mjs";
@@ -125,6 +126,8 @@ export function choisitEscalier(/** @type {string | null} */ id){
   const g = id && noeudDe(id);
   if (g) g.setAttribute("data-objet-choisi", "");
   else choisi = null;
+  // l'objet tenu bleuit et sort sa poignée : le dessin le lit au modèle
+  poseMarques("tenu", choisi ? [choisi] : []);
 }
 
 /** La forme vient d'être refaite : son nœud est neuf, la marque s'y repose. */

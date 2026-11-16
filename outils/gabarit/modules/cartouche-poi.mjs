@@ -29,6 +29,7 @@ import { PICTOS, nomTypeRepere, typeZone, pictoForme, glypheRepere, pastillePoi 
 import { majFondus } from "./bandes.mjs";
 import { formeParId } from "./forme-choisie.mjs";
 import { posePhares, emplacements, groupeEmplacement, estMisEnAvant } from "./etat-emplacements.mjs";
+import { poseMarques } from "./etat-formes.mjs";
 
 /**
  * Les repères, en objets de recherche.
@@ -273,6 +274,9 @@ export const phareZone = (o) => {
 
 /** Met en avant les repères et les zones du point d'intérêt choisi. */
 function eclairePoi(){
+  // les repères : décidés sur leurs données, dits au modèle (`etat-formes.mjs`) et à leur nœud
+  const reperes = mesCalques().flatMap(c => c.formes || []).filter(f => f.t === "repere" && phareRepere(f));
+  poseMarques("phare", reperes.map(f => f.id));
   $("couches").querySelectorAll(".dcal .repere").forEach(g => {
     const f = formeParId(g.dataset.f);
     g.classList.toggle("phare", phareRepere(f && f.f));

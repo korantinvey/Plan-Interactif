@@ -59,7 +59,7 @@ export function jetonsEmplacements(ref){
  *  par l'opacité, et l'opacité se mélange aussi : une teinte de secteur
  *  translucide (`#rrggbbaa`, que `secteurs.mjs` accepte) donne un liseré
  *  translucide, et non opaque. */
-function fonce(/** @type {string} */ c, /** @type {number} */ part){
+export function fonce(/** @type {string} */ c, /** @type {number} */ part){
   // une couleur illisible rend la déclaration invalide : la feuille ne poserait aucun trait
   if (!c || !CSS.supports("color", c)) return "none";
   // une couleur toute transparente se lit comme rien, mais se mélange encore

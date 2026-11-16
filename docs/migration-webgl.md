@@ -213,6 +213,45 @@ Reste du guet : les calques dessinés, qui s'écrivent encore dans le SVG
 caché et que le dessin y relit, et l'ordre des calques (l'ordre des nœuds de
 `#couches`).
 
+**Les calques dessinés, peints depuis leurs données (16 novembre 2026).** La
+décision du 14 novembre est revue : pour épurer le code, les calques quittent
+le lecteur du SVG comme le reste.
+
+- *Une seule géométrie.* `dessin.mjs` calcule chaque forme une fois —
+  `cheminForme`, `cheminFleche`, `geometrieRepere`, `cheminStandDessine` — et
+  en tire à la fois son balisage et ses pièces (tracés, rectangles,
+  pictogrammes posés par leur matrice, textes, images), qu'il pose dans
+  `modules/etat-formes.mjs` (`poseCalquesPeints`, `poseFormePeinte`,
+  `poseCouleurCalque`).
+- *Les marques en données.* Les sept modules qui marquaient les formes après
+  coup les disent aussi au modèle (`poseMarques`) : la sélection et le
+  retrait des stands dessinés (`dessin.mjs`, `recherche.mjs`), le repère
+  ouvert (`points-interet.mjs`, `fiche.mjs`), la mise en avant
+  (`cartouche-poi.mjs`), le hall qu'on cale (`batiments.mjs`), l'escalier
+  tenu (`outil-escalier.mjs`). La teinte du secteur et de la chaleur d'un
+  stand dessiné est celle de son hôte, lue au modèle des emplacements. Le
+  halo d'une forme neuve et la forme choisie ne regardent que le SVG : le
+  dessin ne les peignait pas.
+- *Le style sans la feuille.* `modules/style-calques.mjs` résout les règles
+  `.dcal` dans leur ordre de force — y compris celles qu'on n'attendait pas :
+  le pictogramme d'un repère prend le quart d'opacité d'un calque rempli, et
+  la couleur du calque sous un rôle « circulation » à l'édition.
+- *Le dessin.* `webgl.mjs` `couchesCalque` peint un calque depuis ses pièces ;
+  le groupe du calque reste le bloc, le nœud d'une forme sa poignée
+  (désignation, prise de l'éditeur, focus du clavier). Le guet ignore
+  `.dcal` ; `CALQUES_PEINTS` dit ce qui change.
+- *Essais.* `style-calques.spec.js` pose six calques qui couvrent toutes les
+  sortes de formes, de marques et de rôles, et compare pour quarante-huit
+  états de la racine le style résolu au style calculé, pièce par pièce, focus
+  du clavier compris ; puis ce que le dessin tire des pièces à ce qu'il tirait
+  du SVG (`compareLectures`). Cette seconde comparaison part avec l'ancien
+  lecteur.
+
+Reste du guet : l'ordre des calques (l'ordre des nœuds de `#couches`), et le
+style calculé du groupe `#stands` (son retrait sous le cartouche ou la visite
+guidée), que `parcoursGl` lit encore — le lot suivant, avec le retrait du
+lecteur.
+
 **Étape 4 — les outils de l'exploitant (15 novembre 2026).** Décidé :
 l'administration exige le WebGL (sur les onze jours d'avant, aucune des dix-
 neuf visites de l'administration n'en était privée). Les repères des outils
@@ -283,7 +322,7 @@ source, et des règles en moins dans la feuille.
   qu'elle tire de la racine, de quoi se retracer) : marques, distinctions,
   zone de la visite guidée, trajet. Les distinctions ne suivaient plus
   l'accent depuis leur passage aux attributs — c'est corrigé, et éprouvé.
-- *Décision (14 novembre 2026) : les calques dessinés restent à la feuille.*
+- *Décision (14 novembre 2026), revue le 16 : les calques dessinés restaient à la feuille.*
   Ils pèsent peu — vingt-sept formes sur tout FEP 2027, aucune sur SMCL —, et
   les migrer n'aurait rien gagné en vitesse. Ni en clarté : l'épaisseur d'un
   trait qui suit le zoom passe par `var(--trait-f)`, qu'un attribut refuse ;

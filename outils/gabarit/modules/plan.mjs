@@ -62,6 +62,9 @@ import { couleurGl } from "./trace.mjs";
 import { compareLectures, repereSousWebgl, rectEcranBoite } from "./webgl.mjs";
 import { reperes, boiteDuJeu } from "./scene.mjs";
 import { modelesLibelles, SORTES_LIBELLES, SORTES_PHARE } from "./style-libelles.mjs";
+import { calquesPeints, poseMarques } from "./etat-formes.mjs";
+import { jetonsCalques, styleGroupeForme, stylePiece } from "./style-calques.mjs";
+import { poseSecteurs, poseChaleurs, cleEmplacement } from "./etat-emplacements.mjs";
 
 globalThis.__essais = {
   SLUG, GL, rectEcranWebgl, CONTEXTE_PERDU, _lg, largeur, libelles, COMPTES_LOGOS,
@@ -75,6 +78,10 @@ globalThis.__essais = {
   scene: { reperes, boiteDuJeu, repereSousWebgl, rectEcranBoite },
   // le style des noms résolu sans la feuille, que `style-libelles.spec.js` compare à elle
   stylesLibelles: { modelesLibelles, SORTES_LIBELLES, SORTES_PHARE },
+  /* les calques dessinés en données, et leur style résolu sans la feuille, que
+     `style-calques.spec.js` compare à elle ; de quoi teinter l'hôte d'un stand dessiné */
+  formes: { calquesPeints, poseMarques, jetonsCalques, styleGroupeForme, stylePiece,
+    poseSecteurs, poseChaleurs, cleEmplacement },
   get P_NOM(){ return P_NOM; },
   get P_CODE(){ return P_CODE; },
   get TUTO(){ return TUTO; },
