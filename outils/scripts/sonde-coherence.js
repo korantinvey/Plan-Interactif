@@ -170,6 +170,10 @@ const REGLES = [
     corrigee: 2,
     test(r) {
       const c = r && r.chargement;
+      /* Depuis la révision 4, « gardé » ne se dit plus que de ce que le service
+         a vraiment sorti de sa copie (`_sw.js` `gardee`) : un appel lent sans
+         octet est alors une copie lue lentement — le poste, non la mesure. */
+      if ((n(r.rev) || 1) >= 4) return;
       if (!c || c.depuisCache !== 1 || !Array.isArray(c.lourds)) return;
       const lent = c.lourds.find((x) => x && x.sorte === "fetch" && n(x.ms) > 300 && x.transfertKo === 0);
       if (lent) return "appel de " + lent.ms + " ms sans octet";
@@ -216,6 +220,25 @@ const REGLES = [
       const p = (r && r.gels && Array.isArray(r.gels.pires)) ? r.gels.pires : [];
       const x = p.find((y) => /:1:1$/.test(String(y.lieu || "")));
       if (x) return "gel de " + x.ms + " ms";
+    },
+  },
+  {
+    cle: "trajet",
+    texte: "trajet de l'ouverture incohérent",
+    test(r) {
+      const t = r && r.chargement && r.chargement.trajets;
+      if (!t) return;
+      for (const qui of ["page", "donnees"]) {
+        const x = t[qui];
+        if (!x) continue;
+        for (const k of ["serviceMs", "attenteMs", "relaisMs"]) {
+          if (n(x[k]) < 0) return qui + " : " + k + " négatif";
+        }
+        /* Le relais ne peut pas avoir travaillé plus longtemps que la page n'a
+           attendu son premier octet — à la seconde près : l'horloge d'un
+           Worker ne court que pendant ses attentes, et s'arrondit. */
+        if (n(x.relaisMs) > n(x.attenteMs) + 1000) return qui + " : relais " + x.relaisMs + " > attente " + x.attenteMs;
+      }
     },
   },
   {

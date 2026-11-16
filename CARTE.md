@@ -130,13 +130,14 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-vitrine.css` — 199 l. → demo.html, plan-smcl.html
 
-### `_sw.js` — 590 l. → sw.js
+### `_sw.js` — 623 l. → sw.js
 
 Fonctions :
 
-`estUneTuile` 130 · `range` 166 · `oublieLesVersionsDAvant` 192 · `dabordCache` 213
-`borneLesLots` 249 · `borneLesTuiles` 287 · `demandeTiers` 342 · `commePosee` 350
-`tuileDeCarte` 367 · `fondDeCarte` 403 · `dabordReseau` 430 · `navigation` 447
+`estUneTuile` 130 · `gardee` 188 · `range` 196 · `oublieLesVersionsDAvant` 222
+`dabordCache` 243 · `borneLesLots` 279 · `borneLesTuiles` 317 · `demandeTiers` 372
+`commePosee` 380 · `tuileDeCarte` 397 · `fondDeCarte` 433 · `dabordReseau` 460
+`navigation` 480
 
 ### `modules/abords-salles.mjs` — 244 l. → plan, plan-admin
 
@@ -1977,15 +1978,15 @@ Importé par :
 borne · charge-annoncee · erreurs · fiche · gestes · installation · journee · lancement
 notifications · parcours · partage · sonde · tiroir-itineraire
 
-### `modules/mesures-page.mjs` — 222 l. → plan, plan-admin
+### `modules/mesures-page.mjs` — 314 l. → plan, plan-admin
 
 - l.1 · Les mesures de la page, partagées
 
 Fonctions :
 
 `centile` 31 · `fichier` 37 · `observe` 42 · `carteGraphique` 56 · `navigateur` 84
-`mobileDeRepli` 102 · `systemeDeRepli` 115 · `appareil` 133 · `trajet` 175
-`chargement` 193
+`mobileDeRepli` 102 · `systemeDeRepli` 115 · `appareil` 133 · `trajet` 179 · `minutage` 195
+`minutageRejoue` 236 · `trajetDecoupe` 259 · `chargement` 285
 
 Importé par :
 
@@ -2156,13 +2157,13 @@ Importé par :
 
 moteur-gl
 
-### `modules/moteur-gl.mjs` — 652 l. → plan, plan-admin
+### `modules/moteur-gl.mjs` — 661 l. → plan, plan-admin
 
 - l.1 · Le moteur du plan — WebGL2, écrit pour lui
 
 Fonctions :
 
-`lumieresDe` 65 · `couchesDeChauffe` 585 · `objetDe` 609 · `retourne` 615
+`lumieresDe` 65 · `couchesDeChauffe` 594 · `objetDe` 618 · `retourne` 624
 
 Importe :
 
@@ -3195,27 +3196,27 @@ Importé par :
 
 edition · outil-dessin · outil-escalier · reprise-emplacements
 
-### `modules/sonde.mjs` — 1310 l. → plan, plan-admin
+### `modules/sonde.mjs` — 1357 l. → plan, plan-admin
 
 - l.1 · La sonde silencieuse — chaque visite dépose son résumé de performance
 
 Fonctions :
 
-`sur` 102 · `ms` 103 · `enCreux` 104 · `uuid` 107 · `echantillonne` 123 · `vue0` 144
-`nouvelleVisite` 159 · `cumuleVu` 200 · `poseVu` 212 · `invisibleAvantAffichage` 225
-`lcpVu` 232 · `vueDuMoment` 247 · `surLePlan` 254 · `commence` 259 · `sorte` 270
-`clos` 273 · `relance` 289 · `image` 295 · `ecouteGestes` 325 · `nomDuScript` 362 · `lu` 381
-`cumulDeck` 391 · `travauxDeck` 396 · `releveInstant` 422 · `travauxPendant` 432
-`cleAttente` 520 · `lesAttentes` 532 · `guetteCompilation` 540 · `imageDOuverture` 573
-`decoupe` 596 · `gel` 606 · `doitBattre` 659 · `bat` 668 · `battu` 675
-`ecouteBattement` 694 · `dansLaCarte` 737 · `gelPendantLaCarte` 743 · `etapeDeLaCarte` 749
-`laCarteDesEnvirons` 779 · `ecouteNavigateur` 795 · `memoire` 833 · `contexteDuPlan` 846
-`lisAppareil` 858 · `handicapDeclare` 894 · `finDesDonnees` 908 · `appelsEnEchec` 930
-`leChargement` 952 · `fluidite` 985 · `laCarte` 994 · `resumeSonde` 1017
-`leBattement` 1050 · `octets` 1056 · `coupe` 1059 · `tronque` 1070 · `fraiche` 1104
-`litLaFile` 1107 · `ecritLaFile` 1115 · `retire` 1127 · `corps` 1130
-`versionDesPages` 1138 · `envoieUne` 1149 · `pousse` 1175 · `actif` 1200 · `envoie` 1204
-`brancheSonde` 1229 · `demarre` 1242
+`sur` 112 · `ms` 113 · `enCreux` 114 · `uuid` 117 · `echantillonne` 133 · `vue0` 154
+`nouvelleVisite` 169 · `cumuleVu` 210 · `poseVu` 222 · `invisibleAvantAffichage` 235
+`lcpVu` 242 · `vueDuMoment` 257 · `surLePlan` 264 · `commence` 269 · `sorte` 280
+`clos` 283 · `relance` 299 · `image` 305 · `ecouteGestes` 335 · `nomDuScript` 372 · `lu` 391
+`cumulDeck` 401 · `travauxDeck` 406 · `releveInstant` 432 · `travauxPendant` 442
+`cleAttente` 530 · `lesAttentes` 542 · `guetteCompilation` 550 · `imageDOuverture` 583
+`decoupe` 606 · `gel` 625 · `doitBattre` 678 · `bat` 687 · `battu` 694
+`ecouteBattement` 713 · `dansLaCarte` 756 · `gelPendantLaCarte` 762 · `etapeDeLaCarte` 768
+`laCarteDesEnvirons` 798 · `ecouteNavigateur` 814 · `memoire` 852 · `contexteDuPlan` 865
+`lisAppareil` 877 · `handicapDeclare` 913 · `finDesDonnees` 927 · `trajetDesDonnees` 942
+`dureeDuContexte` 954 · `appelsEnEchec` 968 · `leChargement` 990 · `lesTrajets` 1026
+`fluidite` 1031 · `laCarte` 1040 · `resumeSonde` 1063 · `leBattement` 1097 · `octets` 1103
+`coupe` 1106 · `tronque` 1117 · `fraiche` 1151 · `litLaFile` 1154 · `ecritLaFile` 1162
+`retire` 1174 · `corps` 1177 · `versionDesPages` 1185 · `envoieUne` 1196 · `pousse` 1222
+`actif` 1247 · `envoie` 1251 · `brancheSonde` 1276 · `demarre` 1289
 
 Importe :
 
@@ -4033,8 +4034,8 @@ Injections :
 
 ## Le reste
 
-- `src/index.mjs` — 126 l. · Worker Cloudflare : sert les pages, relaie les lectures du plan et les mesures d'utilisation.
-  `surete` 67 · `aiguille` 85
+- `src/index.mjs` — 156 l. · Worker Cloudflare : sert les pages, relaie les lectures du plan et les mesures d'utilisation.
+  `surete` 67 · `minute` 94 · `aiguille` 115
 - `src/application.mjs` — 302 l. · L'application installée d'un salon : son adresse propre (`/plan-<salon>`), son manifeste et son icône.
   `cleApp` 26 · `cheminDuSalon` 57 · `pageDuSalon` 74 · `appDuSalon` 98 · `iconesDuSalon` 148 `manifeste` 188 · `iconeApp` 278
 - `src/carte.mjs` — 82 l. · Ramener une position du script minifié à sa source.

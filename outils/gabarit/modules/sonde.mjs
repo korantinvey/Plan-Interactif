@@ -62,6 +62,16 @@
          `userAgentData` de Chromium : Safari, Firefox et Chrome sur iPhone
          le disent aussi (`mesures-page.mjs` `systemeDeRepli`). Avant, un
          relevé sans système était le plus souvent un appareil d'Apple.
+     4 — 17 novembre 2026. Ce que le service de second plan sort de sa copie
+         se reconnaît aussi à sa marque (`_sw.js` `gardee`) : `transfertKo`
+         et `depuisCache` comptent ce qui était « inconnu » là où le
+         navigateur ne nomme pas la livraison. S'ajoutent, pour séparer le
+         poste, le réseau et le relais : le trajet du document et de l'appel
+         du plan (`chargement.trajets`), la création du contexte WebGL
+         (`chargement.contexteMs`), et, dans un gel, le temps passé avant son
+         premier script (`avantMs`) et en pauses (`pauseMs`). Le minutage du
+         relais qu'un cache resert n'y entre pas : `rejoue` le dit
+         (`mesures-page.mjs` `minutageRejoue`).
    ============================================================ */
 import { API, SLUG, PLAN_ADMIN, BORNE, entetesApi, configProjet } from "./salon.mjs";
 import { GL, RENDU_WEBGL, REPEINT_FINI, CONTEXTE_PERDU, COMPTES_DECK, IMAGE_DECK, TOILE_PRETE, carteDuWebgl, sousPixelOffert } from "./webgl.mjs";
@@ -72,11 +82,11 @@ import { bilanErreurs } from "./erreurs.mjs";
 import { TOUS } from "./donnees.mjs";
 import { bilanLogos } from "./logos-stands.mjs";
 import { mesureOuverte, supportMesure } from "./mesure.mjs";
-import { SACCADE, FIN_GESTE, TRANCHES, PREMIERE_LENTE, centile, fichier, observe, chargement, appareil, carteGraphique } from "./mesures-page.mjs";
+import { SACCADE, FIN_GESTE, TRANCHES, PREMIERE_LENTE, centile, fichier, observe, chargement, appareil, carteGraphique, trajetDecoupe } from "./mesures-page.mjs";
 
 const PERF = /[?&]perf(?:[=&]|$)/.test(location.search);
 // ce que mesure chaque champ a changé : voir l'en-tête
-const REVISION = 3;
+const REVISION = 4;
 const SONDE_API = API ? API.replace(/[^/]*$/, "sonde") : "";
 const PAGE = PLAN_ADMIN ? "admin" : BORNE ? "borne" : "plan";
 
@@ -598,7 +608,16 @@ function decoupe(/** @type {any} */ e, /** @type {any[]} */ scripts, /** @type {
   const fin = e.startTime + e.duration;
   const somme = (/** @type {string} */ k) => Math.round(scripts.reduce((a, x) => a + (Number(x[k]) || 0), 0));
   const invocation = s && INVOCATION.test(s.invokerType || "") ? s.invokerType : undefined;
+  /* Le temps de l'image avant son premier script : ni nos scripts ni le rendu.
+     Un gel de onze secondes ne comptait que 0,6 s de scripts et 1,4 s de rendu
+     (sonde, 16 novembre 2026) — le reste, s'il tombe ici, est un travail de la
+     page hors de tout script, ou une attente que le navigateur ne lui attribue
+     pas. Les pauses sont celles qu'un script s'impose (dialogue, appel
+     synchrone). */
+  const premier = scripts.reduce((a, x) => Math.min(a, Number(x.startTime) || Infinity), Infinity);
+  const avant = premier < Infinity ? Math.round(premier - e.startTime) : 0;
   return { invocation, scriptsMs: somme("duration"), forceeMs: somme("forcedStyleAndLayoutDuration") || undefined,
+    avantMs: avant > 0 ? avant : undefined, pauseMs: somme("pauseDuration") || undefined,
     renduMs: e.renderStart > 0 ? Math.round(fin - e.renderStart) : undefined,
     miseEnPageMs: e.styleAndLayoutStart > 0 ? Math.round(fin - e.styleAndLayoutStart) : undefined };
 }
@@ -918,6 +937,25 @@ function finDesDonnees(/** @type {number} */ jusqua){
   return fin ? Math.round(fin) : undefined;
 }
 
+/** Le trajet de l'appel du plan (`mesures-page.mjs` `trajetDecoupe`) : le
+ *  premier, celui qu'attend l'ouverture. */
+function trajetDesDonnees(/** @type {number} */ jusqua){
+  if (!API) return undefined;
+  const base = new URL(API, location.href).href;
+  for (const e of performance.getEntriesByType("resource")){
+    if (!e.name.startsWith(base) || e.startTime > jusqua) continue;
+    const cles = [...new URL(e.name).searchParams.keys()];
+    if (cles.includes("slug") && cles.every(c => DEMANDE_DU_PLAN.has(c))) return trajetDecoupe(e);
+  }
+  return undefined;
+}
+
+/** Ce que la création du contexte WebGL a tenu la page (`moteur-gl.mjs`). */
+function dureeDuContexte(){
+  const m = performance.getEntriesByName("plan:contexte-webgl")[0];
+  return m ? Math.round(m.duration) : undefined;
+}
+
 /**
  * Les appels à nos services qui ont répondu en erreur, par statut.
  *
@@ -977,9 +1015,17 @@ function leChargement(){
        elles n'ont pas dessiné. Absente, elle n'a pas eu lieu — le
        navigateur ne compile pas en tâche de fond, ou le plan est au SVG. */
     chauffe: GL.bilanChauffe ? GL.bilanChauffe.slice() : undefined,
+    // le document et l'appel du plan, découpés : le poste, le trajet, le relais
+    trajets: lesTrajets(c.page && c.page.trajet, trajetDesDonnees(jusqua)),
+    contexteMs: dureeDuContexte(),
   };
   if (affiche !== undefined) OUVERTURE = bilan;
   return bilan;
+}
+
+function lesTrajets(/** @type {any} */ page, /** @type {any} */ donnees){
+  const plein = (/** @type {any} */ t) => t && Object.values(t).some(v => v !== undefined) ? t : undefined;
+  return plein(page) || plein(donnees) ? { page: plein(page), donnees: plein(donnees) } : undefined;
 }
 
 function fluidite(/** @type {any} */ v){
@@ -1032,7 +1078,8 @@ export function resumeSonde(){
         fichier: p.url ? nomDuScript(p.url) : undefined, fonction: p.fonction,
         position: p.url && p.position >= 0 ? p.position : undefined,
         t: p.t, avantAffichage: p.avantAffichage, travaux: p.travaux, invocation: p.invocation,
-        scriptsMs: p.scriptsMs, forceeMs: p.forceeMs, renduMs: p.renduMs, miseEnPageMs: p.miseEnPageMs })),
+        scriptsMs: p.scriptsMs, forceeMs: p.forceeMs, renduMs: p.renduMs, miseEnPageMs: p.miseEnPageMs,
+        avantMs: p.avantMs, pauseMs: p.pauseMs })),
       api: API_GELS, battement: leBattement() },
     reactivite: { ...V.reactivite, survols: { ...V.reactivite.survols } },
     erreurs: bilanErreurs(),
