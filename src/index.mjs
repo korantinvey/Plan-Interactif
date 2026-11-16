@@ -75,9 +75,36 @@ function surete(reponse, url) {
   return sortie;
 }
 
+/**
+ * Le minutage du relais, lisible par la page (`Server-Timing`).
+ *
+ * Une ouverture lente se lisait côté visiteur sans qu'on sache quelle part
+ * revenait à Cloudflare et quelle part au trajet : quatre postes ont attendu
+ * leurs données six à onze secondes le 16 novembre 2026, et seule une
+ * déduction a écarté le relais. Ici il le dit lui-même : son point de
+ * présence (`cf`), ce que son cache a rendu (`cache`, la valeur d'`X-Cache`),
+ * et son temps (`w`). Ce temps est celui de l'horloge d'un Worker, qui ne
+ * court que pendant les attentes — le stockage, Supabase : c'est justement ce
+ * qu'il faut séparer du trajet. La sonde le lit sur l'appel du plan
+ * (`modules/mesures-page.mjs` `minutage`).
+ *
+ * Ne passe par ici que ce que le Worker sert : `/api/plan`, l'adresse propre
+ * d'un salon, le manifeste. Les fichiers de `web/` sont servis sans lui.
+ */
+function minute(reponse, requete, debut) {
+  const colo = requete.cf && requete.cf.colo;
+  const cache = reponse.headers.get("X-Cache");
+  const parties = ["w;dur=" + Math.max(0, Date.now() - debut)];
+  if (typeof colo === "string" && /^[A-Z]{3}$/.test(colo)) parties.push('cf;desc="' + colo + '"');
+  if (cache && /^[a-z]{1,12}$/.test(cache)) parties.push('cache;desc="' + cache + '"');
+  reponse.headers.append("Server-Timing", parties.join(", "));
+  return reponse;
+}
+
 export default {
   async fetch(requete, env, ctx) {
-    return surete(await aiguille(requete, env, ctx), new URL(requete.url));
+    const debut = Date.now();
+    return minute(surete(await aiguille(requete, env, ctx), new URL(requete.url)), requete, debut);
   },
 };
 

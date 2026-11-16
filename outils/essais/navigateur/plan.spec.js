@@ -587,6 +587,10 @@ test.describe("le salon que nomme l'adresse", { tag: "@base" }, () => {
       // rangée sous son propre chemin, jamais sous celui du plan public
       await expect.poll(() => rangee("/plan-admin")).toBe(true);
       expect(await rangee("/plan")).not.toBe(true);
+      /* Le préchargement de navigation, allumé dès l'activation : la page
+         ci-dessus est passée par lui, et s'est rangée tout de même. */
+      expect(await page.evaluate(async () =>
+        (await (await navigator.serviceWorker.ready).navigationPreload.getState()).enabled)).toBe(true);
     });
   });
 });

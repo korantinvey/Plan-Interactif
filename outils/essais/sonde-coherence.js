@@ -74,6 +74,7 @@ const SAIN = {
     ["gels-comptes", (r) => { r.gels.pires.reverse(); }],
     ["gel-hors-visite", (r) => { r.gels.pires[0].t = 4000; }],
     ["gel-premiere-ligne", (r) => { r.gels.pires[0].lieu = "versions/plan.8aa1d9e951.js:1:1"; }],
+    ["trajet", (r) => { r.chargement.trajets = { donnees: { attenteMs: 300, relaisMs: 4000, cf: "CDG" } }; }],
     ["battement", (r) => { r.gels.battement.totalMs = 12000; r.gels.battement.maxMs = 200; }],
     ["fluidite", (r) => { r.fluidite.classique.partPlus33 = 34; }],
     ["repeints", (r) => { r.gpu.repeints.p50 = 70; }],
@@ -106,6 +107,15 @@ const SAIN = {
     Object.defineProperty(r.fluidite.classique, "saccades", { get() { throw new Error("piège"); } });
     const l = incoherences(r);
     dit(l.some((x) => x.cle === "fluidite" && /défaut/.test(x.detail)), "une règle qui lève se dit en défaut", JSON.stringify(l));
+  }
+
+  // — révision 4 : un appel lent sorti de la copie du service est une copie lue lentement, non une mesure fausse
+  {
+    const r = copie(SAIN);
+    r.rev = 4;
+    r.chargement.depuisCache = 1;
+    r.chargement.lourds[0] = { fichier: "plan", sorte: "fetch", ms: 3909, transfertKo: 0, tailleKo: 0 };
+    dit(!cles(r).includes("cache-sous-le-service"), "révision 4 : une copie lue lentement n'est pas suspecte", cles(r).join(", "));
   }
 
   // — l'ouverture que personne ne regardait, d'une révision à l'autre

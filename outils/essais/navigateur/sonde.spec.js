@@ -94,7 +94,7 @@ test.describe("la sonde silencieuse", { tag: "@base" }, () => {
     expect(e.visite).toMatch(UUID);
     const r = e.resume;
     expect(r.format).toBe("sonde-plan/1");
-    expect(r.rev).toBe(3);
+    expect(r.rev).toBe(4);
     expect(r.page).toBe("plan");
     expect(r.visibleMs).toBeGreaterThan(0);
     expect(r.visibleMs).toBeLessThanOrEqual(r.duree);
@@ -110,6 +110,33 @@ test.describe("la sonde silencieuse", { tag: "@base" }, () => {
     expect(typeof r.appareil.systeme).toBe("string");
     expect(r.fluidite.classique.tranches).toHaveLength(7);
     expect(octets(r)).toBeLessThanOrEqual(PLAFOND);
+    expect(erreurs).toEqual([]);
+  });
+
+  /* Révision 4 : ce qui sépare le poste, le trajet et le relais. Le relais dit
+     son temps, son point de présence et ce que son cache a rendu
+     (`src/index.mjs` `minute`) ; la sonde le joint au trajet de l'appel du
+     plan, avec ce que la création du contexte WebGL a tenu la page. */
+  test("l'ouverture dit son trajet, le relais qui l'a servie, et ce qu'a tenu le contexte WebGL", async ({ page }) => {
+    const erreurs = await prepare(page);
+    const envois = await releve(page);
+    const PLANS = JSON.stringify(DONNEES);
+    // posée après celle de `prepare`, cette route passe devant elle
+    await page.route("**/api/plan?slug=*", (r) => r.fulfill({
+      status: 200, contentType: "application/json",
+      headers: { "X-Version": "essai", "Server-Timing": 'w;dur=12, cf;desc="CDG", cache;desc="hit"' },
+      body: PLANS,
+    }));
+    await page.goto("/plan?plan=smcl-2026");
+    await attendLaListe(page);
+    await affiche(page);
+    await expect.poll(() => envois.length, { timeout: 15_000 }).toBeGreaterThan(0);
+    const c = envois[0].resume.chargement;
+    expect(c.trajets.donnees).toMatchObject({ relaisMs: 12, cf: "CDG", cache: "hit" });
+    expect(c.trajets.donnees.attenteMs).toBeGreaterThanOrEqual(0);
+    expect(c.trajets.page.attenteMs).toBeGreaterThan(0);
+    expect(c.contexteMs).toBeGreaterThanOrEqual(0);
+    vraisemblable(envois[0].resume);
     expect(erreurs).toEqual([]);
   });
 

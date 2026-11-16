@@ -137,11 +137,20 @@ export class Deck {
     }
     this.canvas = toile;
     const webgl = (props.deviceProps && props.deviceProps.webgl) || {};
+    const avantContexte = performance.now();
     /** @type {WebGL2RenderingContext | null} */
     // les attributs du contexte de deck.gl : refusé là où il l'était, sans gros handicap
     const gl = toile.getContext("webgl2", { alpha: true, antialias: true, premultipliedAlpha: true, depth: true,
       stencil: false, preserveDrawingBuffer: Boolean(webgl.preserveDrawingBuffer), powerPreference: "high-performance",
       failIfMajorPerformanceCaveat: true });
+    /* Ce que la création du contexte a tenu la page. L'appel est synchrone, et
+       c'est le premier qui réveille la carte graphique : un pilote lent à
+       démarrer, ou un poste qui bascule sur sa carte puissante
+       (`high-performance`), s'y paie d'un coup. Quatre postes NVIDIA sous un
+       Chrome en retard ont gelé de cinq à onze secondes à l'ouverture sans
+       qu'aucun script ne l'explique (sonde, 16 novembre 2026) : la sonde lit
+       cette mesure (`modules/sonde.mjs`), sans importer le moteur. */
+    try { performance.measure("plan:contexte-webgl", { start: avantContexte, end: performance.now() }); } catch (_) { /* mesure refusée : rien à dire */ }
     if (!gl){
       this.device = null;
       setTimeout(() => this.props.onError && this.props.onError(new Error("WebGL2 indisponible")), 0);

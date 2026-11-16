@@ -157,10 +157,40 @@ self.addEventListener("activate", (e) => {
       .then((noms) => Promise.all(
         noms.filter((n) => n.startsWith("plan-") && n !== CACHE && n !== DURABLE)
             .map((n) => caches.delete(n))))
+      /* Le préchargement de navigation : le navigateur demande la page au
+         réseau pendant que ce service démarre, au lieu d'attendre qu'il ait
+         démarré pour qu'il la demande. Sans lui, chaque ouverture payait ce
+         démarrage avant même le premier octet — quelques dizaines de
+         millisecondes d'ordinaire, mais deux à quatre secondes sur des postes
+         que quelque chose ralentissait déjà (sonde, FUNEXPO, 16 novembre
+         2026). Un navigateur qui ne le connaît pas n'y perd rien. */
+      .then(() => self.registration.navigationPreload &&
+        self.registration.navigationPreload.enable().catch(() => {}))
       // sans cela, les onglets déjà ouverts resteraient sans service jusqu'à
       // leur prochain rechargement — soit toute la durée d'une visite
       .then(() => self.clients.claim()));
 });
+
+/**
+ * Une copie gardée, marquée comme telle pour la page (`Server-Timing`).
+ *
+ * Le navigateur ne dit pas d'où ce service a tiré sa réponse : un fichier lu
+ * dans le cache et un fichier venu du réseau se ressemblent dans les mesures de
+ * la page (`modules/mesures-page.mjs` `trajet` les dit « inconnus »). Or c'est
+ * ce qui sépare une lenteur du réseau d'une lenteur du poste — des polices
+ * gardées qui mettent neuf secondes à sortir ne doivent rien au réseau. La
+ * copie porte aussi le minutage du relais qui l'avait servie la première fois
+ * (`src/index.mjs` `minute`) : la marque dit à la sonde de ne pas le croire.
+ *
+ * Une réponse opaque — d'une autre origine — ne se recompose pas ; elle reste
+ * telle quelle, et ne se mesure pas davantage.
+ */
+function gardee(reponse) {
+  if (reponse.type === "opaque" || reponse.type === "opaqueredirect") return reponse;
+  const entetes = new Headers(reponse.headers);
+  entetes.append("Server-Timing", 'sw;desc="cache"');
+  return new Response(reponse.body, { status: reponse.status, statusText: reponse.statusText, headers: entetes });
+}
 
 /** Range une copie de la réponse, sans faire attendre celle qui repart. */
 function range(e, requete, reponse) {
@@ -213,7 +243,7 @@ async function oublieLesVersionsDAvant(cache, adresse) {
 async function dabordCache(e, requete, ou) {
   const cache = await caches.open(ou);
   const garde = await cache.match(requete);
-  if (garde) return garde;
+  if (garde) return gardee(garde);
   const reponse = await fetch(requete);
   if (!reponse.ok) return reponse;
   /* Le service dit lui-même ce qui n'est pas à garder : un lot de vignettes
@@ -427,14 +457,17 @@ async function fondDeCarte(e, requete) {
  * choix, une requête conditionnelle que le cache du navigateur rend presque
  * gratuite, est ce qu'on payait déjà.
  */
-async function dabordReseau(e, requete, cle) {
+async function dabordReseau(e, requete, cle, enRoute) {
   try {
-    const reponse = await fetch(requete);
+    /* `enRoute` : la demande que le navigateur a déjà lancée (préchargement de
+       navigation). Elle vaut `undefined` quand il n'a rien préchargé — un
+       service qui vient de s'installer, un navigateur qui ne sait pas. */
+    const reponse = (enRoute && await enRoute) || await fetch(requete);
     if (reponse.ok) range(e, cle || requete, reponse);
     return reponse;
   } catch (panne) {
     const garde = await caches.match(cle || requete);
-    if (garde) return garde;
+    if (garde) return gardee(garde);
     throw panne;
   }
 }
@@ -463,7 +496,7 @@ async function navigation(e, requete) {
   const cle = new Request(new URL(requete.url).pathname
     .replace(/^\/plan-(?!(?:admin|smcl)$)[a-z0-9][a-z0-9-]{0,63}$/, "/plan"));
   try {
-    return await dabordReseau(e, requete, cle);
+    return await dabordReseau(e, requete, cle, e.preloadResponse);
   } catch (panne) {
     // ni réseau ni copie : reste la page mise de côté à l'installation
     return (await caches.match(HORS_LIGNE)) || Response.error();

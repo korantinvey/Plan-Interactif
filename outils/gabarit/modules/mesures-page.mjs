@@ -167,15 +167,62 @@ export function appareil(/** @type {{ agentComplet?: boolean, gl?: any, carte?: 
  * (10 novembre 2026). Dès la deuxième visite, toute la page passe par lui :
  * le transfert de l'ouverture tombait à quelques kilo-octets et la part servie
  * par le cache à 100 %, sur des ouvertures d'une seconde et demie. Seule la
- * livraison « cache-storage » dit qu'il l'a sortie de sa copie.
+ * livraison « cache-storage » dit qu'il l'a sortie de sa copie — ou la marque
+ * qu'il pose lui-même sur ce qu'il en sort (`_sw.js` `gardee`). Il la pose
+ * depuis le 17 novembre 2026 ; recomposer la réponse pour la porter efface la
+ * livraison « cache-storage », et la marque vaut aussi là où le navigateur ne
+ * nomme pas la livraison.
  *
  * Une ressource dont le corps est caché (autre domaine sans autorisation)
  * annonce zéro partout : inconnue elle aussi, et non servie par le cache.
  */
 export function trajet(/** @type {any} */ e){
-  if (e.workerStart > 0) return e.deliveryType === "cache-storage" ? "garde" : "inconnu";
+  if (e.workerStart > 0) return e.deliveryType === "cache-storage" || minutage(e).garde ? "garde" : "inconnu";
   if (!(e.transferSize > 0 || e.decodedBodySize > 0)) return "inconnu";
   return e.transferSize === 0 ? "garde" : "reseau";
+}
+
+/**
+ * Ce que le relais et le service de second plan disent d'une réponse, par son
+ * entête `Server-Timing` : le temps du relais (`relaisMs`), son point de
+ * présence (`cf`), ce que son cache a rendu (`cache`) — `src/index.mjs`
+ * `minute` —, et si le service l'a sortie de sa copie (`garde`, `_sw.js`
+ * `gardee`). Une copie porte encore le minutage de la première fois : il ne
+ * décrit pas cette visite-ci, et n'est pas rendu.
+ *
+ * Ce qui ne porte pas la forme attendue est ignoré : l'entête arrive de qui
+ * sert la réponse, et rien n'en sort qu'un nombre ou un mot de sa liste.
+ */
+export function minutage(/** @type {any} */ e){
+  /** @type {{ garde?: boolean, relaisMs?: number, cf?: string, cache?: string }} */
+  const m = {};
+  for (const s of e && Array.isArray(e.serverTiming) ? e.serverTiming : []){
+    if (s.name === "sw" && s.description === "cache") m.garde = true;
+    else if (s.name === "w" && s.duration >= 0) m.relaisMs = Math.round(s.duration);
+    else if (s.name === "cf" && /^[A-Z]{3}$/.test(s.description)) m.cf = s.description;
+    else if (s.name === "cache" && /^[a-z]{1,12}$/.test(s.description)) m.cache = s.description;
+  }
+  return m.garde ? { garde: true } : m;
+}
+
+/**
+ * Le trajet d'une demande, découpé en ce que chacun y a pris.
+ *
+ * `serviceMs` va du réveil du service de second plan au début de la demande :
+ * son démarrage, et le traitement de l'événement. `attenteMs` va du départ au
+ * premier octet ; ôté du temps du relais, il reste le trajet. Ensemble, ils
+ * séparent ce que les relevés confondaient : quatre ouvertures ont attendu
+ * leur premier octet deux à quatre secondes le 16 novembre 2026, et rien ne
+ * disait si c'était le poste, le réseau ou Cloudflare.
+ */
+export function trajetDecoupe(/** @type {any} */ e){
+  if (!e) return undefined;
+  const depart = e.startTime > 0 ? e.startTime : 0;
+  return {
+    serviceMs: e.workerStart > 0 && e.fetchStart >= e.workerStart ? Math.round(e.fetchStart - e.workerStart) : undefined,
+    attenteMs: e.responseStart > 0 ? Math.round(e.responseStart - depart) : undefined,
+    ...minutage(e),
+  };
 }
 
 /**
@@ -213,7 +260,7 @@ export function chargement(max = 40, jusqua = Infinity){
   return {
     page: nav ? { reponse: instant(nav.responseEnd), domPret: instant(nav.domContentLoadedEventEnd),
       charge: instant(nav.loadEventEnd), transfertKo: navConnue ? ko(nav.transferSize) : undefined,
-      type: nav.type, parLeService: nav.workerStart > 0 || undefined } : null,
+      type: nav.type, parLeService: nav.workerStart > 0 || undefined, trajet: trajetDecoupe(nav) } : null,
     ressources: lourdes,
     transfertKo: ko(transfert),
     depuisCache: connues ? Math.round(100 * gardees / connues) / 100 : undefined,
