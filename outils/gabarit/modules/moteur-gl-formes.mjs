@@ -397,6 +397,24 @@ void main(){
   fragColor = vec4(v_c.rgb, v_c.a * a);
 }`;
 
+/* Les directions des segments du chemin en cours, et ceux qui n'en ont pas :
+   gardées d'un chemin à l'autre, agrandies au besoin. */
+let DIRS = new Float64Array(256), SANS = new Uint8Array(128);
+
+/**
+ * La bissectrice entre les directions des segments `a` et `b`, dans le repère
+ * du segment `u`, écrite en `sortie[o]` et `sortie[o + 1]` ; nulle si l'un
+ * des trois n'a pas de direction (`-1`, ou un segment nul).
+ */
+function bissectrice(/** @type {Float32Array} */ sortie, /** @type {number} */ o, /** @type {number} */ a, /** @type {number} */ b, /** @type {number} */ u){
+  if (a < 0 || b < 0 || SANS[a] || SANS[b] || SANS[u]){ sortie[o] = 0; sortie[o + 1] = 0; return; }
+  const ux = DIRS[2 * u], uy = DIRS[2 * u + 1];
+  let x = DIRS[2 * a] + DIRS[2 * b], y = DIRS[2 * a + 1] + DIRS[2 * b + 1];
+  const l = Math.hypot(x, y);
+  if (l < 1e-9){ x = ux; y = uy; } else { x /= l; y /= l; }
+  sortie[o] = x * ux + y * uy; sortie[o + 1] = -x * uy + y * ux;
+}
+
 export class PathLayer extends Couche {
   static programme(){ return { nom: "trait", vs: VS_TRAIT, fs: FS_TRAIT, attributs: LISTE_TRAIT }; }
 
@@ -414,37 +432,39 @@ export class PathLayer extends Couche {
     }
     const ab = new Float32Array(n * 6), dist = new Float32Array(n), bouts = new Float32Array(n * 2), obj = new Float32Array(n);
     const coupe = new Float32Array(n * 4);
+    /* Écrit droit dans les tableaux typés, sans un tableau par segment : les
+       traits de l'habillage se comptent par dizaines de milliers de segments,
+       et leurs petits tableaux faisaient de cette boucle la plus lourde de la
+       première image. Les calculs, `Math.hypot` compris, sont ceux d'avant, au
+       même ordre : les nombres posés sont les mêmes au bit près
+       (`outils/essais/moteur-traits.js`). */
     let s = 0;
-    chemins.forEach((c, i) => {
-      if (!c) return;
+    for (let i = 0; i < chemins.length; i++){
+      const c = chemins[i];
+      if (!c) continue;
       const m = c.length - 1;
-      // la direction de chaque segment, à plat ; un chemin fermé se rejoint à son départ
-      const dirs = [];
+      // la direction de chaque segment, à plat ; un segment nul n'en a pas
+      if (DIRS.length < 2 * m){ DIRS = new Float64Array(4 * m); SANS = new Uint8Array(2 * m); }
       for (let k = 0; k < m; k++){
         const dx = c[k + 1][0] - c[k][0], dy = c[k + 1][1] - c[k][1], l = Math.hypot(dx, dy);
-        dirs.push(l > 0 ? [dx / l, dy / l] : null);
+        if (l > 0){ DIRS[2 * k] = dx / l; DIRS[2 * k + 1] = dy / l; SANS[k] = 0; } else SANS[k] = 1;
       }
+      // un chemin fermé se rejoint à son départ
       const ferme = m > 1 && c[0][0] === c[m][0] && c[0][1] === c[m][1];
-      /** La bissectrice entre deux directions, dans le repère du segment de direction `u`. */
-      const bissectrice = (/** @type {number[] | null} */ a, /** @type {number[] | null} */ b, /** @type {number[] | null} */ u) => {
-        if (!a || !b || !u) return [0, 0];
-        let x = a[0] + b[0], y = a[1] + b[1];
-        const l = Math.hypot(x, y);
-        if (l < 1e-9){ x = u[0]; y = u[1]; } else { x /= l; y /= l; }
-        return [x * u[0] + y * u[1], -x * u[1] + y * u[0]];
-      };
       let d = 0;
       for (let k = 0; k < m; k++, s++){
-        const u = c[k], v = c[k + 1];
-        ab.set([u[0] - ox, u[1] - oy, (u[2] || 0) - oz, v[0] - ox, v[1] - oy, (v[2] || 0) - oz], s * 6);
+        const u = c[k], v = c[k + 1], uz = u[2] || 0, vz = v[2] || 0, o = s * 6;
+        ab[o] = u[0] - ox; ab[o + 1] = u[1] - oy; ab[o + 2] = uz - oz;
+        ab[o + 3] = v[0] - ox; ab[o + 4] = v[1] - oy; ab[o + 5] = vz - oz;
         dist[s] = d; obj[s] = i;
         bouts[2 * s] = k === 0 && !ferme ? 1 : 0; bouts[2 * s + 1] = k + 1 === m && !ferme ? 1 : 0;
-        const avant = k > 0 ? dirs[k - 1] : ferme ? dirs[m - 1] : null;
-        const apres = k + 1 < m ? dirs[k + 1] : ferme ? dirs[0] : null;
-        coupe.set([...bissectrice(avant, dirs[k], dirs[k]), ...bissectrice(dirs[k], apres, dirs[k])], s * 4);
-        d += Math.hypot(v[0] - u[0], v[1] - u[1], (v[2] || 0) - (u[2] || 0));
+        const avant = k > 0 ? k - 1 : ferme ? m - 1 : -1;
+        const apres = k + 1 < m ? k + 1 : ferme ? 0 : -1;
+        bissectrice(coupe, s * 4, avant, k, k);
+        bissectrice(coupe, s * 4 + 2, k, apres, k);
+        d += Math.hypot(v[0] - u[0], v[1] - u[1], vz - uz);
       }
-    });
+    }
     return { comptes, total: n, ab, dist, bouts, obj, coupe };
   }
 

@@ -2093,14 +2093,14 @@ Importé par :
 
 moteur-gl · moteur-gl-formes · moteur-gl-objets · moteur-gl-texte
 
-### `modules/moteur-gl-formes.mjs` — 492 l. → plan, plan-admin
+### `modules/moteur-gl-formes.mjs` — 512 l. → plan, plan-admin
 
 - l.1 · Le moteur du plan — les aplats et les traits
 
 Fonctions :
 
 `coins` 84 · `remplisAttributs` 93 · `numerote` 104 · `reglageFiltre` 124
-`poseLumiere` 159 · `aire` 211 · `anneauxDe` 218
+`poseLumiere` 159 · `aire` 211 · `anneauxDe` 218 · `bissectrice` 409
 
 Importe :
 
