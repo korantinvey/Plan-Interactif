@@ -1,4 +1,4 @@
-# Eventmaker : identifier un visiteur, et retrouver ses rendez-vous
+# Eventmaker : identifier un visiteur, retrouver ses rendez-vous et ce qu'il cherche
 
 Le plan sait dresser un parcours de visite, et le garder dans le navigateur ;
 il ne savait pas dire *« vous avez rendez-vous à 14 h 30 sur le stand F48 »*.
@@ -17,6 +17,16 @@ elles s'ouvrent.
 
 Ce qui suit est relevé sur l'API publique, en lecture seule, et daté de
 septembre 2026.
+
+**Repris en novembre 2026, par l'autre bout.** Les deux portes sont toujours
+fermées, et le plan vit désormais dans l'application Eventmaker du salon, où le
+visiteur est déjà connecté. Lui redemander qui il est serait absurde : c'est
+l'application qui le sait, et c'est d'elle que le plan doit l'apprendre. Le
+chemin « par la page hôte », gardé ici en réserve, devient le chemin de
+l'application — « Le plan dans l'application Eventmaker », plus bas. Il sert
+deux usages : les rendez-vous, et **les réponses que le visiteur a données en
+s'inscrivant**, pour mettre en avant les exposants qui répondent à ce qu'il a
+dit chercher.
 
 ## Ce que le SSO documenté donne
 
@@ -220,8 +230,187 @@ pas droit —, et cela revient à confier à une page un justificatif qui ouvre
 l'identité, le courriel et les rendez-vous du visiteur. À ne retenir que si un
 salon le demande, et jamais comme chemin par défaut.
 
-Le premier est le bon. Le second est ce qu'on essaiera si les portes tardent à
-s'ouvrir, en le disant.
+Le premier reste le bon pour tout ce qui n'est pas l'application — le QR code
+du hall, la borne, le plan ouvert seul. Le second est celui de l'application,
+où le plan n'est justement pas ouvert seul : c'est la section suivante.
+
+## Le plan dans l'application Eventmaker
+
+### Ce qui change, et ce qui ne change pas
+
+Dans l'application, le visiteur s'est identifié une fois, chez Eventmaker, et
+l'application en garde la preuve. Le plan n'a pas à la refaire : il a à
+**l'emprunter**, le temps de lire ce qui le concerne. Ce n'est pas un SSO, et
+ce n'en est pas un succédané : aucune identité ne s'établit chez nous, aucun
+compte ne se crée, et le plan ne sait du visiteur que ce qu'une lecture lui a
+rendu, pour la durée de la page.
+
+Les réserves d'au-dessus tiennent toujours — confier à une page un justificatif
+qui ouvre l'identité, le courriel et les rendez-vous —, et le montage qui suit
+est fait pour elles : le jeton ne traverse qu'après le oui du visiteur, ne
+touche jamais le stockage, et ne quitte la page que vers notre propre fonction.
+
+### Trois façons d'être chargé, trois façons de recevoir
+
+Tout dépend de la façon dont l'application affiche le plan, et c'est **la
+première chose à établir** — rien de ce qui suit ne s'écrit avant :
+
+| l'application charge… | qui détient le jeton | comment il nous parvient |
+|---|---|---|
+| une page de son site, qui encadre le plan | la page hôte, `window.eventmaker.guestApiToken` | `postMessage`, de la page hôte au cadre |
+| notre adresse, dans une vue web nue | le code natif de l'application | un pont natif injecté, ou le fragment `#` de l'adresse |
+| notre adresse, dans le navigateur du téléphone | personne | rien : le plan reste anonyme |
+
+Le premier cas est le seul où le dépôt peut tout faire de son côté, pour peu
+que la page hôte accepte quelques lignes de script de l'organisateur. Le
+deuxième demande Eventmaker lui-même : une vue web nue n'a pas de page parente
+à qui parler, et seul le code de l'application peut y déposer le jeton. Le
+fragment est alors la moins mauvaise adresse — il n'atteint ni le serveur, ni
+l'en-tête `Referer` —, mais il reste dans l'historique de la vue web : le plan
+le lit au chargement et l'efface aussitôt (`history.replaceState`). La requête
+d'adresse (`?jeton=`) est exclue : elle finirait dans les journaux de
+Cloudflare, et dans ceux de quiconque relaie la page.
+
+La sonde sait déjà dire où l'on est, à moitié : `INTEGRE`
+(`modules/cadre-visible.mjs`) sépare le cadre de l'onglet, `support=appli`
+la coque déclarée. Il lui manque l'origine du parent —
+`location.ancestorOrigins`, que Chromium et WebKit exposent, et qui ne dit rien
+du visiteur. Une seule semaine de relevé sur un salon présent dans
+l'application tranche entre les trois lignes du tableau.
+
+### Le protocole, dans le cas du cadre
+
+Quatre messages, et l'ordre est le consentement :
+
+```
+plan → hôte    { type: "plan-interactif:pret", version: 1 }
+                 le plan est monté et sait proposer ; il ne demande rien
+plan → hôte    { type: "plan-interactif:demande" }
+                 seulement après le « oui » du visiteur, dans la fenêtre
+hôte → plan    { type: "plan-interactif:invite", jeton }
+                 ou { type: "plan-interactif:anonyme" } — personne n'est connecté
+plan → hôte    { type: "plan-interactif:oublie" }
+                 le visiteur a retiré son accord ; l'hôte n'a plus à répondre
+```
+
+**Le jeton ne traverse qu'après le oui.** L'hôte ne l'envoie pas d'office au
+chargement : un jeton reçu sans avoir été demandé serait un jeton détenu sans
+consentement, et la page qui l'a reçu, même pour le jeter, l'a eu en main. Le
+plan demande, l'hôte répond.
+
+**Les origines sont inscrites, jamais devinées.** Chaque message part vers une
+origine nommée — jamais `"*"` —, et chaque réponse n'est reçue que si
+`event.origin` figure dans la liste du salon et que `event.source` est bien
+`window.parent`. La liste se règle dans la console, colonne
+`evenement.origines_hote`, publiée avec la configuration : le domaine du site
+Eventmaker du salon, et rien d'autre. Un salon sans origine inscrite ne
+propose rien.
+
+**Le jeton ne vit qu'en mémoire.** Ni `localStorage`, ni `sessionStorage`, ni
+cookie : le stockage d'un cadre tiers est cloisonné ou refusé (le README le
+relève pour les mesures), et un jeton rangé survivrait à la page qui l'a
+demandé. Il sert à un appel, puis la variable est vidée. La page rouverte
+redemande à l'hôte — sans redemander au visiteur, dont le oui, lui, se garde
+(`plan-rdv-invite:<slug>`).
+
+**Une faille d'écriture HTML devient un vol de jeton.** Jusqu'ici, un script
+injecté dans le plan pouvait défigurer la page ; avec un jeton en mémoire, il
+pourrait l'emporter. C'est la raison de plus pour que `npm run html` ne laisse
+rien passer, et pour que la politique de sécurité (`poseCsp`) garde
+`connect-src` aussi étroit qu'il l'est : même lu, le jeton ne saurait partir
+que vers nos propres fonctions.
+
+### La fonction qui lit pour le plan
+
+La page ne parle pas au graphe d'Eventmaker. Elle confie le jeton, en en-tête
+et non dans l'adresse, à une fonction Supabase — `invite-eventmaker`, à créer
+—, qui :
+
+1. retrouve elle-même l'événement Eventmaker du salon, par son `slug` — elle ne
+   croit jamais l'identifiant qu'une page lui donnerait ;
+2. interroge `/api/graphql?event_id=…` avec le jeton, en une seule requête :
+   les rendez-vous et les réponses d'inscription ;
+3. résout chaque exposant en stand, par le dossier, comme `rolesParConference()` ;
+4. applique la correspondance des réponses (section suivante) ;
+5. rend **le strict nécessaire**, et l'oublie.
+
+```json
+{ "rendezVous": [ { "stand": "F48", "debut": "…", "fin": "…", "nom": "…" } ],
+  "interets":   { "thematiques": ["Restauration rapide"], "secteurs": ["…"] } }
+```
+
+Ni nom, ni courriel, ni société : le plan n'en fait rien, il n'a pas à les
+recevoir. Le prénom, si l'accueil le veut un jour, s'ajoutera en le décidant.
+
+Passer par le serveur coûte un aller-retour, et rapporte trois choses : le
+jeton ne touche aucune origine que la nôtre, la correspondance des réponses
+s'applique là où les réponses brutes ne sortent pas, et l'appel au graphe se
+fait depuis une adresse que l'on connaît, si Eventmaker doit un jour l'inscrire.
+
+## Les réponses d'inscription
+
+### Ce qu'on veut en faire
+
+Un visiteur qui coche, en s'inscrivant, « Restauration rapide » et
+« Services aux franchisés » a dit ce qu'il vient chercher avant d'avoir ouvert
+le plan. La suggestion (`modules/suggestion.mjs`) attend aujourd'hui qu'il
+retienne trois exposants du même critère pour le deviner ; ses réponses le lui
+disent dès l'ouverture. **Mettre en avant**, c'est donc partir de ses réponses
+là où la suggestion partait de son parcours :
+
+- une rubrique « Pour vous » en tête de la liste, les exposants des valeurs
+  qu'il a cochées ;
+- leurs stands relevés sur le plan, comme ceux d'une recherche — et c'est déjà
+  ce que fait un critère coché dans le panneau de la recherche ;
+- la suggestion amorcée par ses intérêts, sans attendre le seuil.
+
+Rien ne s'ajoute au parcours sans geste du visiteur : mettre en avant n'est pas
+choisir à sa place.
+
+### Où elles vivent chez Eventmaker
+
+Ce sont des **champs de l'invité**, définis par l'organisateur dans son
+formulaire : `/api/v1/me` rend « les champs définis dans Eventmaker », la
+ressource REST des invités les porte sous `guest_metadata`. Sous `viewer`, dans
+le graphe, **le champ qui les porte n'est pas encore relevé** : le sondage de
+novembre n'a pas pu se faire, le réseau de la session refusant
+`app.eventmaker.io`. C'est la première vérification de la liste plus bas, et
+elle se fait par le même procédé que le reste — une requête qui valide ou dont
+le message suggère le bon nom.
+
+### La correspondance, réglée par l'exploitant
+
+Le vocabulaire n'est pas le même des deux côtés, et ne le sera jamais. Les
+questions du formulaire sont écrites par l'organisateur chez Eventmaker
+(« Quels secteurs vous intéressent ? ») ; les critères d'un exposant viennent de
+Klipso — secteurs, thématiques, nomenclature (`modules/recherche.mjs`
+`clesCriteres`). Aucun rapprochement automatique ne serait juste partout.
+
+La console porte donc une **table de correspondance**, par salon, dans la
+famille de celle des champs (`modules/correspondance.mjs`) :
+
+| question Eventmaker | critère du plan | réponse → valeur(s) |
+|---|---|---|
+| Secteurs d'intérêt | `thematiques` | « Restauration » → « Restauration rapide », « Restauration à table » |
+| Votre projet | — | *non lue* |
+
+Les réponses dont le libellé est le même qu'une valeur se proposent d'elles-mêmes,
+à confirmer ; les autres se rangent à la main. **Une question absente de la
+table ne sort pas de la fonction** — c'est là que tient la minimisation, et
+c'est pourquoi la table s'applique côté serveur : la page ne reçoit jamais que
+des valeurs de critères, jamais les réponses elles-mêmes.
+
+Un formulaire d'inscription demande parfois ce qui n'a rien à faire sur un plan
+— régime alimentaire, handicap, budget, taille d'entreprise. La console ne
+propose à la correspondance que les questions à choix ; les réponses libres ne
+se lient pas, et rien ne s'en lit.
+
+### Ce qu'on n'en apprend pas
+
+Les intérêts du visiteur entrent dans la page ; ils n'en ressortent pas. Comme
+pour la suggestion, le rapprochement se fait sur l'appareil, et la mesure ne
+compte que ce qu'elle compte déjà : une fiche ouverte depuis « Pour vous » se
+compte sous un canal à elle, sans dire pourquoi elle y figurait.
 
 ## Ce qui reste à vérifier
 
@@ -243,6 +432,29 @@ questions se règlent en quatre appels, et la première commande les autres.
    est sûr ; son remplissage ne se mesure que sur un vrai salon, comme les 70
    rattachements sur 178 sessions l'ont été.
 
+Le chemin de l'application ajoute les siennes, qui ne demandent, elles, aucune
+porte d'administrateur — sauf la deuxième :
+
+5. **Comment l'application charge-t-elle le plan ?** Cadre dans une page de son
+   site, vue web nue, ou navigateur du téléphone : le tableau d'au-dessus. Une
+   semaine de sonde, `ancestorOrigins` ajouté, le dit.
+6. **Qui peut y poser le script ?** Si c'est un cadre, la page hôte
+   accepte-t-elle le code de l'organisateur ? Si c'est une vue web nue, il faut
+   Eventmaker, et un pont natif.
+7. **Le `guestApiToken` est-il rempli dans l'application**, ou seulement sur le
+   site ouvert dans un navigateur ? L'application a sa propre session.
+8. **Quel champ de `viewer` porte les réponses d'inscription**, et sous quelle
+   forme — question, réponse, libellé ou code ? À relever par validation, depuis
+   un réseau qui atteint `app.eventmaker.io`.
+9. **Que vaut ce jeton, et combien de temps ?** Le jeton OAuth vit deux heures ;
+   celui de l'invité, rien ne le dit. Et s'il ouvre aussi les mutations, le plan
+   détient une clé qui écrit chez Eventmaker — raison de plus pour qu'il ne la
+   garde qu'en mémoire.
+10. **Qui en répond ?** L'organisateur reste responsable des données de ses
+    invités ; lire leurs réponses pour leur compte fait du plan un
+    sous-traitant, et l'accord passé avec chaque salon doit le dire avant le
+    premier jeton reçu.
+
 Une dernière chose, non vérifiée et qui n'a pas à l'être : **la racine
 `Mutation` n'a pas été sondée.** La fonctionnalité lit des rendez-vous, elle
 n'en crée ni n'en annule jamais — poser un rendez-vous reste l'affaire
@@ -254,8 +466,16 @@ d'Eventmaker, et le plan n'a pas à s'en mêler.
 
 Le visiteur reste anonyme par défaut, et le plan le lui demande avant tout :
 
-> **Vos rendez-vous**
-> Souhaitez-vous ajouter vos rendez-vous à votre parcours de visite ?
+> **Votre visite, à partir de votre inscription**
+> Le plan peut lire vos rendez-vous et les centres d'intérêt indiqués à votre
+> inscription, pour les poser sur le plan et vous signaler les exposants qui y
+> répondent. Rien n'en est conservé.
+
+Une seule question pour les deux usages : le visiteur ne consent pas à un
+jeton, il consent à ce qu'on en lit, et l'un ne va pas sans l'autre dans la
+même lecture. Dans l'application, il n'y a rien à dire de la contrepartie
+« s'identifier mène chez Eventmaker » : il l'est déjà, et la fenêtre le dit
+autrement — c'est l'application qui prête son identité, le plan qui lit.
 
 C'est la même façon de faire que `fenetreRappel` dans `_rappels.html`, et pour
 les mêmes raisons — le dépôt a déjà tranché cette question une fois, il n'y a
@@ -272,7 +492,9 @@ pas à la retrancher :
   dire oui, non après.
 
 Elle ne se propose évidemment que là où il y a quelque chose à proposer : un
-salon dont le domaine SSO est réglé, et dont les rendez-vous sont ouverts.
+salon dont le domaine SSO est réglé, ou — dans l'application — dont l'origine
+hôte est inscrite, et dont les rendez-vous ou la correspondance des réponses
+sont ouverts.
 
 ### Le casier
 
@@ -305,7 +527,12 @@ la plus personnelle que le plan ait jamais approchée, et la mesure du plan tien
 justement à ne rien laisser fuir sans consentement.
 
 - **Le jeton ne se range nulle part.** Il sert le temps de l'échange, dans la
-  fonction, et disparaît avec elle. Ni base, ni page, ni journal.
+  fonction, et disparaît avec elle. Ni base, ni page, ni journal. Reçu de
+  l'application, il passe par la page, mais en mémoire seulement, et n'en sort
+  que vers la fonction.
+- **Les réponses d'inscription ne sortent que traduites.** La fonction ne rend
+  que des valeurs de critères, celles que la table de correspondance a liées ;
+  une question que l'exploitant n'a pas liée ne quitte pas Eventmaker.
 - **Les rendez-vous ne sont pas enregistrés côté serveur.** La fonction rend à
   la page ce qu'il lui faut — un stand, une heure, un libellé — et rien n'en
   reste. Le parcours vit dans le navigateur, comme le reste.
