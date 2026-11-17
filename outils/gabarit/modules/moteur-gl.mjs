@@ -153,7 +153,10 @@ export class Deck {
     try { performance.measure("plan:contexte-webgl", { start: avantContexte, end: performance.now() }); } catch (_) { /* mesure refusée : rien à dire */ }
     if (!gl){
       this.device = null;
-      setTimeout(() => this.props.onError && this.props.onError(new Error("WebGL2 indisponible")), 0);
+      /* Marqué pour ce qu'il est : qui le reçoit (`webgl.mjs` `signaleRate`)
+         y joint la carte graphique et l'occasion, sans relire le message. */
+      const refus = Object.assign(new Error("WebGL2 indisponible"), { contexteRefuse: true });
+      setTimeout(() => this.props.onError && this.props.onError(refus), 0);
       return;
     }
     this.gl = gl;
