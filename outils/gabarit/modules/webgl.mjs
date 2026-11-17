@@ -131,6 +131,11 @@ let deck = null;
    repli se fait passer pour un visiteur. */
 const PUCE_IMITEE = /SwiftShader|llvmpipe|softpipe|Software|Basic Render|WARP/i;
 
+/** Rend tout de suite la carte graphique d'une toile d'épreuve, au lieu
+ *  d'attendre qu'elle soit ramassée : le navigateur borne le nombre de
+ *  contextes ouverts. */
+const jetteContexte = (/** @type {any} */ g) => { const f = g && g.getExtension("WEBGL_lose_context"); if (f) f.loseContext(); };
+
 /** Ce que le navigateur dit du WebGL qu'il donnerait : la puce, imitée ou
  *  non, et son refus d'un dessin à gros handicap. Lu une fois ; rien sans
  *  WebGL2. Aussi relevé par la sonde (`sonde.mjs`). */
@@ -144,13 +149,12 @@ export function carteDuWebgl(){
     if (!gl) return _carte;
     const info = gl.getExtension("WEBGL_debug_renderer_info");
     const puce = String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER) || "");
-    const jette = (/** @type {any} */ g) => { const f = g && g.getExtension("WEBGL_lose_context"); if (f) f.loseContext(); };
-    jette(gl);
+    jetteContexte(gl);
     let handicap;
     try {
       const sans = document.createElement("canvas").getContext("webgl2", { failIfMajorPerformanceCaveat: true });
       handicap = !sans;
-      jette(sans);
+      jetteContexte(sans);
     } catch (e) { handicap = undefined; }
     _carte = { puce, imitee: PUCE_IMITEE.test(puce), handicap };
   } catch (e) { _carte = null; }
@@ -223,6 +227,8 @@ export const GL = {
   groupes: new Map(), survol: null, focus: null, libellesPhare: [], temps: 0, imageAnim: 0, cleAnim: "",
   modeles: new Map(), tailles: new Map(), duree: 0,
   hote: null, toile: null, branche: false, veille: false, aRemonter: false, attente: 0, remontes: 0, abandon: false,
+  // la raison de la dernière perte du dessin (`perdContexteWebgl`), dite avec un remontage refusé
+  perte: "",
   // la clé d'un bloc vit hors du DOM : l'écrire dans le SVG réveillerait le guet
   cles: new WeakMap(), compteur: 0, versionModeles: 0, signatureModeles: "",
   // la vue immersive est-elle à l'écran — voir « La vue immersive »
@@ -323,13 +329,38 @@ function chargeDeck(/** @type {() => void} */ arrive, /** @type {() => void} */ 
    répète à chaque image ne doit pas épuiser à lui seul le plafond du relais. */
 const RATES_DITS = new Set();
 function signaleRate(/** @type {any} */ e){
-  const m = (GL.moteur === "deck" ? "deck.gl : " : "Moteur du plan : ") + (e && e.message ? e.message : String(e));
+  let m = (GL.moteur === "deck" ? "deck.gl : " : "Moteur du plan : ") + (e && e.message ? e.message : String(e));
+  if (e && e.contexteRefuse) m += " — " + circonstancesDuRefus();
   console.warn("Rendu WebGL :", m);
   if (RATES_DITS.has(m)) return;
   RATES_DITS.add(m);
   const x = new Error(m);
   if (e && e.stack) x.stack = e.stack;
   signaleErreur(x);
+}
+
+/* Un contexte que le navigateur refuse au moteur, alors que l'épreuve de
+   `chargeWebgl` venait de l'accorder. Le relais ne garde que le message et
+   le lieu : la seule fois qu'on l'a vu (16 novembre 2026), rien ne disait
+   pourquoi. On y joint donc ce qui sépare les causes probables — un dessin
+   qui remonte après une perte, sur un téléphone qui vient de reprendre sa
+   carte graphique, ou un navigateur qui la refuse désormais au site ; la
+   puce, celle que la sonde relève déjà ; et si le contexte s'accorde encore
+   sans l'exigence de performance que le moteur pose, comme deck.gl avant
+   lui. Le message reste sous les 300 caractères que le relais garde. */
+function circonstancesDuRefus(){
+  const c = carteDuWebgl();
+  let sansExigence = "?";
+  try {
+    const g = document.createElement("canvas").getContext("webgl2");
+    sansExigence = g ? "accordé" : "refusé";
+    jetteContexte(g);
+  } catch (e) { /* l'épreuve a levé : on ne sait pas */ }
+  return [
+    GL.remontes ? "remontage " + GL.remontes + " après « " + GL.perte + " »" : "première montée",
+    c ? "puce " + c.puce.slice(0, 100) + (c.imitee ? " (imitée)" : "") : "puce inconnue",
+    "sans exigence de performance : " + sansExigence,
+  ].join(" ; ");
 }
 
 /* ------------------------------------------------------------
@@ -483,7 +514,7 @@ export function monteWebgl(){
     views: vuesGl(), effects: effetsGl(),
     viewState: vueDeck(), layers: [],
     layerFilter: filtreCouches,
-    onError: signaleRate,
+    onError: (/** @type {any} */ e) => { signaleRate(e); if (e && e.contexteRefuse) renonceAuDessin(); },
     // ses comptes, lus avant qu'il ne les remette à zéro : `stats` est scellé, rien ne s'y greffe
     _onMetrics: (/** @type {any} */ m) => COMPTES_DECK.emet(m),
     /* La toile ne naît qu'avec la carte graphique, que la bibliothèque
@@ -718,6 +749,7 @@ function perdContexteWebgl(raison = "contexte perdu"){
      sans contexte valide. */
   try { CONTEXTE_PERDU.emet(raison); } catch (e) { console.warn("Rendu WebGL : un auditeur de la perte a échoué.", e); }
   console.warn("Rendu WebGL : " + raison + ", le plan repasse en SVG.");
+  GL.perte = raison;
   clearTimeout(_gardeBoucle); _gardeBoucle = 0;
   GL.actif = false; GL.pret = false;
   // le SVG reprend le plan : il lui faut son habillage
@@ -746,8 +778,22 @@ function perdContexteWebgl(raison = "contexte perdu"){
   remonteWebgl();
 }
 
+/* Le navigateur refuse la carte graphique au dessin qui monte. Le moteur, né
+   sans contexte, ne peindra jamais ; mais la page le tenait pour actif, et la
+   feuille cache alors les noms du SVG, que le dessin devait porter. Le
+   visiteur gardait un plan sans un nom de stand, et les quatre secondes du
+   secours avant de le voir (`chargeWebgl`). On renonce donc sur-le-champ,
+   comme après une perte, et sans remonter : la toile suivante serait
+   refusée de même. */
+function renonceAuDessin(){
+  GL.abandon = true;
+  perdContexteWebgl("contexte refusé");
+  planAffiche();
+}
+
 function remonteWebgl(){
-  if (GL.actif || !GL.aRemonter || GL.attente || document.visibilityState !== "visible") return;
+  // un dessin auquel on a renoncé (`renonceAuDessin`) ne remonte plus
+  if (GL.actif || !GL.aRemonter || GL.attente || GL.abandon || document.visibilityState !== "visible") return;
   if (GL.remontes >= REMONTES_WEBGL){
     GL.aRemonter = false; GL.abandon = true;
     console.warn("Rendu WebGL : contexte repris trop souvent, le plan reste en SVG.");

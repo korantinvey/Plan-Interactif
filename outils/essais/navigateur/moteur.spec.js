@@ -11,7 +11,7 @@
  * On éprouve que le réglage publié du salon (`_rendu.moteur`) charge deck.gl
  * et le fait peindre, que l'adresse (`?moteur=`) l'emporte sur lui, et qu'une
  * couche qui ne se prépare pas part au relais des erreurs, une seule fois
- * quoiqu'elle se répète.
+ * quoiqu'elle se répète — et un contexte refusé, avec sa puce et son occasion.
  */
 const { test, expect } = require("@playwright/test");
 const { prepare, attendLaListe, DONNEES } = require("./aide");
@@ -47,6 +47,20 @@ async function ouvre(page, donnees, requete = "") {
   const peint = await page.waitForFunction(() => window.__essais.GL.pret, null, { timeout: 30_000 })
     .then(() => true, () => false);
   return { erreurs, envois, demandes, peint, webgl2 };
+}
+
+/** Le dessin abandonné : le SVG montre le plan, et ses noms, qu'il n'écrit
+ *  pas tant qu'un dessin est tenu pour actif. */
+async function sansDessinAvecSesNoms(page) {
+  await page.waitForFunction(() => !window.__essais.GL.actif && window.__essais.GL.abandon, null, { timeout: 10_000 });
+  const etat = await page.evaluate(() => {
+    const c = document.documentElement.classList, noms = document.getElementById("labels");
+    return { webgl: c.contains("rendu-webgl") || c.contains("gl-attente") || c.contains("gl-pret"),
+      vus: noms ? getComputedStyle(noms).visibility : "absent", textes: noms ? noms.querySelectorAll("text").length : 0 };
+  });
+  expect(etat.webgl, "plus de classe du dessin sur la racine").toBe(false);
+  expect(etat.vus, "les noms du SVG se montrent").toBe("visible");
+  expect(etat.textes, "les noms du SVG sont écrits").toBeGreaterThan(0);
 }
 
 test.describe("le moteur qui peint le plan", () => {
@@ -95,5 +109,53 @@ test.describe("le moteur qui peint le plan", () => {
     expect(rates).toHaveLength(1);
     expect(rates[0].message).toMatch(/^Error: Moteur du plan : la couche « essai-casse » n'a pas pu se préparer : forme illisible/);
     expect(rates[0].fichier).toMatch(/\/versions\/plan\.[0-9a-f]{10}\.js$/);
+  });
+
+  /* Le refus vu une fois en production (16 novembre 2026), sans rien qui dise
+     pourquoi : le signalement porte désormais l'occasion, la puce, et ce que
+     le navigateur accorderait sans l'exigence de performance. On le rejoue
+     dans le cas qu'on soupçonne — la carte graphique reprise, puis refusée
+     au dessin qui remonte. */
+  test("un contexte refusé au remontage part avec la puce et l'occasion", async ({ page }) => {
+    test.setTimeout(90_000);
+    const { envois, peint, webgl2 } = await ouvre(page, DONNEES);
+    test.skip(!webgl2, "pas de carte graphique : le plan reste en SVG");
+    expect(peint, "le moteur a peint le plan").toBe(true);
+    await page.evaluate(() => {
+      const avant = HTMLCanvasElement.prototype.getContext;
+      // le navigateur ne donne plus que des contextes sans exigence de performance
+      HTMLCanvasElement.prototype.getContext = function (sorte, options) {
+        if (sorte === "webgl2" && options && options.failIfMajorPerformanceCaveat) return null;
+        return avant.call(this, sorte, options);
+      };
+      window.__essais.GL.toile.getContext("webgl2").getExtension("WEBGL_lose_context").loseContext();
+    });
+    await expect.poll(() => envois.flatMap((e) => e.erreurs).filter((e) => /WebGL2 indisponible/.test(e.message)).length,
+      { timeout: 25_000 }).toBe(1);
+    const [refus] = envois.flatMap((e) => e.erreurs).filter((e) => /WebGL2 indisponible/.test(e.message));
+    expect(refus.message).toMatch(/^Error: Moteur du plan : WebGL2 indisponible — remontage 1 après « contexte perdu » ; puce \S.* ; sans exigence de performance : accordé$/);
+    expect(refus.message.length, "sous le plafond du relais").toBeLessThanOrEqual(300);
+    await sansDessinAvecSesNoms(page);
+  });
+
+  /* Le refus dès l'ouverture : le moteur, né sans contexte, était tenu pour
+     actif — la feuille cachait les noms du SVG, et le secours attendait
+     quatre secondes. Le plan doit paraître au SVG, ses noms avec lui, sans
+     attendre l'échéance. */
+  test("un contexte refusé à l'ouverture laisse le SVG, noms compris, sans attendre", async ({ page }) => {
+    test.setTimeout(90_000);
+    await page.addInitScript(() => {
+      const avant = HTMLCanvasElement.prototype.getContext;
+      HTMLCanvasElement.prototype.getContext = function (sorte, options) {
+        // l'épreuve de `chargeWebgl` ne pose pas cette exigence ; et sous automate, son repli ne joue pas
+        if (sorte === "webgl2" && options && options.failIfMajorPerformanceCaveat) return null;
+        return avant.call(this, sorte, options);
+      };
+    });
+    const { envois, webgl2 } = await ouvre(page, DONNEES);
+    test.skip(!webgl2, "pas de carte graphique : le plan reste en SVG");
+    await sansDessinAvecSesNoms(page);
+    await expect.poll(() => envois.flatMap((e) => e.erreurs).map((e) => e.message).join("\n"), { timeout: 25_000 })
+      .toMatch(/WebGL2 indisponible — première montée ; /);
   });
 });
