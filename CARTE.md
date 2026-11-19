@@ -120,7 +120,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ### `_styles-jetons.css` — 297 l. → demo.html, plan-smcl.html
 
-### `_styles-modeles-parcours.css` — 1671 l. → demo.html, plan-smcl.html
+### `_styles-modeles-parcours.css` — 1680 l. → demo.html, plan-smcl.html
 
 ### `_styles-modeles.css` — 836 l. → demo.html, plan-smcl.html
 
@@ -2932,16 +2932,17 @@ Importé par :
 
 bande-admin
 
-### `modules/releve.mjs` — 361 l. → plan, plan-admin
+### `modules/releve.mjs` — 458 l. → plan, plan-admin
 
 - l.1 · Le relevé des performances — `?perf`
 
 Fonctions :
 
-`ms` 65 · `garde` 67 · `decrit` 75 · `dansLeReleve` 91 · `commence` 95 · `sorte` 108
-`clos` 112 · `ecouteGestes` 131 · `image` 163 · `ecouteNavigateur` 195 · `echantillonne` 227
-`laPage` 248 · `synthese` 253 · `releve` 267 · `affiche` 304 · `partage` 313
-`posePastille` 330
+`ms` 66 · `garde` 68 · `decrit` 76 · `dansLeReleve` 92 · `commence` 96 · `sorte` 109
+`clos` 113 · `ecouteGestes` 132 · `image` 164 · `fenetre` 219 · `tiroir` 227
+`lisTiroirs` 237 · `lisTiroirsApresImage` 248 · `ecouteFenetre` 254 · `ecouteNavigateur` 277
+`echantillonne` 309 · `laPage` 330 · `synthese` 335 · `releve` 349 · `affiche` 388
+`partage` 397 · `posePastille` 414
 
 Importe :
 
