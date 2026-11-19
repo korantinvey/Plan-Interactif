@@ -228,6 +228,8 @@ export const GL = {
   modeles: new Map(), tailles: new Map(), duree: 0, reconstruits: 0,
   // les stands et les zones que le dernier repeint a reconvertis, les autres repris tels quels (`emplacementGarde`)
   emplacementsRefaits: 0,
+  // leur cumul depuis le chargement : un geste peut repeindre plusieurs fois, et seul le premier refait
+  emplacementsRefaitsTotal: 0,
   hote: null, toile: null, branche: false, veille: false, aRemonter: false, attente: 0, remontes: 0, abandon: false,
   // la raison de la dernière perte du dessin (`perdContexteWebgl`), dite avec un remontage refusé
   perte: "",
@@ -1001,6 +1003,7 @@ function repeintWebgl(){
   GL.duree = performance.now() - t0;
   GL.reconstruits = n;
   GL.emplacementsRefaits = REFAITS;
+  GL.emplacementsRefaitsTotal += REFAITS;
   REPEINT_FINI.emet(GL.duree, n);
 }
 

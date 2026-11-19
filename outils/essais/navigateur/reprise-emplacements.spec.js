@@ -30,6 +30,9 @@ const choisi = (page) => page.evaluate(() => {
  * ligne choisit son stand par le même `select` (`fiche.mjs`) que le tap :
  * c'est ce changement que la mémoire doit suivre.
  */
+/** Les emplacements reconvertis depuis le chargement, tous repeints confondus. */
+const refaitsEnTout = (page) => page.evaluate(() => window.__essais.GL.emplacementsRefaitsTotal);
+
 async function choisitUnAutre(page, avant, attente) {
   const lignes = page.locator("#list .row");
   const n = Math.min(await lignes.count(), 12);
@@ -85,10 +88,14 @@ for (const ambiance of ["classique", "tuiles", "immersif"]) {
     // un autre stand ensuite, exclu par identifiant : la sélection doit l'avoir suivi
     const idA = await choisi(page);
     expect(idA).toBeTruthy();
+    /* Compté sur tous les repeints du geste, et non sur le dernier : le clic
+       en déclenche plusieurs, et seul le premier reconvertit — le dernier,
+       presque vide, laissait passer un geste qui avait tout refait. */
+    const avantB = await refaitsEnTout(page);
     const idB = await choisitUnAutre(page, idA, attente);
     expect(idB).toBeTruthy();
     expect(idB).not.toBe(idA);
-    const refaitsB = await page.evaluate(() => window.__essais.GL.emplacementsRefaits);
+    const refaitsB = (await refaitsEnTout(page)) - avantB;
     expect(await ecarts()).toEqual([]);
     expect(refaitsB).toBeLessThanOrEqual(4);
 
@@ -109,10 +116,11 @@ for (const ambiance of ["classique", "tuiles", "immersif"]) {
     /* Et le tap qui suit ne refait toujours que ce qui change : chaque bloc
        garde l'âge de son propre contexte, que le passage de l'autre ne fait
        pas vieillir. */
+    const avantC = await refaitsEnTout(page);
     const idC = await choisitUnAutre(page, idB, attente);
     expect(idC).toBeTruthy();
     expect(idC).not.toBe(idB);
-    const refaitsC = await page.evaluate(() => window.__essais.GL.emplacementsRefaits);
+    const refaitsC = (await refaitsEnTout(page)) - avantC;
     expect(await ecarts()).toEqual([]);
     expect(refaitsC).toBeLessThanOrEqual(4);
     expect(erreurs).toEqual([]);
