@@ -85,12 +85,14 @@ async function attendLaListe(page) {
  * stand se trouve (`webgl.mjs` `rectEcranWebgl`). Rend `null` si aucun stand
  * ne convient ; `sauf` écarte celui dont le texte le contient.
  */
-function standAViser(page, { sauf = "" } = {}) {
-  return page.evaluate((sauf) => {
+function standAViser(page, { sauf = "", saufId = "" } = {}) {
+  return page.evaluate(({ sauf, saufId }) => {
     const { GL, rectEcranWebgl } = /** @type {any} */ (globalThis).__essais;
     const st = document.getElementById("stage").getBoundingClientRect();
     for (const n of document.querySelectorAll("#stands g[data-id]")) {
       if (sauf && n.textContent.includes(sauf)) continue;
+      // le groupe d'un stand ne porte qu'un tracé, ses noms sont à part : l'identifiant seul l'exclut sûrement
+      if ([].concat(saufId || []).includes(n.dataset.id)) continue;
       const r = GL.actif ? rectEcranWebgl(n) : n.getBoundingClientRect();
       if (!r || r.width < 10 || r.height < 10) continue;
       const x = r.left + r.width / 2, y = r.top + r.height / 2;
@@ -98,10 +100,10 @@ function standAViser(page, { sauf = "" } = {}) {
       const e = document.elementFromPoint(x, y);
       if (!e || !e.closest("#stage") ||
           e.closest("#viseur, .tools, .zoombar, #poi, #side, #detail, #parcours, #itineraire, .topbar")) continue;
-      return { x, y };
+      return { x, y, id: n.dataset.id };
     }
     return null;
-  }, sauf);
+  }, { sauf, saufId });
 }
 
 /* Les deux empreintes d'intégrité de MapLibre, relues là où la page les tient

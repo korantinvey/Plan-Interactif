@@ -845,22 +845,41 @@ function ecouteNavigateur(){
      survols se comptent à part : ils disent qu'une longue image a eu un
      témoin, non que le survol coûte. Le champ `survols` marque aussi le
      changement de règle : les relevés qui ne l'ont pas comptaient tout. */
-  observe("event", sur((/** @type {any} */ e) => {
-    if (e.duration <= 100) return;
-    if (e.interactionId > 0){
-      const r = V.reactivite;
+  /* Observé dès 16 ms, le plancher de l'API : le relâché d'un tap peint dans
+     la même image que son appui peut durer moins que le seuil, et son
+     traitement doit rester au découpage (`recoisEntree`). */
+  observe("event", sur(recoisEntree), { durationThreshold: 16 });
+}
+
+/* Le seuil des statistiques, celui d'avant la révision 6 : une interaction
+   plus courte ne compte pas, et ne peut pas être la pire. */
+const SEUIL_INTERACTION = 100;
+
+/**
+ * Une entrée d'événement rapportée par le navigateur.
+ *
+ * Toute entrée d'un geste se garde pour le découpage, quelle que soit sa
+ * durée ; seules celles au-delà du seuil comptent (`n`) et peuvent être la
+ * pire. Un appui de 200 ms et son relâché de 72 ms, peints dans la même image :
+ * le relâché, sous le seuil, n'arrivait pas, et son traitement passait dans
+ * l'image d'après (relu par CodeRabbit sur la #560).
+ */
+function recoisEntree(/** @type {any} */ e){
+  if (e.interactionId > 0){
+    const r = V.reactivite;
+    entreesRecentes.push(e);
+    if (entreesRecentes.length > ENTREES_RECENTES) entreesRecentes.shift();
+    if (e.duration > SEUIL_INTERACTION){
       r.n++;
-      entreesRecentes.push(e);
-      if (entreesRecentes.length > ENTREES_RECENTES) entreesRecentes.shift();
       if (e.duration > r.pireMs){ r.pireMs = Math.round(e.duration); r.pireType = e.name; pireEntree = e; }
-      // un événement du même geste, peint dans la même image, élargit son découpage
-      if (pireEntree && e.interactionId === pireEntree.interactionId) r.pire = partsDeLInteraction(pireEntree, entreesRecentes);
-    } else if (SURVOLS.test(e.name)){
-      const s = V.reactivite.survols;
-      s.n++;
-      s.pireMs = Math.max(s.pireMs, Math.round(e.duration));
     }
-  }), { durationThreshold: 104 });
+    // un événement du même geste, peint dans la même image, élargit son découpage
+    if (pireEntree && e.interactionId === pireEntree.interactionId) r.pire = partsDeLInteraction(pireEntree, entreesRecentes);
+  } else if (e.duration > SEUIL_INTERACTION && SURVOLS.test(e.name)){
+    const s = V.reactivite.survols;
+    s.n++;
+    s.pireMs = Math.max(s.pireMs, Math.round(e.duration));
+  }
 }
 /** L'entrée et la sortie du pointeur, que rien n'a demandées au visiteur. */
 const SURVOLS = /^(pointer|mouse)(over|out|enter|leave)$/;
@@ -1433,6 +1452,8 @@ function demarre(){
   if (essais) essais.sonde = { get resume(){ return resumeSonde(); }, get images(){ return images; },
     get battements(){ return battements; },
     get visite(){ return V.id; },
+    // une entrée d'événement fabriquée, reçue comme celles du navigateur
+    recoisEntree,
     // les comptes cumulés de deck.gl et de luma.gl, tels que le prochain gel les lirait
     get travaux(){ return travauxDeck(); } };
 }

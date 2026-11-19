@@ -577,6 +577,31 @@ test.describe("la sonde silencieuse, ce qu'un tap lent a coûté", () => {
     expect(incoherences(r).filter((x) => x.cle === "decoupe")).toEqual([]);
     expect(erreurs).toEqual([]);
   });
+
+  /* Un relâché peint dans la même image que son appui, mais parti tard : sa
+     durée est sous le seuil des statistiques, et son traitement doit pourtant
+     rester au découpage. Le cas se fabrique — un vrai tap ne le donne pas à
+     coup sûr — et passe par la même réception que les entrées du navigateur. */
+  test("un relâché plus court que le seuil reste au découpage de son geste", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await releve(page);
+    await page.goto(PLAN);
+    await attendLaListe(page);
+    const pire = await page.evaluate(() => {
+      const S = window.__essais.sonde, cible = document.getElementById("stage");
+      const T = performance.now() + 100000, id = 987654;
+      S.recoisEntree({ name: "pointerdown", interactionId: id, startTime: T, duration: 200,
+        processingStart: T + 120, processingEnd: T + 130, target: cible });
+      S.recoisEntree({ name: "pointerup", interactionId: id, startTime: T + 128, duration: 72,
+        processingStart: T + 130, processingEnd: T + 190, target: cible });
+      return S.resume.reactivite;
+    });
+    expect(pire.pireMs).toBe(200);
+    // seul l'appui passe le seuil : le relâché ne compte pas, mais il découpe
+    expect(pire.n).toBe(1);
+    expect(pire.pire).toMatchObject({ attenteMs: 120, traitementMs: 70, presentationMs: 10, surLePlan: true });
+    expect(erreurs).toEqual([]);
+  });
 });
 
 test.describe("la sonde silencieuse, ce qu'elle tient pour le plan", () => {

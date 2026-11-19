@@ -1917,18 +1917,20 @@ function couchesTexte(id, items, famille, graisse, extra){
 const PRISES = ".pgn, [data-f], #calageApercu .contour, #calageApercu .poignee";
 const accVide = prises => ({ pleins: [], traitsPx: [], traitsM: [], traitsZ: [], textes: new Map(), images: [], phares: new Map(), prises,
   decor: [], jetons: new Map(), parent: null });
+/** Ce que l'éditeur attrape dans ce bloc : le calque ouvert, et les poignées posées à la racine. */
+const prisesDuBloc = (/** @type {Element} */ racine) => (_page.enEdition() && (racine.classList.contains("editable") ||
+    racine.id === "poignees" || racine.id === "poigneesGeo")) ||
+  racine.id === "calageApercu";
 function convertitBloc(racine, cle){
   // ce que l'éditeur attrape : le calque ouvert, et les poignées posées à la
   // racine — celles d'une forme dessinée comme celles d'un emplacement repris
   // le cadrage d'un bâtiment de la bibliothèque s'attrape aussi, calque ouvert ou non
-  const acc = accVide((_page.enEdition() && (racine.classList.contains("editable") ||
-      racine.id === "poignees" || racine.id === "poigneesGeo")) ||
-    racine.id === "calageApercu");
+  const acc = accVide(prisesDuBloc(racine));
   const avant = racine.id === "stands" ? cleChoisi() : null;
   if (avant !== null) CHOISI = null;
   // les couleurs de la page, lues une fois pour tous les stands ou toutes les zones du bloc
   JETONS = racine.id === "stands" || racine.id === "zones" ? jetonsEmplacements(racine) : null;
-  CONTEXTE = JETONS ? contexteEmplacements(racine, acc) : "";
+  if (JETONS) poseContexte(racine, acc); else CONTEXTE = "";
   try {
     if (estHabillage(racine)) habillageGl(racine, acc);
     else if (PAR_ATTRIBUTS.has(racine.id)) parcoursAttributs(racine, M_ID, 1, acc, racine);
@@ -2050,12 +2052,20 @@ function contexteEmplacements(/** @type {Element} */ racine, /** @type {any} */ 
 }
 /* Le contexte change rarement — une couleur réglée, la vue immersive, un
    trajet — et se compare une fois par bloc : chaque conversion gardée retient
-   seulement l'âge du contexte sous lequel elle s'est faite. */
-let contexteVu = "", ageContexte = 0;
-const ageDuContexte = () => {
-  if (CONTEXTE !== contexteVu){ contexteVu = CONTEXTE; ageContexte++; }
-  return ageContexte;
-};
+   seulement l'âge du contexte de son bloc. Un âge par bloc, et non un seul :
+   les stands et les zones n'ont pas le même contexte, et un repeint qui
+   refaisait les deux faisait vieillir l'âge commun deux fois — le tap suivant
+   reconvertissait alors tout le bloc des stands (relu par CodeRabbit sur la #560). */
+/** @type {WeakMap<Element, { texte: string, age: number }>} */
+const CONTEXTES = new WeakMap();
+/** L'âge du contexte du bloc en conversion, posé avec lui par `poseContexte`. */
+let AGE = 0;
+function poseContexte(/** @type {Element} */ racine, /** @type {any} */ acc){
+  CONTEXTE = contexteEmplacements(racine, acc);
+  const vu = CONTEXTES.get(racine);
+  if (!vu || vu.texte !== CONTEXTE) CONTEXTES.set(racine, { texte: CONTEXTE, age: vu ? vu.age + 1 : 1 });
+  AGE = /** @type {{ age: number }} */ (CONTEXTES.get(racine)).age;
+}
 
 /* L'état d'un emplacement, en peu de caractères. Ses attributs et son
    contenu n'y entrent pas : le guet signale tout ce qui les change
@@ -2074,7 +2084,7 @@ const memesNombres = (/** @type {number[]} */ a, /** @type {number[]} */ b) => {
 
 function emplacementGarde(/** @type {Element} */ g, /** @type {number[]} */ m, /** @type {number} */ op, /** @type {any} */ acc){
   const etat = etatDe(g);
-  const signe = signeEtat(etat), age = ageDuContexte();
+  const signe = signeEtat(etat), age = AGE;
   const garde = CONVERTIS.get(g);
   if (garde && !SANS_MEMOIRE && garde.signe === signe && garde.age === age && garde.op === op &&
       memesNombres(garde.m, m) && !EMPLACEMENTS_SALIS.has(g)){
@@ -2134,10 +2144,10 @@ export function compareConversions(){
   /** @type {string[]} */
   const ecarts = [];
   const lis = (/** @type {Element} */ racine, /** @type {boolean} */ sans) => {
-    const acc = accVide(false);
+    const acc = accVide(prisesDuBloc(racine));
     const garde = CHOISI;
     JETONS = jetonsEmplacements(racine);
-    CONTEXTE = contexteEmplacements(racine, acc);
+    poseContexte(racine, acc);
     const avant = SANS_MEMOIRE;
     SANS_MEMOIRE = sans;
     let choisi = "";

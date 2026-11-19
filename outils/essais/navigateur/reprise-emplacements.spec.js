@@ -14,6 +14,34 @@
 const { test, expect } = require("@playwright/test");
 const { prepare, attendLaListe, standAViser } = require("./aide");
 
+/** Le stand choisi, d'après le SVG caché. */
+const choisi = (page) => page.evaluate(() => {
+  const g = document.querySelector("#stands > g.sel");
+  return g ? g.getAttribute("data-id") : null;
+});
+
+/**
+ * Choisit un autre stand que celui-ci par la liste, et rend celui que la
+ * sélection a pris.
+ *
+ * Par la liste et non par un tap : en immersif, `standAViser` vise l'emprise à
+ * plat, et le tap retombait sur le volume haussé du stand choisi, ou sur rien —
+ * l'essai d'avant croyait avoir changé de stand en retapant le premier. Une
+ * ligne choisit son stand par le même `select` (`fiche.mjs`) que le tap :
+ * c'est ce changement que la mémoire doit suivre.
+ */
+async function choisitUnAutre(page, avant, attente) {
+  const lignes = page.locator("#list .row");
+  const n = Math.min(await lignes.count(), 12);
+  for (let i = 0; i < n; i++) {
+    await lignes.nth(i).click();
+    await repose(page, attente);
+    const id = await choisi(page);
+    if (id && id !== avant) return id;
+  }
+  return null;
+}
+
 /** Le repeint qui suit une action, fini : plus rien d'attendu, et les volumes arrivés. */
 async function repose(page, attente) {
   await page.waitForTimeout(attente);
@@ -54,17 +82,17 @@ for (const ambiance of ["classique", "tuiles", "immersif"]) {
     expect(refaits).toBeLessThanOrEqual(4);
     expect(total).toBeGreaterThan(20 * refaits);
 
-    const nomA = await page.locator("#detail h2, #detail .nom").first().textContent().catch(() => "");
-    const b = await standAViser(page, { sauf: (nomA || "").trim().slice(0, 12) });
-    if (b) {
-      await page.mouse.click(b.x, b.y);
-      await repose(page, attente);
-      const refaitsB = await page.evaluate(() => window.__essais.GL.emplacementsRefaits);
-      expect(await ecarts()).toEqual([]);
-      expect(refaitsB).toBeLessThanOrEqual(4);
-    }
+    // un autre stand ensuite, exclu par identifiant : la sélection doit l'avoir suivi
+    const idA = await choisi(page);
+    expect(idA).toBeTruthy();
+    const idB = await choisitUnAutre(page, idA, attente);
+    expect(idB).toBeTruthy();
+    expect(idB).not.toBe(idA);
+    const refaitsB = await page.evaluate(() => window.__essais.GL.emplacementsRefaits);
+    expect(await ecarts()).toEqual([]);
+    expect(refaitsB).toBeLessThanOrEqual(4);
 
-    // une recherche éteint une partie du hall : tout ce qui change se refait, le reste se reprend
+    // une recherche éteint une partie du hall, stands et zones dans le même repeint
     await page.keyboard.press("Escape");
     await page.fill("#q", "a");
     await repose(page, attente);
@@ -72,6 +100,15 @@ for (const ambiance of ["classique", "tuiles", "immersif"]) {
     await page.fill("#q", "");
     await repose(page, attente);
     expect(await ecarts()).toEqual([]);
+    /* Et le tap qui suit ne refait toujours que ce qui change : chaque bloc
+       garde l'âge de son propre contexte, que le passage de l'autre ne fait
+       pas vieillir. */
+    const idC = await choisitUnAutre(page, idB, attente);
+    expect(idC).toBeTruthy();
+    expect(idC).not.toBe(idB);
+    const refaitsC = await page.evaluate(() => window.__essais.GL.emplacementsRefaits);
+    expect(await ecarts()).toEqual([]);
+    expect(refaitsC).toBeLessThanOrEqual(4);
     expect(erreurs).toEqual([]);
   });
 }
