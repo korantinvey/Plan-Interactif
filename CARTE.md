@@ -3198,7 +3198,7 @@ Importé par :
 
 edition · outil-dessin · outil-escalier · reprise-emplacements
 
-### `modules/sonde.mjs` — 1438 l. → plan, plan-admin
+### `modules/sonde.mjs` — 1459 l. → plan, plan-admin
 
 - l.1 · La sonde silencieuse — chaque visite dépose son résumé de performance
 
@@ -3212,14 +3212,14 @@ Fonctions :
 `cleAttente` 542 · `lesAttentes` 554 · `guetteCompilation` 562 · `imageDOuverture` 595
 `decoupe` 618 · `gel` 637 · `doitBattre` 690 · `bat` 699 · `battu` 706
 `ecouteBattement` 725 · `dansLaCarte` 768 · `gelPendantLaCarte` 774 · `etapeDeLaCarte` 780
-`laCarteDesEnvirons` 810 · `ecouteNavigateur` 826 · `partsDeLInteraction` 903
-`memoire` 931 · `contexteDuPlan` 944 · `lisAppareil` 956 · `handicapDeclare` 992
-`finDesDonnees` 1006 · `trajetDesDonnees` 1021 · `dureeDuContexte` 1033
-`appelsEnEchec` 1047 · `leChargement` 1069 · `lesTrajets` 1105 · `fluidite` 1110
-`laCarte` 1119 · `resumeSonde` 1142 · `leBattement` 1176 · `octets` 1182 · `coupe` 1185
-`tronque` 1196 · `fraiche` 1230 · `litLaFile` 1233 · `ecritLaFile` 1241 · `retire` 1253
-`corps` 1256 · `versionDesPages` 1264 · `envoieUne` 1275 · `pousse` 1301 · `actif` 1326
-`envoie` 1330 · `brancheSonde` 1355 · `demarre` 1368
+`laCarteDesEnvirons` 810 · `ecouteNavigateur` 826 · `recoisEntree` 867
+`partsDeLInteraction` 922 · `memoire` 950 · `contexteDuPlan` 963 · `lisAppareil` 975
+`handicapDeclare` 1011 · `finDesDonnees` 1025 · `trajetDesDonnees` 1040
+`dureeDuContexte` 1052 · `appelsEnEchec` 1066 · `leChargement` 1088 · `lesTrajets` 1124
+`fluidite` 1129 · `laCarte` 1138 · `resumeSonde` 1161 · `leBattement` 1195 · `octets` 1201
+`coupe` 1204 · `tronque` 1215 · `fraiche` 1249 · `litLaFile` 1252 · `ecritLaFile` 1260
+`retire` 1272 · `corps` 1275 · `versionDesPages` 1283 · `envoieUne` 1294 · `pousse` 1320
+`actif` 1345 · `envoie` 1349 · `brancheSonde` 1374 · `demarre` 1387
 
 Importe :
 
@@ -3794,61 +3794,61 @@ Injections :
 
 - `injecteALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 4381 l. → plan, plan-admin
+### `modules/webgl.mjs` — 4394 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
 Fonctions :
 
 `injecteAuWebgl` 89 · `moteurVoulu` 109 · `jetteContexte` 137 · `carteDuWebgl` 144
-`sansCarteGraphique` 165 · `chargeWebgl` 269 · `chargeDeck` 320 · `signaleRate` 333
-`circonstancesDuRefus` 353 · `sortesDeChauffe` 400 · `chauffeAvantLesDonnees` 410
-`finisChauffe` 443 · `brancheWebgl` 455 · `monteWebgl` 475 · `poseToileWebgl` 663
-`guetteContexteWebgl` 669 · `contextePerduWebgl` 679 · `verifieContexteWebgl` 686
-`guetteBoucleWebgl` 728 · `perdContexteWebgl` 749 · `renonceAuDessin` 793
-`remonteWebgl` 799 · `vueDeck` 817 · `enCamera` 837 · `vuesGl` 841 · `effetsGl` 865
-`basculeCamera` 875 · `vueWebgl` 888 · `blocDe` 905 · `majEditionWebgl` 918 · `cleBloc` 930
-`planifieWebgl` 956 · `toutRepeindreWebgl` 960 · `blocsDansLOrdre` 971 · `repeintWebgl` 976
-`pointsParMetre` 1011 · `assembleWebgl` 1037 · `assembleCouches` 1040 · `memesElements` 1083
-`cleReunion` 1091 · `reunisCalques` 1116 · `reunisVolumes` 1171 · `sorteDe` 1206
-`cleChauffe` 1268 · `chauffe` 1276 · `copiesQuiDessinent` 1324 · `guetteChauffe` 1342
-`finisLaChauffe` 1383 · `parEtapes` 1395 · `demandeChauffeLogos` 1419 · `auCreux` 1435
-`largeurLisere` 1467 · `constTexte` 1470 · `jeuDeCaracteres` 1636 · `sousPixelOffert` 1692
-`couchesPetites` 1700 · `filtreCouches` 1735 · `poseGeste` 1747 · `positionTexte` 1767
-`cleChoisi` 1807 · `versEcran` 1810 · `enveloppe` 1817 · `nomsCaches` 1828
-`parametresTexte` 1857 · `nomsAPlat` 1866 · `couchesTexte` 1868 · `accVide` 1918
-`convertitBloc` 1920 · `tracesDe` 1967 · `estEmplacement` 1976 · `etatDe` 1981
-`emplacementGl` 1986 · `emplacementDe` 2039 · `contexteEmplacements` 2047
-`ageDuContexte` 2055 · `signeEtat` 2063 · `memesNombres` 2068 · `emplacementGarde` 2075
-`enRoute` 2101 · `verse` 2109 · `compareConversions` 2133 · `accDe` 2166 · `parcoursGl` 2183
-`tracesDeForme` 2214 · `estHabillage` 2242 · `habillageGl` 2244 · `parcoursHabillage` 2262
-`parcoursAttributs` 2291 · `compareLectures` 2315 · `resteDebout` 2349 · `dedansAnneau` 2357
-`auDessusDuSol` 2382 · `surSonStand` 2391 · `standDeLaMarque` 2397
-`marquesSurLesToits` 2409 · `hauteurVolume` 2426 · `zoneMeublee` 2458 · `poseJeton` 2510
-`mul4` 2534 · `enColonnes` 2543 · `translation` 2544 · `homothetie` 2546 · `autourDuZ` 2547
-`matriceJeton` 2556 · `corpsDansLeJeton` 2572 · `couchesJeton` 2580 · `couchesJetons` 2628
-`meubleZone` 2670 · `dansLeHall` 2747 · `teinteDesFigurants` 2770 · `coucheFigurants` 2818
-`penchee` 2870 · `couchesFigurants` 2881 · `eclatant` 2931 · `opaque` 2937 · `formeGl` 2944
-`corpsDeclare` 3015 · `texteGl` 3029 · `imageGl` 3053 · `imageDressee` 3095
-`socleImage` 3109 · `partage` 3121 · `designeGl` 3127 · `sortie` 3141 · `noteHauteur` 3147
-`anticipeHausses` 3177 · `monteALAppui` 3203 · `rendLAppui` 3215 · `detacheVolume` 3225
-`hauteurEnCours` 3259 · `hauteurHausse` 3265 · `echelleHausse` 3270 · `haussesParId` 3273
-`memesFormes` 3292 · `memesPoints` 3302 · `memesTraits` 3320 · `signeTraits` 3330
-`signeCouleurs` 3340 · `masqueVolumes` 3348 · `aPlat` 3368 · `ombresAuRepos` 3380
-`couchesDeBloc` 3405 · `modelesLibellesHtml` 3526 · `poseModelesLibelles` 3536
-`lisModelesLibelles` 3542 · `groupesNoms` 3575 · `couchesNoms` 3601
-`couchesPastilles` 3617 · `couchesLibellesWebgl` 3634 · `couchesDessineesWebgl` 3687
-`stage` 3708 · `lectureDifferee` 3741 · `survolTrouve` 3781 · `demandeSurvolWebgl` 3787
-`survoleWebgl` 3793 · `brancheSurvolWebgl` 3821 · `poseSurvolWebgl` 3834 · `enTuiles` 3871
-`hauteurTuile` 3884 · `visePour` 3890 · `suisChoisies` 3900 · `gonfleSurvol` 3908
-`coucheTuileSoulevee` 3931 · `couchesTuiles` 3962 · `poseCurseurWebgl` 3975
-`poseFocusWebgl` 3984 · `aplatsDe` 3991 · `coucheSurvol` 3994 · `coucheSurvolVolume` 4019
-`coucheFocus` 4055 · `couchesPhare` 4085 · `lueurDe` 4102 · `opacitePhare` 4140
-`echellePhare` 4141 · `couchesPhareNoms` 4144 · `instant` 4170 · `aUnInstant` 4172
-`animeCouche` 4177 · `majAnimationWebgl` 4197 · `animeWebgl` 4205 · `reanime` 4241
-`logosSurLesToits` 4250 · `objetSous` 4280 · `sansProfondeurDeDesignation` 4301
-`peutDesigner` 4321 · `objetSousDiffere` 4323 · `viseEnAvance` 4339 · `lisObjet` 4347
-`cibleWebgl` 4352 · `priseWebgl` 4362 · `libelleSousWebgl` 4367 · `rectEcranWebgl` 4372
+`sansCarteGraphique` 165 · `chargeWebgl` 271 · `chargeDeck` 322 · `signaleRate` 335
+`circonstancesDuRefus` 355 · `sortesDeChauffe` 402 · `chauffeAvantLesDonnees` 412
+`finisChauffe` 445 · `brancheWebgl` 457 · `monteWebgl` 477 · `poseToileWebgl` 665
+`guetteContexteWebgl` 671 · `contextePerduWebgl` 681 · `verifieContexteWebgl` 688
+`guetteBoucleWebgl` 730 · `perdContexteWebgl` 751 · `renonceAuDessin` 795
+`remonteWebgl` 801 · `vueDeck` 819 · `enCamera` 839 · `vuesGl` 843 · `effetsGl` 867
+`basculeCamera` 877 · `vueWebgl` 890 · `blocDe` 907 · `majEditionWebgl` 920 · `cleBloc` 932
+`planifieWebgl` 958 · `toutRepeindreWebgl` 962 · `blocsDansLOrdre` 973 · `repeintWebgl` 978
+`pointsParMetre` 1014 · `assembleWebgl` 1040 · `assembleCouches` 1043 · `memesElements` 1086
+`cleReunion` 1094 · `reunisCalques` 1119 · `reunisVolumes` 1174 · `sorteDe` 1209
+`cleChauffe` 1271 · `chauffe` 1279 · `copiesQuiDessinent` 1327 · `guetteChauffe` 1345
+`finisLaChauffe` 1386 · `parEtapes` 1398 · `demandeChauffeLogos` 1422 · `auCreux` 1438
+`largeurLisere` 1470 · `constTexte` 1473 · `jeuDeCaracteres` 1639 · `sousPixelOffert` 1695
+`couchesPetites` 1703 · `filtreCouches` 1738 · `poseGeste` 1750 · `positionTexte` 1770
+`cleChoisi` 1810 · `versEcran` 1813 · `enveloppe` 1820 · `nomsCaches` 1831
+`parametresTexte` 1860 · `nomsAPlat` 1869 · `couchesTexte` 1871 · `accVide` 1921
+`prisesDuBloc` 1924 · `convertitBloc` 1927 · `tracesDe` 1972 · `estEmplacement` 1981
+`etatDe` 1986 · `emplacementGl` 1991 · `emplacementDe` 2044 · `contexteEmplacements` 2052
+`poseContexte` 2066 · `signeEtat` 2076 · `memesNombres` 2081 · `emplacementGarde` 2088
+`enRoute` 2114 · `verse` 2122 · `compareConversions` 2146 · `accDe` 2179 · `parcoursGl` 2196
+`tracesDeForme` 2227 · `estHabillage` 2255 · `habillageGl` 2257 · `parcoursHabillage` 2275
+`parcoursAttributs` 2304 · `compareLectures` 2328 · `resteDebout` 2362 · `dedansAnneau` 2370
+`auDessusDuSol` 2395 · `surSonStand` 2404 · `standDeLaMarque` 2410
+`marquesSurLesToits` 2422 · `hauteurVolume` 2439 · `zoneMeublee` 2471 · `poseJeton` 2523
+`mul4` 2547 · `enColonnes` 2556 · `translation` 2557 · `homothetie` 2559 · `autourDuZ` 2560
+`matriceJeton` 2569 · `corpsDansLeJeton` 2585 · `couchesJeton` 2593 · `couchesJetons` 2641
+`meubleZone` 2683 · `dansLeHall` 2760 · `teinteDesFigurants` 2783 · `coucheFigurants` 2831
+`penchee` 2883 · `couchesFigurants` 2894 · `eclatant` 2944 · `opaque` 2950 · `formeGl` 2957
+`corpsDeclare` 3028 · `texteGl` 3042 · `imageGl` 3066 · `imageDressee` 3108
+`socleImage` 3122 · `partage` 3134 · `designeGl` 3140 · `sortie` 3154 · `noteHauteur` 3160
+`anticipeHausses` 3190 · `monteALAppui` 3216 · `rendLAppui` 3228 · `detacheVolume` 3238
+`hauteurEnCours` 3272 · `hauteurHausse` 3278 · `echelleHausse` 3283 · `haussesParId` 3286
+`memesFormes` 3305 · `memesPoints` 3315 · `memesTraits` 3333 · `signeTraits` 3343
+`signeCouleurs` 3353 · `masqueVolumes` 3361 · `aPlat` 3381 · `ombresAuRepos` 3393
+`couchesDeBloc` 3418 · `modelesLibellesHtml` 3539 · `poseModelesLibelles` 3549
+`lisModelesLibelles` 3555 · `groupesNoms` 3588 · `couchesNoms` 3614
+`couchesPastilles` 3630 · `couchesLibellesWebgl` 3647 · `couchesDessineesWebgl` 3700
+`stage` 3721 · `lectureDifferee` 3754 · `survolTrouve` 3794 · `demandeSurvolWebgl` 3800
+`survoleWebgl` 3806 · `brancheSurvolWebgl` 3834 · `poseSurvolWebgl` 3847 · `enTuiles` 3884
+`hauteurTuile` 3897 · `visePour` 3903 · `suisChoisies` 3913 · `gonfleSurvol` 3921
+`coucheTuileSoulevee` 3944 · `couchesTuiles` 3975 · `poseCurseurWebgl` 3988
+`poseFocusWebgl` 3997 · `aplatsDe` 4004 · `coucheSurvol` 4007 · `coucheSurvolVolume` 4032
+`coucheFocus` 4068 · `couchesPhare` 4098 · `lueurDe` 4115 · `opacitePhare` 4153
+`echellePhare` 4154 · `couchesPhareNoms` 4157 · `instant` 4183 · `aUnInstant` 4185
+`animeCouche` 4190 · `majAnimationWebgl` 4210 · `animeWebgl` 4218 · `reanime` 4254
+`logosSurLesToits` 4263 · `objetSous` 4293 · `sansProfondeurDeDesignation` 4314
+`peutDesigner` 4334 · `objetSousDiffere` 4336 · `viseEnAvance` 4352 · `lisObjet` 4360
+`cibleWebgl` 4365 · `priseWebgl` 4375 · `libelleSousWebgl` 4380 · `rectEcranWebgl` 4385
 
 Importe :
 
