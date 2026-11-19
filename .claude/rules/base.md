@@ -24,9 +24,13 @@ Ce que les revues de CodeRabbit ont trouvé côté Supabase (#531, #533, #535,
   l'opération (`pg_advisory_xact_lock`, comme `remplace_acces` sur le profil),
   ou la ligne stable qui la porte (`select … for update` sur le salon, le
   profil). Jamais sur les lignes qu'on va lire : une liste vide n'en verrouille
-  aucune. Une transaction ordinaire n'y suffit pas non plus : deux
-  administrateurs simultanés y lisaient la même liste et laissaient l'union des
-  deux.
+  aucune. Toutes les écritures d'une même liste prennent le même verrou, même
+  mécanisme et même clé : un verrou consultatif et un verrou de ligne ne se
+  bloquent pas l'un l'autre. Le schéma suppose l'isolation par défaut,
+  `read committed` : en `repeatable read`, l'image de la base est prise avant
+  l'attente du verrou, et la transaction relirait l'ancienne liste. Une
+  transaction ordinaire, sans verrou, n'y suffit pas : deux administrateurs
+  simultanés y lisaient la même liste et laissaient l'union des deux.
 - **Ce qui est réservé à l'administrateur l'est dans la base** (déclencheur),
   pas seulement dans l'interface.
 - **Une migration n'avale pas d'erreur** : si `pg_cron` refuse une tâche, elle
