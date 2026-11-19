@@ -263,9 +263,24 @@ function plieLesBandes(oui){
   if (tiroir) tiroir.classList.toggle("pliee", oui);
 }
 
+/* Au doigt levé, les bandes ne reviennent qu'un instant plus tard. Un zoom se
+   fait souvent en plusieurs pincements, et revenues sur-le-champ elles
+   reparaissaient le quart de seconde qui sépare l'un de l'autre, puis
+   s'effaçaient de nouveau : la liste clignotait à chaque reprise du doigt.
+   Le relevé `?perf` d'un téléphone (le 19 novembre 2026) mettait 226 à
+   376 ms entre deux pincements d'un même zoom, et une seconde entre deux
+   gestes distincts. Le geste suivant annule le retour, puisque le pli
+   repart de zéro. */
+const RETOUR_BANDES = 600;
+function rendLesBandes(){
+  if (!bandesPliees) return;
+  clearTimeout(filetBandes);
+  filetBandes = setTimeout(() => plieLesBandes(false), RETOUR_BANDES);
+}
+
 export const saisitPlan = (/** @type {boolean} */ tenu) => {
   // la main lâche : les bandes reviennent, quelle que soit la façon dont le geste finit
-  if (!tenu) plieLesBandes(false);
+  if (!tenu) rendLesBandes();
   if (tenu && dernierAppuiTactile) return;
   svg.style.cursor = tenu ? "grabbing" : "";
 };

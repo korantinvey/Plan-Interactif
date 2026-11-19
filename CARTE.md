@@ -1546,7 +1546,7 @@ Importé par :
 
 plan-admin
 
-### `modules/gestes.mjs` — 640 l. → plan, plan-admin
+### `modules/gestes.mjs` — 655 l. → plan, plan-admin
 
 - l.1 · Les gestes sur le plan — glisser, pincer, la molette, l'appui qui ouvre
 - l.74 · 8. Interactions du plan
@@ -1555,8 +1555,8 @@ Fonctions :
 
 `poseGestesAdmin` 72 · `milieu` 104 · `commencePince` 110 · `suitPince` 124
 `noteGlisser` 208 · `stoppeElan` 214 · `lanceElan` 220 · `plieLesBandes` 252
-`saisitPlan` 266 · `cibleElargie` 303 · `planifieFiltre` 346 · `brancheGestes` 360
-`brancheLangue` 623
+`rendLesBandes` 275 · `saisitPlan` 281 · `cibleElargie` 318 · `planifieFiltre` 361
+`brancheGestes` 375 · `brancheLangue` 638
 
 Importe :
 
@@ -2932,17 +2932,17 @@ Importé par :
 
 bande-admin
 
-### `modules/releve.mjs` — 458 l. → plan, plan-admin
+### `modules/releve.mjs` — 459 l. → plan, plan-admin
 
 - l.1 · Le relevé des performances — `?perf`
 
 Fonctions :
 
 `ms` 66 · `garde` 68 · `decrit` 76 · `dansLeReleve` 92 · `commence` 96 · `sorte` 109
-`clos` 113 · `ecouteGestes` 132 · `image` 164 · `fenetre` 219 · `tiroir` 227
-`lisTiroirs` 237 · `lisTiroirsApresImage` 248 · `ecouteFenetre` 254 · `ecouteNavigateur` 277
-`echantillonne` 309 · `laPage` 330 · `synthese` 335 · `releve` 349 · `affiche` 388
-`partage` 397 · `posePastille` 414
+`clos` 113 · `ecouteGestes` 132 · `image` 164 · `fenetre` 219 · `tiroir` 228
+`lisTiroirs` 238 · `lisTiroirsApresImage` 249 · `ecouteFenetre` 255 · `ecouteNavigateur` 278
+`echantillonne` 310 · `laPage` 331 · `synthese` 336 · `releve` 350 · `affiche` 389
+`partage` 398 · `posePastille` 415
 
 Importe :
 
