@@ -99,3 +99,40 @@ test("la fiche descend par son corps @telephone", async ({ page }) => {
   await expect(fiche).toHaveClass(/\bopen\b/);
   expect(erreurs).toEqual([]);
 });
+
+/* La barre se plie au premier mouvement d'un geste sur le plan, et ses pictos
+   sortent par la droite. Ils élargissaient la page : le navigateur du
+   téléphone la dézoomait pour la faire tenir, en plein geste, et la fiche
+   posée au bas de l'écran sautait avec la fenêtre. Le doigt reste posé :
+   c'est pendant le geste, barre pliée, que la page doit garder sa taille. */
+test("la barre pliée n'élargit pas la page, et la fiche ne saute pas @telephone", async ({ page }) => {
+  test.slow();
+  const erreurs = await prepare(page);
+  await page.goto(PLAN + "&rendu=svg");
+  test.skip(await page.evaluate(() => innerWidth > 900), "la barre ne se plie que sur écran étroit");
+  await attendLaListe(page);
+  await page.locator("#side .row").first().evaluate((n) => n.click());
+  await expect(page.locator("#detail")).toHaveClass(/\bopen\b/);
+  // la fiche arrivée à son cran : on mesure un tiroir au repos
+  await page.waitForTimeout(600);
+  const avant = await page.evaluate(() => ({ w: innerWidth, h: innerHeight,
+    fiche: Math.round(document.getElementById("detail").getBoundingClientRect().top) }));
+
+  const cdp = await page.context().newCDPSession(page);
+  const x = Math.round(avant.w / 2), y = 120;
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
+  for (let i = 1; i <= 8; i++) {
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: x - i * 5, y: y + i * 5 }] });
+  }
+  await expect(page.locator("#bandeau")).toHaveClass(/\bpliee\b/);
+  // la barre au bout de sa transition, pictos sortis
+  await page.waitForTimeout(500);
+  const pendant = await page.evaluate(() => ({ w: innerWidth, h: innerHeight,
+    large: document.documentElement.scrollWidth,
+    fiche: Math.round(document.getElementById("detail").getBoundingClientRect().top) }));
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+
+  expect(pendant.large).toBeLessThanOrEqual(avant.w);
+  expect({ w: pendant.w, h: pendant.h, fiche: pendant.fiche }).toEqual(avant);
+  expect(erreurs).toEqual([]);
+});
