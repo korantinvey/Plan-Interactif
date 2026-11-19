@@ -39,7 +39,7 @@ const ACTIF = /[?&]perf(?:[=&]|$)/.test(location.search);
 
 // au-delà, une liste garde ses premières entrées et compte celles qu'elle perd
 const BORNES = { gestes: 400, saccades: 800, repeints: 1500, images: 300, evenements: 400,
-  memoire: 720, deck: 720, erreurs: 50 };
+  memoire: 720, deck: 720, erreurs: 50, tiroirs: 1200 };
 
 /** @typedef {{ t: number, fin: number, type: string, doigts: number, chemin: number,
  *    cible: string, images: number[], repeints: number, msRepeints: number,
@@ -57,6 +57,7 @@ const R = {
   /** @type {any[]} */ memoire: [],
   /** @type {any[]} */ deck: [],
   /** @type {any[]} */ erreurs: [],
+  /** @type {any[]} */ tiroirs: [],
   /** @type {Record<string, number>} */
   perdus: {},
   histo: { geste: TRANCHES.map(() => 0), repos: TRANCHES.map(() => 0) },
@@ -179,6 +180,7 @@ function image(/** @type {number} */ ts){
     }
   }
   precedente = ts;
+  if (geste && (doigts.size > 0 || t - geste.dernier < FIN_GESTE)) lisTiroirsApresImage();
   // le geste fini, et les images de son élan comptées avec lui
   if (geste && !doigts.size && t - geste.dernier >= FIN_GESTE) clos();
   imagesSeconde++;
@@ -186,6 +188,86 @@ function image(/** @type {number} */ ts){
     ips = Math.round(imagesSeconde * 1000 / (t - debutSeconde));
     imagesSeconde = 0; debutSeconde = t;
     affiche();
+  }
+}
+
+/* ------------------------------------------------------------
+   La fenêtre et les tiroirs, pendant un geste
+
+   Fiche ouverte, le tiroir sautait en plein pincement. Dans Chromium émulé,
+   la hauteur de la fenêtre changeait sous le geste, comme quand la barre
+   d'adresse se rétracte, et le tiroir posé au bas de la fenêtre la suivait.
+   Ce qu'en fait un vrai téléphone ne se voit que sur lui : on y note, à chaque
+   image d'un geste et de sa traîne, ce que mesurent la fenêtre et la fenêtre
+   visuelle, et où sont la liste, la fiche, le parcours, l'itinéraire et la
+   barre. Une entrée par changement seulement, sans quoi une minute de geste
+   remplirait la liste d'états identiques.
+
+   La lecture se fait après l'image, non dans son rappel : lus là, les
+   rectangles forceraient une mise en page que le plan n'aurait pas faite, et
+   le relevé fausserait ce qu'il mesure. Les « resize » et les mouvements de
+   la fenêtre visuelle, eux, se notent quand ils arrivent, geste ou non : c'est
+   leur heure, rapprochée de celle des gestes, qui dit qui a bougé le premier.
+   ------------------------------------------------------------ */
+const TIROIRS = ["side", "detail", "parcours", "itineraire", "bandeau"];
+const CLASSES_TIROIR = ["open", "pliee", "cede", "glisse"];
+let dernierEtat = "";
+let lectureDemandee = false;
+
+/** La fenêtre, en une ligne : largeur × hauteur, défilement (`sy`), puis la
+ *  fenêtre visuelle (`vv`), son décalage (`dy`) et son agrandissement. */
+function fenetre(){
+  const vv = window.visualViewport;
+  return innerWidth + "x" + innerHeight + (scrollY ? " sy" + Math.round(scrollY) : "") +
+    (vv ? " vv " + Math.round(vv.width) + "x" + Math.round(vv.height) +
+      (vv.offsetTop ? " dy" + Math.round(vv.offsetTop) : "") + (vv.scale !== 1 ? " x" + vv.scale.toFixed(2) : "") : "");
+}
+
+/** Un tiroir, en une ligne : ses bords à l'écran, son cran, ses classes d'état, son opacité. */
+function tiroir(/** @type {string} */ id){
+  const n = document.getElementById(id);
+  if (!n) return undefined;
+  const r = n.getBoundingClientRect();
+  const cl = CLASSES_TIROIR.filter(c => n.classList.contains(c));
+  const op = +getComputedStyle(n).opacity;
+  return Math.round(r.top) + "→" + Math.round(r.bottom) + (n.dataset.cran ? " " + n.dataset.cran : "") +
+    (cl.length ? " " + cl.join(" ") : "") + (op < 1 ? " op" + op.toFixed(2) : "");
+}
+
+function lisTiroirs(){
+  lectureDemandee = false;
+  /** @type {Record<string, string | undefined>} */
+  const etat = { fenetre: fenetre() };
+  for (const id of TIROIRS) etat[id] = tiroir(id);
+  const cle = JSON.stringify(etat);
+  if (cle === dernierEtat) return;
+  dernierEtat = cle;
+  garde("tiroirs", { t: Math.round(performance.now()), geste: geste ? sorte(geste) : undefined, ...etat });
+}
+
+function lisTiroirsApresImage(){
+  if (lectureDemandee) return;
+  lectureDemandee = true;
+  setTimeout(lisTiroirs, 0);
+}
+
+function ecouteFenetre(){
+  /* La fenêtre visuelle défile à chaque image d'un zoom du navigateur : un
+     événement qui ne change rien à la précédente mesure ne se note pas, sans
+     quoi il évincerait de la liste les tiroirs qu'on est venu voir. */
+  let derniere = "";
+  const note = (/** @type {string} */ quoi) => {
+    const f = fenetre();
+    if (quoi + f === derniere) return;
+    derniere = quoi + f;
+    garde("tiroirs", { t: Math.round(performance.now()), evenement: quoi, geste: geste ? sorte(geste) : undefined, fenetre: f });
+  };
+  addEventListener("resize", () => { note("resize"); lisTiroirsApresImage(); });
+  addEventListener("scroll", () => note("scroll"), { passive: true });
+  const vv = window.visualViewport;
+  if (vv){
+    vv.addEventListener("resize", () => note("vv-resize"));
+    vv.addEventListener("scroll", () => note("vv-scroll"));
   }
 }
 
@@ -284,6 +366,8 @@ function releve(){
     gestes: R.gestes, saccades: R.saccades, repeints: R.repeints,
     imagesLongues: R.images, evenementsLents: R.evenements,
     memoire: R.memoire, deck: R.deck, erreurs: R.erreurs,
+    // la fenêtre et les tiroirs à chaque changement pendant un geste, et les « resize »
+    tiroirs: R.tiroirs,
     /* des comptes, non des mesures : « octetsTexture » est ce qu'on a demandé à
        la carte graphique ; « envoisParLogo », « partRenvois » et « koParEnvoi »
        se comparent d'une visite à l'autre, quels qu'en soient les gestes */
@@ -340,7 +424,19 @@ function posePastille(){
   bouton.textContent = "Partager le relevé";
   bouton.style.cssText = "font:inherit;padding:6px 8px;border:0;border-radius:6px;background:#fff;color:#000";
   bouton.addEventListener("click", () => { partage(); });
-  boite.append(compteur, bouton);
+  /* Copier, pour coller le relevé tel quel dans une conversation : le menu de
+     partage d'un téléphone n'y offre pas toujours la page où on le lira. */
+  const copie = document.createElement("button");
+  copie.type = "button";
+  copie.textContent = "Copier le relevé";
+  copie.style.cssText = bouton.style.cssText;
+  copie.addEventListener("click", async () => {
+    let ok = false;
+    try { await navigator.clipboard.writeText(JSON.stringify(releve())); ok = true; } catch (e) {}
+    copie.textContent = ok ? "Relevé copié" : "Copie refusée";
+    setTimeout(() => { copie.textContent = "Copier le relevé"; }, 2000);
+  });
+  boite.append(compteur, bouton, copie);
   document.body.appendChild(boite);
   affiche();
 }
@@ -348,6 +444,7 @@ function posePastille(){
 if (ACTIF){
   ecouteGestes();
   ecouteNavigateur();
+  ecouteFenetre();
   REPEINT_FINI.ecoute((duree, blocs) => {
     garde("repeints", { t: Math.round(performance.now()), ms: ms(duree), blocs, geste: geste ? sorte(geste) : undefined });
     if (geste){ geste.repeints++; geste.msRepeints += duree; }

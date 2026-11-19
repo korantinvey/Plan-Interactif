@@ -1203,6 +1203,15 @@
   /* Chacun s'en va par le bord d'où il vient : les onglets remontent avec la
      bande, les pictos sortent par la droite. */
   html:not(.mode-admin):not(.barre-bande) .topbar.pliee .tools{transform:translateX(calc(100% + 10px))}
+  /* Sortis ainsi, ils élargissaient la page de leur largeur — 427 points sur
+     un écran de 390. Le navigateur du téléphone la dézoomait alors pour la
+     faire tenir, au premier mouvement de chaque geste puisque c'est là que la
+     barre se plie : la fenêtre passait à 427 × 727, la fiche posée au bas de
+     l'écran sautait de soixante points, et le plan changeait d'échelle sous
+     le doigt, puis de nouveau au doigt levé. La barre coupe donc ce qui sort
+     par son côté. « clip » et non « hidden » : la colonne des pictos dépasse
+     la barre par le bas, et « hidden » l'aurait coupée aussi. */
+  html:not(.mode-admin):not(.barre-bande) .topbar{overflow-x:clip}
   /* La légère transparence : le hall se voit dessous, le liseré et l'ombre
      suffisent à poser le bouton. Tout est réécrit ici, jusqu'à l'aplat de
      l'accent et la pastille du parcours, parce que les modèles les peignent à
