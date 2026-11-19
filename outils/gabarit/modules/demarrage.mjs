@@ -54,8 +54,9 @@ export const SESSION_REFUSEE = creeEvenement();
  *  `session` (l'exploitant doit se reconnecter), `code` (une exception de nos
  *  modules, signalée aussi comme erreur). La sonde l'écoute : sans lui, un
  *  relevé sans première image ne disait pas si la page avait planté ou si le
- *  visiteur était simplement parti avant.
- *  @type {import("./evenement.mjs").Evenement<[{ sorte: string, statut?: number }]>} */
+ *  visiteur était simplement parti avant. Un plan reçu mais illisible porte
+ *  en plus `lecture` : ce qui est arrivé à la place (`litLePlan`).
+ *  @type {import("./evenement.mjs").Evenement<[{ sorte: string, statut?: number, lecture?: Lecture }]>} */
 export const PLAN_EN_PANNE = creeEvenement();
 
 /* ------------------------------------------------------------------
@@ -235,8 +236,107 @@ function echec(/** @type {any} */ e){
     signaleErreur(e);
     e = panne("code", String(e && e.message || e));
   }
-  PLAN_EN_PANNE.emet({ sorte: e.sorte, statut: e.statut });
+  PLAN_EN_PANNE.emet({ sorte: e.sorte, statut: e.statut, lecture: e.lecture });
   annonce(panneDuChargement(e), true);
+  // une session refusée mène à l'écran de connexion : recharger n'y changerait rien
+  if (e.sorte !== "session") proposeDeReessayer();
+}
+
+/**
+ * Le bouton « Réessayer » sous le message de panne.
+ *
+ * Le message était la fin de la visite : rien à toucher, et le visiteur qui
+ * ne pense pas à recharger la page — sur un téléphone, le geste ne se voit
+ * nulle part — repartait sans plan. Recharger, et non relancer `charge` : une
+ * exception du montage laisse la page à moitié posée, et seul un départ neuf
+ * la remet d'aplomb. Une copie illisible a déjà été oubliée (`litLePlan`) :
+ * le rechargement ne la retrouvera pas.
+ */
+function proposeDeReessayer(){
+  const vide = $("list").querySelector(".empty");
+  if (!vide) return;
+  const bouton = document.createElement("button");
+  bouton.type = "button";
+  bouton.className = "btn reessai";
+  bouton.textContent = "Réessayer";
+  bouton.addEventListener("click", () => location.reload());
+  vide.append(bouton);
+}
+
+/**
+ * Ce qu'une réponse du plan portait quand elle ne s'est pas lue.
+ *
+ * `recu` dit ce qui est arrivé à la place du plan : `interrompue` (le
+ * téléchargement s'est coupé en route), `vide`, `html` (une page servie à sa
+ * place), `tronquee` (un JSON arrêté au milieu), `autre`. `octets` dit combien
+ * en sont arrivés, `copie` si la réponse sortait de la copie gardée par le
+ * service de second plan (`_sw.js` `gardee`). Rien du contenu lui-même : ces
+ * mots et ces nombres suffisent à séparer les causes.
+ * @typedef {{ recu: string, octets?: number, copie?: true }} Lecture
+ */
+
+/** La réponse lue : le plan, ou ce qui l'a rendu illisible. */
+async function lis(/** @type {Response} */ r){
+  /** @type {string | null} */
+  let texte = null;
+  try { texte = await r.text(); } catch (e) { /* coupée en route : `interrompue` */ }
+  if (texte !== null){
+    try { return { lu: true, plan: JSON.parse(texte) }; } catch (e) { /* illisible, dit plus bas */ }
+  }
+  const debut = texte === null ? "" : texte.trimStart().charAt(0);
+  const recu = texte === null ? "interrompue" : !debut ? "vide" : debut === "<" ? "html"
+    : debut === "{" || debut === "[" ? "tronquee" : "autre";
+  /** @type {Lecture} */
+  const lecture = { recu };
+  if (texte !== null) lecture.octets = texte.length;
+  if (/sw;desc="cache"/.test(r.headers.get("Server-Timing") || "")) lecture.copie = true;
+  return { lu: false, lecture };
+}
+
+/* Les copies de cette adresse, retirées de tous les caches de la page. Celui
+   du service de second plan garde le plan un an sous son adresse versionnée :
+   une copie fautive y resservirait la même panne à chaque ouverture, jusqu'à
+   la synchronisation suivante. */
+async function oublieLaCopie(/** @type {string} */ adresse){
+  try {
+    for (const nom of await caches.keys()){
+      await (await caches.open(nom)).delete(adresse, { ignoreVary: true });
+    }
+  } catch (e) { /* sans `caches` (une page hors HTTPS), rien n'était gardé */ }
+}
+
+/**
+ * Le plan lu dans sa réponse, et redemandé une fois au réseau s'il ne se lit pas.
+ *
+ * Les 18 et 19 novembre 2026, six visites sous Chrome pour Android finirent
+ * sur « réponse illisible » : un statut 200, des données arrivées en moins
+ * d'une seconde et demie — quatre fois sur six de la copie gardée par le
+ * service de second plan —, et rien qui dise ce qu'elles portaient, la
+ * lecture jetant son exception. Le visiteur restait devant un plan vide.
+ *
+ * Désormais la copie est oubliée et le plan redemandé, en contournant aussi
+ * le cache du navigateur, avant de rien annoncer : un téléchargement coupé
+ * dans un hall saturé se rattrape sans que le visiteur le voie. Les deux
+ * issues se signalent comme erreur, avec ce qui était arrivé — la sonde ne
+ * garde qu'une part des visites, le relais des erreurs les compte toutes. Le
+ * message ne tient que des mots fixes : les mêmes causes s'y regroupent.
+ */
+async function litLePlan(/** @type {Response} */ r, /** @type {(adresse: string) => Promise<Response>} */ redemande){
+  const premiere = await lis(r);
+  if (premiere.lu) return premiere.plan;
+  const lecture = /** @type {Lecture} */ (premiere.lecture);
+  const dit = "Plan illisible : " + lecture.recu + (lecture.copie ? ", copie gardée" : ", réseau");
+  if (r.url){
+    await oublieLaCopie(r.url);
+    const encore = await redemande(r.url).catch(() => null);
+    const seconde = encore && encore.ok ? await lis(encore) : null;
+    if (seconde && seconde.lu){
+      signaleErreur(new Error(dit + ", repris"));
+      return seconde.plan;
+    }
+  }
+  signaleErreur(new Error(dit));
+  throw Object.assign(panne("http", "réponse illisible", r.status), { lecture });
 }
 
 /* La version du plan qu'on avait la dernière fois, par salon : c'est elle qui
@@ -362,7 +462,11 @@ export function charge(){
          qu'il y a à dire, et non le « Unexpected token » de la lecture. */
       if (!r.ok) return r.json().catch(() => ({}))
         .then(j => Promise.reject(panne("http", j.erreur || ("HTTP " + r.status), r.status)));
-      return r.json().catch(() => Promise.reject(panne("http", "réponse illisible", r.status)));
+      /* Redemandé comme la première fois, sans le cache du navigateur : le
+         plan versionné s'y déclare immuable, et la copie fautive pouvait y
+         être aussi. L'exploitant garde sa session, et jamais de copie. */
+      return litLePlan(r, (adresse) => fetch(adresse, entetes.Authorization
+        ? { headers: entetes, cache: "no-store" } : { cache: "reload" }));
     })
     .then(d => {
       if (!d.plans?.length) throw panne("vide", "Aucun pavillon : lancez une synchronisation depuis la console.");

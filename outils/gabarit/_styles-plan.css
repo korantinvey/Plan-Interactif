@@ -252,6 +252,8 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
   color:var(--d,var(--accent))}
 .row .nSous{color:var(--d,var(--accent));font-weight:600}
 .empty{padding:40px 20px;text-align:center;color:var(--ink-3);font-size:13px}
+/* sous le message d'une panne : le seul geste qui reste au visiteur (`demarrage.mjs`) */
+.empty .reessai{display:block;margin:14px auto 0;color:var(--ink)}
 
 /* Les tiroirs fermés sont garés à `translateX(100%)`, soit 340 px au-delà du
    bord droit : la scène a donc toujours de quoi défiler. Or `hidden` cache la
