@@ -421,34 +421,6 @@ Ce qui ne se voit ni à la lecture d'un module ni dans la carte.
   le serveur n'applique les colonnes de l'événement qu'aux zones de
   l'instantané (`modules/fiche-zone.mjs` `enregistreZoneAjoutee`).
 - **Le thème du plan est le clair, seul** ; la nuit ne vit que dans la console.
-- **`/api/plan` sert du JSON et des images.** Le plan, son entête et les lots
-  de vignettes sont du JSON ; `vignette=` et `grande=` sont des images. Le
-  relais recopie le `Content-Type` de l'amont sans le contrôler (`src/plan.mjs`) :
-  une règle sur ces réponses (garder, valider, mesurer) dit d'abord laquelle
-  elle vise, sans croire l'étiquette seule. Une page HTML servie en 200 a
-  l'étiquette qu'on lui donne (`_sw.js` `seLit`).
-- **Une longueur de chaîne n'est pas un nombre d'octets** : `texte.length`
-  compte des unités UTF-16, et un accent en vaut une pour deux octets. Ce qui
-  se dit en octets se lit par `arrayBuffer()` et `byteLength`.
-
-### Écrire un essai
-
-Ce qu'une relecture a dû relever, et qu'il ne faut plus lui laisser trouver.
-
-- **Un essai qui éprouve une garde échoue sans elle.** Retirez-la une fois,
-  voyez l'essai échouer, puis remettez-la, avant de pousser. Sans quoi l'essai
-  peut réussir sans rien éprouver : celui du plan illisible en cache passait
-  d'abord aussi bien sans le correctif.
-- **Le service de second plan ne sérialise rien.** Les `waitUntil` de deux
-  demandes courent ensemble : voir rangée l'une ne dit pas que l'autre a fini.
-  Un essai attend la fin propre à ce qu'il vérifie, jamais un signal voisin.
-- **Ranger une version d'un salon efface les autres** (`_sw.js`
-  `oublieLesVersionsDAvant`) : deux réponses qu'un essai compare dans le cache
-  vivent sous deux salons, sinon la seconde efface la première.
-- **Une réponse simulée du plan porte la version que l'entête annonce**
-  (`outils/essais/navigateur/aide.js` `VERSION`). Sous une autre,
-  `modules/demarrage.mjs` `demandePlan` l'écarte et redemande le plan : l'essai
-  éprouve alors autre chose que ce qu'il croit.
 
 ## Déploiement
 
