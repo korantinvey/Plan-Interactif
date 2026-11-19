@@ -92,6 +92,12 @@ for (const ambiance of ["classique", "tuiles", "immersif"]) {
     expect(await ecarts()).toEqual([]);
     expect(refaitsB).toBeLessThanOrEqual(4);
 
+    /* Les zones prennent un autre contexte que les stands, comme le calque
+       ouvert dans l'administration (« editable ») : chez le visiteur, les deux
+       blocs ont le même, et un âge commun ne se voyait pas. */
+    await page.evaluate(() => document.getElementById("zones").classList.add("contexte-a-part"));
+    await repose(page, attente);
+    expect(await ecarts()).toEqual([]);
     // une recherche éteint une partie du hall, stands et zones dans le même repeint
     await page.keyboard.press("Escape");
     await page.fill("#q", "a");
