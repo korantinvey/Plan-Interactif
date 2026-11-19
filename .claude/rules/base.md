@@ -19,9 +19,11 @@ Ce que les revues de CodeRabbit ont trouvé côté Supabase (#531, #533, #535,
   plafond de lignes compté sur un index, taille en octets, sommes plafonnées —
   trois relevés suffisaient à faire échouer le bilan, et la purge de tous les
   salons avec lui.
-- **Lire puis écrire sous concurrence** se fait sous verrou
-  (`pg_advisory_xact_lock`) ou en une seule transaction : deux administrateurs
-  simultanés laissaient l'union de leurs deux listes.
+- **Lire puis écrire sous concurrence** se fait sous un verrou pris avant la
+  lecture et tenu jusqu'à l'écriture (`pg_advisory_xact_lock`, ou
+  `select … for update`), comme `remplace_acces`. Une transaction ordinaire n'y
+  suffit pas : deux administrateurs simultanés y lisaient la même liste et
+  laissaient l'union des deux.
 - **Ce qui est réservé à l'administrateur l'est dans la base** (déclencheur),
   pas seulement dans l'interface.
 - **Une migration n'avale pas d'erreur** : si `pg_cron` refuse une tâche, elle

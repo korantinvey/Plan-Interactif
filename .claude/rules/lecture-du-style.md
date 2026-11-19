@@ -20,7 +20,11 @@ aucune vue par les essais parce qu'aucun salon réel n'employait ces écritures.
 
 - **Partir de ce que le nettoyage laisse passer** (`_partage/svg.ts`), pas de ce
   que les salons emploient, et traiter chaque forme valide :
-  - `inherit`, qui remonte au parent comme une valeur absente ;
+  - `inherit`, qui prend la valeur du parent. Pour une propriété héritée
+    (`fill`, `fill-opacity`, `font-size`), c'est ce que donne aussi l'absence
+    (`herite`). Pour une propriété qui ne s'hérite pas (`opacity`), l'absence
+    vaut sa valeur initiale, 1, et seul `inherit` reprend celle du parent
+    (`opaciteElement`) ;
   - les pourcentages (`opacity="50%"` vaut 0,5), bornés à [0, 1] ;
   - les mots-clés (`font-size="small"`, `medium`), mesurés et non tirés d'une
     table : ils suivent la taille de police réglée par le visiteur ;
