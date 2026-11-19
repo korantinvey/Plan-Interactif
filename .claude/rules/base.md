@@ -20,10 +20,13 @@ Ce que les revues de CodeRabbit ont trouvé côté Supabase (#531, #533, #535,
   trois relevés suffisaient à faire échouer le bilan, et la purge de tous les
   salons avec lui.
 - **Lire puis écrire sous concurrence** se fait sous un verrou pris avant la
-  lecture et tenu jusqu'à l'écriture (`pg_advisory_xact_lock`, ou
-  `select … for update`), comme `remplace_acces`. Une transaction ordinaire n'y
-  suffit pas : deux administrateurs simultanés y lisaient la même liste et
-  laissaient l'union des deux.
+  lecture et tenu jusqu'à l'écriture, sur ce qui existe toujours : la clé de
+  l'opération (`pg_advisory_xact_lock`, comme `remplace_acces` sur le profil),
+  ou la ligne stable qui la porte (`select … for update` sur le salon, le
+  profil). Jamais sur les lignes qu'on va lire : une liste vide n'en verrouille
+  aucune. Une transaction ordinaire n'y suffit pas non plus : deux
+  administrateurs simultanés y lisaient la même liste et laissaient l'union des
+  deux.
 - **Ce qui est réservé à l'administrateur l'est dans la base** (déclencheur),
   pas seulement dans l'interface.
 - **Une migration n'avale pas d'erreur** : si `pg_cron` refuse une tâche, elle
