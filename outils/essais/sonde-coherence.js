@@ -41,7 +41,9 @@ const SAIN = {
   gels: { n: 3, totalMs: 600, maxMs: 257, api: "loaf",
     pires: [{ ms: 257, t: 1136, avantAffichage: true }, { ms: 192, t: 913, avantAffichage: true }, { ms: 151, t: 5000 }],
     battement: { n: 2, totalMs: 300, maxMs: 200, avantAffichage: 1, pendantGeste: 0, couvertMs: 9000 } },
-  reactivite: { n: 1, pireMs: 120, survols: { n: 0, pireMs: 0 } },
+  reactivite: { n: 1, pireMs: 120, survols: { n: 0, pireMs: 0 },
+    // ses parts tiennent dans sa durée : la règle « decoupe » ne dit rien
+    pire: { attenteMs: 10, traitementMs: 70, presentationMs: 40, surLePlan: true } },
   gpu: { repeints: { n: 8, p50: 6.1, p95: 40, max: 58.9 }, pertesContexte: 0 },
   appareil: { mobile: false, reseau: { type: "4g", debitMbps: 10 } },
 };
@@ -79,6 +81,8 @@ const SAIN = {
     ["fluidite", (r) => { r.fluidite.classique.partPlus33 = 34; }],
     ["repeints", (r) => { r.gpu.repeints.p50 = 70; }],
     ["reactivite", (r) => { r.reactivite = { n: 0, pireMs: 8900 }; }],
+    // des parts qui débordent la durée du geste : un découpage faussé
+    ["decoupe", (r) => { r.reactivite.pire = { attenteMs: 60, traitementMs: 60, presentationMs: 60 }; }],
     ["pertes", (r) => { r.gpu.raisonsPertes = [{ raison: "x" }]; }],
     ["panne-affichee", (r) => { r.chargement.panne = { sorte: "reseau" }; }],
     ["aller-retour-nul", (r) => { r.appareil.reseau.rttMs = 0; }],
