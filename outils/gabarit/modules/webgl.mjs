@@ -188,8 +188,8 @@ const DECK_WEBGL = {
   integrite: "sha384-tfBYxvpmXlsE4BBUsCWUytXqH1PTUQsZJPO62M/eVs1HcZbxl7P2mDBm29D+Qz7v",
 };
 /** Un repeint vient de finir : sa durée en millisecondes, et combien de
- *  blocs il a refaits. Seul le relevé des performances l'écoute
- *  (`releve.mjs`, `?perf`) ; chez le visiteur personne, et rien ne coûte.
+ *  blocs il a refaits. Le relevé des performances (`releve.mjs`, `?perf`) et
+ *  la sonde l'écoutent : celle-ci y retrouve les repeints d'une interaction lente.
  *  @type {import("./evenement.mjs").Evenement<[number, number]>} */
 export const REPEINT_FINI = creeEvenement();
 /** Le rendu WebGL vient d'être abandonné pour le SVG : la raison. La sonde
@@ -225,7 +225,9 @@ export const GL = {
   // les noms du stand choisi, écrits à part (`libelles.mjs` `libellesWebgl`)
   libellesChoisis: [], pastillesChoisies: [], cleChoisis: "", versionChoisis: 0,
   groupes: new Map(), survol: null, focus: null, libellesPhare: [], temps: 0, imageAnim: 0, cleAnim: "",
-  modeles: new Map(), tailles: new Map(), duree: 0,
+  modeles: new Map(), tailles: new Map(), duree: 0, reconstruits: 0,
+  // les stands et les zones que le dernier repeint a reconvertis, les autres repris tels quels (`emplacementGarde`)
+  emplacementsRefaits: 0,
   hote: null, toile: null, branche: false, veille: false, aRemonter: false, attente: 0, remontes: 0, abandon: false,
   // la raison de la dernière perte du dessin (`perdContexteWebgl`), dite avec un remontage refusé
   perte: "",
@@ -577,6 +579,9 @@ export function monteWebgl(){
         const b = blocDe(n.target);
         if (b === "ordre") GL.ordre = true;
         else if (b) GL.sales.add(b);
+        // l'emplacement touché, s'il y en a un : lui seul se reconvertira (`emplacementGarde`)
+        const e = b && b !== "ordre" ? emplacementDe(n.target) : null;
+        if (e) EMPLACEMENTS_SALIS.add(e);
         // un stand qui monte ou s'abaisse emporte ses marques, posées sur son dessus
         if (b && b !== "ordre" && b.id === "stands" && GL.camera && $("dists")) GL.sales.add($("dists"));
       }
@@ -977,6 +982,9 @@ function repeintWebgl(){
   let n = 0;
   // un stand dessiné a pu naître, changer d'exposant ou disparaître : son nom suit
   if ([...GL.sales].some(b => b.classList && b.classList.contains("dcal"))) _page.libellesWebgl();
+  // tout repeindre, c'est aussi ne rien reprendre : la page entière a pu changer
+  SANS_MEMOIRE = GL.tout;
+  REFAITS = 0;
   for (const b of blocsDansLOrdre()){
     vus.add(b);
     if (b.id === "labels") continue;
@@ -986,11 +994,13 @@ function repeintWebgl(){
     }
   }
   for (const b of [...GL.blocs.keys()]) if (!vus.has(b)) GL.blocs.delete(b);
-  GL.sales.clear(); GL.tout = false; GL.ordre = false; GL.massif = false;
+  GL.sales.clear(); EMPLACEMENTS_SALIS.clear(); SANS_MEMOIRE = false;
+  GL.tout = false; GL.ordre = false; GL.massif = false;
   GL.deck.setProps({ layers: assembleWebgl() });
   majAnimationWebgl();
   GL.duree = performance.now() - t0;
   GL.reconstruits = n;
+  GL.emplacementsRefaits = REFAITS;
   REPEINT_FINI.emet(GL.duree, n);
 }
 
@@ -1918,12 +1928,13 @@ function convertitBloc(racine, cle){
   if (avant !== null) CHOISI = null;
   // les couleurs de la page, lues une fois pour tous les stands ou toutes les zones du bloc
   JETONS = racine.id === "stands" || racine.id === "zones" ? jetonsEmplacements(racine) : null;
+  CONTEXTE = JETONS ? contexteEmplacements(racine, acc) : "";
   try {
     if (estHabillage(racine)) habillageGl(racine, acc);
     else if (PAR_ATTRIBUTS.has(racine.id)) parcoursAttributs(racine, M_ID, 1, acc, racine);
     else parcoursGl(racine, M_ID, 1, acc);
   }
-  finally { JETONS = null; }
+  finally { JETONS = null; CONTEXTE = ""; }
   // un autre stand choisi, ou le même à une autre hauteur : d'autres noms passent derrière lui
   if (avant !== null && cleChoisi() !== avant) GL.couchesLibelles = null;
   const out = couchesDeBloc(acc, cle);
@@ -1967,10 +1978,13 @@ const estEmplacement = (/** @type {Element} */ el) => {
   return el.localName === "g" && !!p && (/** @type {Element} */ (p).id === "stands" || /** @type {Element} */ (p).id === "zones") &&
     !el.hasAttribute("transform");
 };
-function emplacementGl(/** @type {Element} */ g, /** @type {number[]} */ m, /** @type {number} */ op, /** @type {any} */ acc){
+const etatDe = (/** @type {Element} */ g) => {
   // l'état vient de ceux qui le décident (`etat-emplacements.mjs`), et non des classes du groupe
   const d = /** @type {SVGElement} */ (g).dataset;
-  const etat = etatEmplacement(d.id, d.aj, g.classList.contains("zone"), g.matches(":focus-visible"));
+  return etatEmplacement(d.id, d.aj, g.classList.contains("zone"), g.matches(":focus-visible"));
+};
+function emplacementGl(/** @type {Element} */ g, /** @type {number[]} */ m, /** @type {number} */ op, /** @type {any} */ acc,
+    /** @type {ReturnType<typeof etatEmplacement>} */ etat = etatDe(g)){
   const st = styleEmplacement(etat, /** @type {ReturnType<typeof jetonsEmplacements>} */ (JETONS));
   op *= st.opacite;
   if (!(op > .003)) return;
@@ -1984,6 +1998,167 @@ function emplacementGl(/** @type {Element} */ g, /** @type {number[]} */ m, /** 
     }
     formeGl(c, st.trace, m, op, tracesDe(c.getAttribute("d") || ""), acc);
   }
+}
+
+/* ------------------------------------------------------------
+   La conversion de chaque emplacement, gardée d'un repeint à l'autre
+
+   Choisir un stand change sa classe ; le guet, qui raisonne par bloc, salissait
+   alors le bloc entier, et chacun des stands du salon se redécoupait en formes
+   pour en allumer un seul — et autant au tap suivant, et à la fermeture de la
+   fiche (banc du 19 novembre 2026 : la moitié du repeint qui suit un tap).
+   Chaque emplacement garde donc ce que sa conversion a versé, avec ce dont
+   elle dépend : son état (`etat-emplacements.mjs`), sa place, et le contexte
+   du bloc — les couleurs de la page, la vue immersive, le trajet tracé,
+   l'édition. Ses attributs et son contenu, le guet les surveille déjà. Au repeint suivant, un
+   emplacement que le guet n'a pas vu changer et dont la signature tient verse
+   sa conversion gardée ; les autres se refont. Un tap ne reconvertit plus que
+   les stands qui changent, quelle que soit la taille du salon — les noms, et
+   les couleurs que le moteur renvoie pour tout le bloc, restent à refaire.
+
+   Ce qui se verse est identique à ce que la conversion aurait produit
+   (`compareConversions`, que les essais imposent dans chaque ambiance) : les
+   formes reprises sont les mêmes tableaux, et le moteur, qui les compare
+   (`memesFormes`), ne renvoie alors que les couleurs à la carte graphique.
+   Deux choses ne se gardent pas : un volume en route vers sa hauteur — il se
+   reconvertit jusqu'à son arrivée, comme avant —, et tout ce qu'un repeint
+   complet (`toutRepeindreWebgl`) refait, la page entière ayant pu changer.
+   ------------------------------------------------------------ */
+/** @type {WeakMap<Element, { signe: string, age: number, op: number, m: number[], sous: any, choisi: any }>} */
+let CONVERTIS = new WeakMap();
+/** Les emplacements que le guet a vus changer depuis le dernier repeint. */
+const EMPLACEMENTS_SALIS = new Set();
+/** Le contexte du bloc en conversion, posé par `convertitBloc`. */
+let CONTEXTE = "";
+/** Un repeint complet : rien ne se reprend. */
+let SANS_MEMOIRE = false;
+/** Combien d'emplacements le repeint en cours a reconvertis. */
+let REFAITS = 0;
+
+/** L'emplacement — stand ou zone — qui contient ce nœud, s'il y en a un. */
+function emplacementDe(/** @type {Node} */ n){
+  let x = /** @type {Element | null} */ (n.nodeType === 1 ? n : n.parentNode);
+  while (x && x.parentNode && !(/** @type {Element} */ (x.parentNode).id === "stands" ||
+      /** @type {Element} */ (x.parentNode).id === "zones")) x = /** @type {Element} */ (x.parentNode);
+  return x && x.parentNode && x.localName === "g" ? x : null;
+}
+
+/** Ce qui, hors de l'emplacement, décide de sa conversion. */
+function contexteEmplacements(/** @type {Element} */ racine, /** @type {any} */ acc){
+  return JSON.stringify([JETONS, racine.getAttribute("class"), cameraEnJeu(), GL.camera, boutsDuTrajet(),
+    Boolean(acc.prises), MOUVEMENT_REDUIT.matches]);
+}
+/* Le contexte change rarement — une couleur réglée, la vue immersive, un
+   trajet — et se compare une fois par bloc : chaque conversion gardée retient
+   seulement l'âge du contexte sous lequel elle s'est faite. */
+let contexteVu = "", ageContexte = 0;
+const ageDuContexte = () => {
+  if (CONTEXTE !== contexteVu){ contexteVu = CONTEXTE; ageContexte++; }
+  return ageContexte;
+};
+
+/* L'état d'un emplacement, en peu de caractères. Ses attributs et son
+   contenu n'y entrent pas : le guet signale tout ce qui les change
+   (`EMPLACEMENTS_SALIS`). Le secteur et la chaleur, rares, s'écrivent en entier. */
+function signeEtat(/** @type {any} */ e){
+  return (e.zone ? "z" : "") + (e.focus ? "f" : "") + (e.sel ? "s" : "") + (e.dim ? "d" : "") +
+    (e.phare ? "p" : "") + (e.masquee ? "m" : "") + (e.repris ? "r" : "") + (e.tutoCible ? "t" : "") +
+    (e.sect === null ? "" : "S" + JSON.stringify(e.sect)) + (e.chal === null ? "" : "C" + JSON.stringify(e.chal));
+}
+const memesNombres = (/** @type {number[]} */ a, /** @type {number[]} */ b) => {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+};
+
+function emplacementGarde(/** @type {Element} */ g, /** @type {number[]} */ m, /** @type {number} */ op, /** @type {any} */ acc){
+  const etat = etatDe(g);
+  const signe = signeEtat(etat), age = ageDuContexte();
+  const garde = CONVERTIS.get(g);
+  if (garde && !SANS_MEMOIRE && garde.signe === signe && garde.age === age && garde.op === op &&
+      memesNombres(garde.m, m) && !EMPLACEMENTS_SALIS.has(g)){
+    verse(garde.sous, acc);
+    if (garde.choisi) CHOISI = garde.choisi;
+    return;
+  }
+  REFAITS++;
+  const sous = accVide(acc.prises);
+  // le volume choisi que sa conversion retient (`formeGl`) : gardé avec elle
+  const avant = CHOISI;
+  CHOISI = null;
+  /** @type {any} */
+  let choisi = null;
+  // une conversion qui lève rend le volume choisi d'avant, comme si elle n'avait pas eu lieu
+  try { emplacementGl(g, m, op, sous, etat); choisi = CHOISI; }
+  finally { CHOISI = choisi || avant; }
+  if (enRoute(sous)) CONVERTIS.delete(g);
+  else CONVERTIS.set(g, { signe, age, op, m: m.slice(), sous, choisi });
+  verse(sous, acc);
+}
+
+/** Un volume encore en mouvement : sa conversion change à chaque repeint. */
+function enRoute(/** @type {any} */ a){
+  if (a.pleins.some((/** @type {any} */ p) => p.hausse)) return true;
+  for (const s of a.phares.values()) if (enRoute(s)) return true;
+  for (const s of a.jetons.values()) if (enRoute(s)) return true;
+  return false;
+}
+
+/** Verse une conversion gardée dans celle du bloc, sans toucher à la gardée. */
+function verse(/** @type {any} */ sous, /** @type {any} */ acc){
+  for (const k of ["pleins", "traitsPx", "traitsM", "traitsZ", "images", "decor"]){
+    const de = sous[k], vers = acc[k];
+    for (let i = 0; i < de.length; i++) vers.push(de[i]);
+  }
+  for (const [cle, g] of sous.textes){
+    const t = acc.textes.get(cle);
+    if (t) t.items.push(...g.items);
+    else acc.textes.set(cle, { ...g, items: [...g.items] });
+  }
+  for (const [nom, carte] of [["phares", sous.phares], ["jetons", sous.jetons]]){
+    for (const [el, s] of carte){
+      let t = acc[nom].get(el);
+      if (!t){ t = { ...accVide(acc.prises), ...(nom === "jetons" ? { phares: null, jetons: null, parent: acc } : {}) }; acc[nom].set(el, t); }
+      verse(s, t);
+    }
+  }
+}
+
+/**
+ * Ce que la mémoire verse, comparé à ce que la conversion produit d'elle-même :
+ * les différences, bloc par bloc. Vide, la mémoire ne change rien à l'image.
+ * Seuls les essais l'appellent (`plan.mjs` `__essais`).
+ */
+export function compareConversions(){
+  /** @type {string[]} */
+  const ecarts = [];
+  const lis = (/** @type {Element} */ racine, /** @type {boolean} */ sans) => {
+    const acc = accVide(false);
+    const garde = CHOISI;
+    JETONS = jetonsEmplacements(racine);
+    CONTEXTE = contexteEmplacements(racine, acc);
+    const avant = SANS_MEMOIRE;
+    SANS_MEMOIRE = sans;
+    let choisi = "";
+    try { parcoursGl(racine, M_ID, 1, acc); choisi = cleChoisi(); }
+    finally { JETONS = null; CONTEXTE = ""; SANS_MEMOIRE = avant; CHOISI = garde; }
+    return JSON.stringify({ acc, choisi }, (k, v) =>
+      v instanceof Element ? (v.getAttribute("data-id") || v.getAttribute("data-aj") || v.localName)
+        : v instanceof Map ? [...v.entries()] : k === "hausse" ? Boolean(v) : v);
+  };
+  for (const id of ["stands", "zones"]){
+    const racine = $(id);
+    if (!racine) continue;
+    // d'abord la mémoire, telle que les repeints l'ont laissée ; puis sans elle
+    const avec = lis(racine, false), sans = lis(racine, true);
+    if (avec !== sans){
+      let i = 0;
+      while (i < avec.length && avec[i] === sans[i]) i++;
+      ecarts.push(id + " : diffère à partir de « " + avec.slice(Math.max(0, i - 60), i + 60) + " »");
+    }
+  }
+  return ecarts;
 }
 
 /* Ce que le cartouche met en avant se range à part : il bat, et seules ses
@@ -2006,7 +2181,7 @@ function accDe(el, acc){
 }
 
 function parcoursGl(el, m, op, acc){
-  if (JETONS && estEmplacement(el)){ emplacementGl(el, m, op, acc); return; }
+  if (JETONS && estEmplacement(el)){ emplacementGarde(el, m, op, acc); return; }
   const cs = getComputedStyle(el);
   if (cs.display === "none") return;
   const tr = el.getAttribute("transform");
@@ -3130,6 +3305,37 @@ function memesPoints(/** @type {any} */ a, /** @type {any} */ b){
   for (let i = 0; i < a.length; i++) if (!memesPoints(a[i], b[i])) return false;
   return true;
 }
+/**
+ * Des traits aux mêmes tracés, pour les mêmes objets.
+ *
+ * Les contours n'avaient pas la comparaison des aplats : chaque repeint du bloc
+ * des stands leur donnait un tableau neuf, et le moteur retriangulait les
+ * contours des deux cent trente-neuf stands de la démonstration à chaque tap,
+ * pour un seul qui changeait de couleur — le plus gros du travail qui restait
+ * au moteur après un choix (banc du 19 novembre 2026). Les tracés repris d'une
+ * conversion gardée sont les mêmes tableaux (`emplacementGarde`) : la
+ * comparaison s'arrête alors au premier niveau. Couleurs, largeurs et tirets se
+ * signent à part (`signeTraits`) et ne refont que leur attribut.
+ */
+function memesTraits(/** @type {any} */ neufs, /** @type {any} */ avant){
+  if (neufs === avant) return true;
+  if (!Array.isArray(neufs) || !Array.isArray(avant) || neufs.length !== avant.length) return false;
+  for (let i = 0; i < neufs.length; i++){
+    const a = neufs[i], b = avant[i];
+    if (a.el !== b.el || !memesPoints(a.path, b.path)) return false;
+  }
+  return true;
+}
+/** Ce que les traits d'une couche disent de leurs couleurs, largeurs et tirets. */
+function signeTraits(/** @type {any[]} */ data){
+  let c = "", l = "", t = "";
+  for (const d of data){
+    c += (d.couleur ? d.couleur.join(",") : "") + ";";
+    l += d.largeur + ";";
+    t += (d.dash ? d.dash.join(",") : "") + ";";
+  }
+  return { getColor: c, getWidth: l, getDashArray: t };
+}
 /** Ce que les couleurs d'une couche disent d'elles, pour savoir si elles ont changé. */
 const signeCouleurs = (/** @type {any[]} */ data) => data.map(d => d.couleur ? d.couleur.join(",") : "").join(";");
 
@@ -3262,7 +3468,8 @@ function couchesDeBloc(acc, cle){
       ...(GL.camera && cle === "#itin" ? { billboard: true, parameters: { depthCompare: "always", depthWriteEnabled: false } } : plat),
       getPath: d => d.path, getColor: d => d.couleur, getWidth: d => d.largeur, widthUnits: unites,
       jointRounded: true, capRounded: false, widthMinPixels: unites === "common" ? .6 : 0,
-      extensions: K.traits, getDashArray: d => d.dash, dashJustified: false }));
+      extensions: K.traits, getDashArray: d => d.dash, dashJustified: false,
+      dataComparator: memesTraits, updateTriggers: signeTraits(liste) }));
   });
   /* Les traits qui s'amincissent : comptés en mètres, à la largeur que le
      SVG leur donnerait à « TRAIT_PLEIN » pixels par mètre, et bornés par
@@ -3281,7 +3488,8 @@ function couchesDeBloc(acc, cle){
         getPath: d => d.path, getColor: d => d.couleur, getWidth: ep / TRAIT_PLEIN, widthUnits: "common",
         widthMinPixels: ep * TRAIT_PLANCHER, widthMaxPixels: ep,
         jointRounded: true, capRounded: false, extensions: constTexte().traits,
-        getDashArray: d => d.dash, dashJustified: false, tirets: [0, 0], demiEpaisseur: ep / 2, ...plat }));
+        getDashArray: d => d.dash, dashJustified: false, tirets: [0, 0], demiEpaisseur: ep / 2, ...plat,
+        dataComparator: memesTraits, updateTriggers: signeTraits(l) }));
   });
   let i = 0;
   for (const g of acc.textes.values()) out.push(...couchesTexte(cle + "-textes-" + (i++), g.items, g.famille, g.graisse,

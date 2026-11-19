@@ -77,6 +77,11 @@
          page HTML, un JSON tronqué ; combien d'octets ; s'il sortait de la
          copie gardée) — `demarrage.mjs` `litLePlan`. Avant, la panne n'en
          disait que `http` et le statut 200.
+     6 — 19 novembre 2026. La pire interaction dit où son temps est passé
+         (`reactivite.pire`) : l'attente avant que la page la traite, son
+         traitement, l'image qui l'a suivie, si elle portait sur le plan, et
+         les repeints du plan tombés pendant elle. Avant, seuls sa durée et son
+         type : un tap lent sur iPhone ne disait pas ce qui le retenait.
    ============================================================ */
 import { API, SLUG, PLAN_ADMIN, BORNE, entetesApi, configProjet } from "./salon.mjs";
 import { GL, RENDU_WEBGL, REPEINT_FINI, CONTEXTE_PERDU, COMPTES_DECK, IMAGE_DECK, TOILE_PRETE, carteDuWebgl, sousPixelOffert } from "./webgl.mjs";
@@ -91,7 +96,7 @@ import { SACCADE, FIN_GESTE, TRANCHES, PREMIERE_LENTE, centile, fichier, observe
 
 const PERF = /[?&]perf(?:[=&]|$)/.test(location.search);
 // ce que mesure chaque champ a changé : voir l'en-tête
-const REVISION = 5;
+const REVISION = 6;
 const SONDE_API = API ? API.replace(/[^/]*$/, "sonde") : "";
 const PAGE = PLAN_ADMIN ? "admin" : BORNE ? "borne" : "plan";
 
@@ -175,13 +180,15 @@ function nouvelleVisite(/** @type {boolean} */ chargee){
   const maintenant = performance.now();
   // la visite d'avant garde le temps vu jusqu'ici ; celle-ci part de son début
   if (V) cumuleVu(maintenant);
+  // la pire interaction est celle de la visite : la précédente ne la décide plus
+  pireEntree = null;
   V = { id: uuid(), debut: Date.now(), t0: chargee ? 0 : maintenant, chargee,
     vues: { classique: vue0(), immersif: vue0() }, horsPlan: vue0(), gesteDepuisEnvoi: false, immersif: false,
     visibleMs: 0,
     gels: { n: 0, totalMs: 0, maxMs: 0, /** @type {any[]} */ pires: [] },
     battement: { n: 0, totalMs: 0, maxMs: 0, avantAffichage: 0, pendantGeste: 0, couvertMs: 0 },
     reactivite: { n: 0, pireMs: 0, pireType: /** @type {string | undefined} */ (undefined),
-      survols: { n: 0, pireMs: 0 } },
+      /** @type {Decoupe | undefined} */ pire: undefined, survols: { n: 0, pireMs: 0 } },
     /** @type {number[]} */ repeints: [], nRepeints: 0, maxRepeint: 0,
     /** @type {any[]} */ deck: [], nDeck: 0, pertes: 0, /** @type {any[]} */ raisons: [], picMo: 0 };
   if (chargee && (document.hidden || /** @type {any} */ (document).prerendering)){
@@ -843,7 +850,11 @@ function ecouteNavigateur(){
     if (e.interactionId > 0){
       const r = V.reactivite;
       r.n++;
-      if (e.duration > r.pireMs){ r.pireMs = Math.round(e.duration); r.pireType = e.name; }
+      entreesRecentes.push(e);
+      if (entreesRecentes.length > ENTREES_RECENTES) entreesRecentes.shift();
+      if (e.duration > r.pireMs){ r.pireMs = Math.round(e.duration); r.pireType = e.name; pireEntree = e; }
+      // un événement du même geste, peint dans la même image, élargit son découpage
+      if (pireEntree && e.interactionId === pireEntree.interactionId) r.pire = partsDeLInteraction(pireEntree, entreesRecentes);
     } else if (SURVOLS.test(e.name)){
       const s = V.reactivite.survols;
       s.n++;
@@ -853,6 +864,69 @@ function ecouteNavigateur(){
 }
 /** L'entrée et la sortie du pointeur, que rien n'a demandées au visiteur. */
 const SURVOLS = /^(pointer|mouse)(over|out|enter|leave)$/;
+
+/* Les derniers événements de gestes rapportés, et celui de la pire
+   interaction de la visite : ses voisins de la même image s'y retrouvent. */
+const ENTREES_RECENTES = 24;
+/** @type {any[]} */
+const entreesRecentes = [];
+/** @type {any} */
+let pireEntree = null;
+
+/* Les derniers repeints du plan, l'instant de leur fin avec : la pire
+   interaction y retrouve ceux qui sont tombés pendant elle. Une poignée
+   suffit — l'entrée de l'interaction arrive dans l'image qui la suit. */
+const REPEINTS_RECENTS = 12;
+/** @type {{ fin: number, duree: number, blocs: number }[]} */
+const repeintsRecents = [];
+
+/**
+ * Où le temps d'une interaction est passé.
+ *
+ * Les taps lents sur iPhone (le quart des visites de FUNEXPO au-delà de
+ * 470 ms, les 18 et 19 novembre 2026) ne disaient que leur durée, et Safari
+ * ne rapporte pas les longues images qui l'auraient expliquée. Or les entrées
+ * d'un geste savent, partout, quand la page a commencé et fini de les
+ * traiter : de quoi séparer une page déjà occupée quand le doigt arrive
+ * (`attenteMs`), le travail que le geste demande (`traitementMs`) et l'image
+ * qui le montre (`presentationMs`). Les repeints du plan tombés dans
+ * l'intervalle disent si cette image redessinait le plan, et combien de blocs
+ * elle a refaits.
+ *
+ * Un tap rapporte l'appui, le relâché et le clic, peints dans la même image et
+ * de la même durée : le découpage les prend ensemble, comme `web-vitals` — du
+ * début du traitement du premier à la fin de celui du dernier. Pris seul, l'appui
+ * laissait le travail du relâché, qui le suit, dans l'image d'après.
+ * @typedef {{ attenteMs: number, traitementMs: number, presentationMs: number,
+ *   surLePlan?: true, repeints?: number, repeintMs?: number, blocs?: number }} Decoupe
+ */
+function partsDeLInteraction(/** @type {any} */ e, /** @type {any[]} */ recentes){
+  const fin = e.startTime + e.duration;
+  // la durée est arrondie à 8 ms près : la même image, à cela près
+  const image = recentes.filter(x => x.interactionId === e.interactionId &&
+    Math.abs(x.startTime + x.duration - fin) <= 8 && x.processingStart > 0 && x.processingEnd >= x.processingStart);
+  // un navigateur qui ne date pas le traitement : la durée seule reste dite
+  if (!image.length) return undefined;
+  const premier = image.reduce((a, x) => (x.startTime < a.startTime ? x : a));
+  const debutTraitement = Math.min(...image.map(x => x.processingStart));
+  const finTraitement = Math.max(...image.map(x => x.processingEnd));
+  /** @type {Decoupe} */
+  const d = {
+    attenteMs: Math.max(0, Math.round(premier.processingStart - premier.startTime)),
+    traitementMs: Math.round(finTraitement - debutTraitement),
+    // la dernière part ne descend pas sous zéro, l'arrondi de la durée aidant
+    presentationMs: Math.max(0, Math.round(fin - finTraitement)),
+  };
+  const cible = e.target;
+  if (cible && typeof cible.closest === "function" && cible.closest("#stage")) d.surLePlan = true;
+  const pendant = repeintsRecents.filter(p => p.fin >= e.startTime && p.fin - p.duree <= fin);
+  if (pendant.length){
+    d.repeints = pendant.length;
+    d.repeintMs = Math.round(pendant.reduce((a, p) => a + p.duree, 0));
+    d.blocs = Math.max(...pendant.map(p => p.blocs));
+  }
+  return d;
+}
 
 function memoire(){
   const m = /** @type {any} */ (performance).memory;
@@ -1298,7 +1372,9 @@ function demarre(){
   ecouteGestes();
   ecouteNavigateur();
   ecouteBattement();
-  REPEINT_FINI.ecoute(sur((/** @type {number} */ duree) => {
+  REPEINT_FINI.ecoute(sur((/** @type {number} */ duree, /** @type {number} */ blocs) => {
+    repeintsRecents.push({ fin: performance.now(), duree, blocs });
+    if (repeintsRecents.length > REPEINTS_RECENTS) repeintsRecents.shift();
     V.nRepeints++;
     V.maxRepeint = Math.max(V.maxRepeint, duree);
     echantillonne(V.repeints, V.nRepeints, duree);

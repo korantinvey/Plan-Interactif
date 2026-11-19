@@ -287,6 +287,19 @@ const REGLES = [
     },
   },
   {
+    cle: "decoupe",
+    texte: "parts de la pire interaction au-delà de sa durée",
+    test(r) {
+      const x = r && r.reactivite;
+      const d = x && x.pire;
+      if (!d) return;
+      const somme = (n(d.attenteMs) || 0) + (n(d.traitementMs) || 0) + (n(d.presentationMs) || 0);
+      /* La durée de l'entrée est arrondie à 8 ms près, ses instants non : la
+         somme des parts la dépasse d'autant au plus. */
+      if (somme > (n(x.pireMs) || 0) + 10) return somme + " ms > " + x.pireMs + " ms";
+    },
+  },
+  {
     cle: "pertes",
     texte: "plus de raisons que de pertes du dessin",
     test(r) {

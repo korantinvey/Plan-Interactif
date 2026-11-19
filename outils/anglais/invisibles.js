@@ -161,4 +161,7 @@ module.exports = [
   // la place « Plan indisponible : réponse illisible »
   "Plan illisible : ",
   ", copie gardée",
+  // `modules/webgl.mjs` `compareConversions` : l'écart que seuls les essais
+  // lisent, jamais affiché
+  " : diffère à partir de « ",
 ];
