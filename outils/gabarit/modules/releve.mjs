@@ -215,11 +215,12 @@ let dernierEtat = "";
 let lectureDemandee = false;
 
 /** La fenêtre, en une ligne : largeur × hauteur, défilement (`sy`), puis la
- *  fenêtre visuelle (`vv`), son décalage (`dy`) et son agrandissement. */
+ *  fenêtre visuelle (`vv`), ses décalages (`dx`, `dy`) et son agrandissement. */
 function fenetre(){
   const vv = window.visualViewport;
   return innerWidth + "x" + innerHeight + (scrollY ? " sy" + Math.round(scrollY) : "") +
     (vv ? " vv " + Math.round(vv.width) + "x" + Math.round(vv.height) +
+      (vv.offsetLeft ? " dx" + Math.round(vv.offsetLeft) : "") +
       (vv.offsetTop ? " dy" + Math.round(vv.offsetTop) : "") + (vv.scale !== 1 ? " x" + vv.scale.toFixed(2) : "") : "");
 }
 

@@ -127,12 +127,46 @@ test("la barre pliée n'élargit pas la page, et la fiche ne saute pas @telephon
   await expect(page.locator("#bandeau")).toHaveClass(/\bpliee\b/);
   // la barre au bout de sa transition, pictos sortis
   await page.waitForTimeout(500);
+  /* La barre se replie d'elle-même un peu après le dernier mouvement : son
+     pli se relève dans le même instantané que les mesures, sans quoi une
+     mesure prise barre dépliée passerait sans rien prouver. */
   const pendant = await page.evaluate(() => ({ w: innerWidth, h: innerHeight,
+    pliee: document.getElementById("bandeau").classList.contains("pliee"),
     large: document.documentElement.scrollWidth,
     fiche: Math.round(document.getElementById("detail").getBoundingClientRect().top) }));
   await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
 
+  expect(pendant.pliee).toBe(true);
   expect(pendant.large).toBeLessThanOrEqual(avant.w);
   expect({ w: pendant.w, h: pendant.h, fiche: pendant.fiche }).toEqual(avant);
+  expect(erreurs).toEqual([]);
+});
+
+/* Un zoom se fait en plusieurs pincements, à un quart de seconde l'un de
+   l'autre. La liste, qui s'efface pendant le geste, revenait au doigt levé
+   et s'effaçait de nouveau au geste suivant : elle clignotait entre chaque
+   reprise du doigt. Deux gestes rapprochés ne la font plus revenir qu'une
+   fois, après le second. */
+test("deux gestes rapprochés n'effacent la liste qu'une fois @telephone", async ({ page }) => {
+  test.slow();
+  const erreurs = await prepare(page);
+  await page.goto(PLAN + "&rendu=svg");
+  test.skip(await page.evaluate(() => innerWidth > 900), "la liste ne s'efface que sur écran étroit");
+  await attendLaListe(page);
+  await page.evaluate(() => {
+    const s = document.getElementById("side");
+    window.__plis = [];
+    new MutationObserver(() => {
+      const p = s.classList.contains("pliee");
+      if (window.__plis[window.__plis.length - 1] !== p) window.__plis.push(p);
+    }).observe(s, { attributes: true, attributeFilter: ["class"] });
+  });
+  const cdp = await page.context().newCDPSession(page);
+  const x = Math.round(await page.evaluate(() => innerWidth / 2));
+  for (let n = 0; n < 2; n++) {
+    await glisse(cdp, x, 160, 60);
+    await page.waitForTimeout(250);
+  }
+  await expect.poll(() => page.evaluate(() => window.__plis.join(" "))).toBe("true false");
   expect(erreurs).toEqual([]);
 });
