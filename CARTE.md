@@ -3197,27 +3197,28 @@ Importé par :
 
 edition · outil-dessin · outil-escalier · reprise-emplacements
 
-### `modules/sonde.mjs` — 1362 l. → plan, plan-admin
+### `modules/sonde.mjs` — 1412 l. → plan, plan-admin
 
 - l.1 · La sonde silencieuse — chaque visite dépose son résumé de performance
 
 Fonctions :
 
-`sur` 117 · `ms` 118 · `enCreux` 119 · `uuid` 122 · `echantillonne` 138 · `vue0` 159
-`nouvelleVisite` 174 · `cumuleVu` 215 · `poseVu` 227 · `invisibleAvantAffichage` 240
-`lcpVu` 247 · `vueDuMoment` 262 · `surLePlan` 269 · `commence` 274 · `sorte` 285
-`clos` 288 · `relance` 304 · `image` 310 · `ecouteGestes` 340 · `nomDuScript` 377 · `lu` 396
-`cumulDeck` 406 · `travauxDeck` 411 · `releveInstant` 437 · `travauxPendant` 447
-`cleAttente` 535 · `lesAttentes` 547 · `guetteCompilation` 555 · `imageDOuverture` 588
-`decoupe` 611 · `gel` 630 · `doitBattre` 683 · `bat` 692 · `battu` 699
-`ecouteBattement` 718 · `dansLaCarte` 761 · `gelPendantLaCarte` 767 · `etapeDeLaCarte` 773
-`laCarteDesEnvirons` 803 · `ecouteNavigateur` 819 · `memoire` 857 · `contexteDuPlan` 870
-`lisAppareil` 882 · `handicapDeclare` 918 · `finDesDonnees` 932 · `trajetDesDonnees` 947
-`dureeDuContexte` 959 · `appelsEnEchec` 973 · `leChargement` 995 · `lesTrajets` 1031
-`fluidite` 1036 · `laCarte` 1045 · `resumeSonde` 1068 · `leBattement` 1102 · `octets` 1108
-`coupe` 1111 · `tronque` 1122 · `fraiche` 1156 · `litLaFile` 1159 · `ecritLaFile` 1167
-`retire` 1179 · `corps` 1182 · `versionDesPages` 1190 · `envoieUne` 1201 · `pousse` 1227
-`actif` 1252 · `envoie` 1256 · `brancheSonde` 1281 · `demarre` 1294
+`sur` 122 · `ms` 123 · `enCreux` 124 · `uuid` 127 · `echantillonne` 143 · `vue0` 164
+`nouvelleVisite` 179 · `cumuleVu` 220 · `poseVu` 232 · `invisibleAvantAffichage` 245
+`lcpVu` 252 · `vueDuMoment` 267 · `surLePlan` 274 · `commence` 279 · `sorte` 290
+`clos` 293 · `relance` 309 · `image` 315 · `ecouteGestes` 345 · `nomDuScript` 382 · `lu` 401
+`cumulDeck` 411 · `travauxDeck` 416 · `releveInstant` 442 · `travauxPendant` 452
+`cleAttente` 540 · `lesAttentes` 552 · `guetteCompilation` 560 · `imageDOuverture` 593
+`decoupe` 616 · `gel` 635 · `doitBattre` 688 · `bat` 697 · `battu` 704
+`ecouteBattement` 723 · `dansLaCarte` 766 · `gelPendantLaCarte` 772 · `etapeDeLaCarte` 778
+`laCarteDesEnvirons` 808 · `ecouteNavigateur` 824 · `partsDeLInteraction` 883
+`memoire` 905 · `contexteDuPlan` 918 · `lisAppareil` 930 · `handicapDeclare` 966
+`finDesDonnees` 980 · `trajetDesDonnees` 995 · `dureeDuContexte` 1007 · `appelsEnEchec` 1021
+`leChargement` 1043 · `lesTrajets` 1079 · `fluidite` 1084 · `laCarte` 1093
+`resumeSonde` 1116 · `leBattement` 1150 · `octets` 1156 · `coupe` 1159 · `tronque` 1170
+`fraiche` 1204 · `litLaFile` 1207 · `ecritLaFile` 1215 · `retire` 1227 · `corps` 1230
+`versionDesPages` 1238 · `envoieUne` 1249 · `pousse` 1275 · `actif` 1300 · `envoie` 1304
+`brancheSonde` 1329 · `demarre` 1342
 
 Importe :
 

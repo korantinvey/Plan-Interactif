@@ -12,7 +12,7 @@
  * `/api/sonde` et la RPC `sonde_admin` sont interceptés : rien ne sort.
  */
 const { test, expect } = require("@playwright/test");
-const { prepare, attendLaListe, remplaceMapLibre, DONNEES } = require("./aide.js");
+const { prepare, attendLaListe, remplaceMapLibre, standAViser, DONNEES } = require("./aide.js");
 const { incoherences } = require("../../scripts/sonde-coherence.js");
 
 /** Le résumé ne contredit aucune règle de vraisemblance : une mesure faussée échoue ici. */
@@ -94,7 +94,7 @@ test.describe("la sonde silencieuse", { tag: "@base" }, () => {
     expect(e.visite).toMatch(UUID);
     const r = e.resume;
     expect(r.format).toBe("sonde-plan/1");
-    expect(r.rev).toBe(5);
+    expect(r.rev).toBe(6);
     expect(r.page).toBe("plan");
     expect(r.visibleMs).toBeGreaterThan(0);
     expect(r.visibleMs).toBeLessThanOrEqual(r.duree);
@@ -531,6 +531,40 @@ test.describe("la sonde de l'administration", () => {
     expect(file.map((e) => e.visite)).toContain(corps.p_visite);
     // l'administration n'écrit pas au Worker
     expect(publics).toEqual([]);
+    expect(erreurs).toEqual([]);
+  });
+});
+
+/* Un tap lent sur iPhone ne disait que sa durée : l'attente, le traitement et
+   l'image qui l'a suivi se séparent désormais (`sonde.mjs` `partsDeLInteraction`). */
+test.describe("la sonde silencieuse, ce qu'un tap lent a coûté", () => {
+  test("la pire interaction dit où son temps est passé, et qu'elle portait sur le plan", async ({ page }) => {
+    const erreurs = await prepare(page);
+    const envois = await releve(page);
+    await page.goto(PLAN.replace("&rendu=svg", ""));
+    await attendLaListe(page);
+    await affiche(page);
+    await page.waitForFunction(() => window.__essais.GL.actif, null, { timeout: 30_000 });
+    // un relâché qui travaille 200 ms : c'est le traitement qui doit les porter
+    await page.evaluate(() => document.getElementById("stage").addEventListener("pointerup", () => {
+      const t = performance.now();
+      while (performance.now() - t < 200) { /* le travail qu'un geste demanderait */ }
+    }, true));
+    const p = await standAViser(page);
+    expect(p).not.toBeNull();
+    await page.mouse.click(p.x, p.y);
+    await expect(page.locator("#detail")).toBeVisible();
+    await page.waitForTimeout(500);
+    await cache(page);
+    await expect.poll(() => envois.length).toBeGreaterThan(0);
+    const r = envois.at(-1).resume;
+    const d = r.reactivite.pire;
+    expect(r.reactivite.pireMs).toBeGreaterThanOrEqual(200);
+    expect(d.traitementMs).toBeGreaterThanOrEqual(190);
+    expect(d.attenteMs).toBeGreaterThanOrEqual(0);
+    expect(d.presentationMs).toBeGreaterThanOrEqual(0);
+    expect(d.surLePlan).toBe(true);
+    vraisemblable(r);
     expect(erreurs).toEqual([]);
   });
 });

@@ -188,8 +188,8 @@ const DECK_WEBGL = {
   integrite: "sha384-tfBYxvpmXlsE4BBUsCWUytXqH1PTUQsZJPO62M/eVs1HcZbxl7P2mDBm29D+Qz7v",
 };
 /** Un repeint vient de finir : sa durée en millisecondes, et combien de
- *  blocs il a refaits. Seul le relevé des performances l'écoute
- *  (`releve.mjs`, `?perf`) ; chez le visiteur personne, et rien ne coûte.
+ *  blocs il a refaits. Le relevé des performances (`releve.mjs`, `?perf`) et
+ *  la sonde l'écoutent : celle-ci y retrouve les repeints d'une interaction lente.
  *  @type {import("./evenement.mjs").Evenement<[number, number]>} */
 export const REPEINT_FINI = creeEvenement();
 /** Le rendu WebGL vient d'être abandonné pour le SVG : la raison. La sonde
