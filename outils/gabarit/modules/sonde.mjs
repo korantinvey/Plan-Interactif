@@ -72,6 +72,11 @@
          premier script (`avantMs`) et en pauses (`pauseMs`). Le minutage du
          relais qu'un cache resert n'y entre pas : `rejoue` le dit
          (`mesures-page.mjs` `minutageRejoue`).
+     5 — 19 novembre 2026. Un plan reçu mais illisible dit ce qui est arrivé
+         à sa place (`chargement.panne.lecture` : coupé en route, vide, une
+         page HTML, un JSON tronqué ; combien d'octets ; s'il sortait de la
+         copie gardée) — `demarrage.mjs` `litLePlan`. Avant, la panne n'en
+         disait que `http` et le statut 200.
    ============================================================ */
 import { API, SLUG, PLAN_ADMIN, BORNE, entetesApi, configProjet } from "./salon.mjs";
 import { GL, RENDU_WEBGL, REPEINT_FINI, CONTEXTE_PERDU, COMPTES_DECK, IMAGE_DECK, TOILE_PRETE, carteDuWebgl, sousPixelOffert } from "./webgl.mjs";
@@ -86,7 +91,7 @@ import { SACCADE, FIN_GESTE, TRANCHES, PREMIERE_LENTE, centile, fichier, observe
 
 const PERF = /[?&]perf(?:[=&]|$)/.test(location.search);
 // ce que mesure chaque champ a changé : voir l'en-tête
-const REVISION = 4;
+const REVISION = 5;
 const SONDE_API = API ? API.replace(/[^/]*$/, "sonde") : "";
 const PAGE = PLAN_ADMIN ? "admin" : BORNE ? "borne" : "plan";
 
@@ -160,7 +165,7 @@ let V = null;
    pas paru parce qu'on ne la regardait pas ; une panne, parce qu'elle ne le
    pouvait pas. */
 let cacheeAvant = false;
-/** @type {{ sorte: string, statut?: number } | null} */
+/** @type {{ sorte: string, statut?: number, lecture?: object } | null} */
 let panne = null;
 
 /** Une visite neuve. `chargee` dit si elle commence avec la page : une borne
@@ -1316,8 +1321,8 @@ function demarre(){
   }));
   PLAN_DEMARRE.ecoute(sur(() => { J["plan-demarre"] = Math.round(performance.now()); }));
   // le plan ne paraîtra pas : inutile d'attendre `SANS_AFFICHAGE` pour le dire
-  PLAN_EN_PANNE.ecoute(sur((/** @type {{ sorte: string, statut?: number }} */ p) => {
-    panne = { sorte: p.sorte, statut: p.statut || undefined };
+  PLAN_EN_PANNE.ecoute(sur((/** @type {{ sorte: string, statut?: number, lecture?: object }} */ p) => {
+    panne = { sorte: p.sorte, statut: p.statut || undefined, lecture: p.lecture };
     envoie();
   }));
   quandAffiche(sur(() => {

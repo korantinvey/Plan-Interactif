@@ -94,7 +94,7 @@ test.describe("la sonde silencieuse", { tag: "@base" }, () => {
     expect(e.visite).toMatch(UUID);
     const r = e.resume;
     expect(r.format).toBe("sonde-plan/1");
-    expect(r.rev).toBe(4);
+    expect(r.rev).toBe(5);
     expect(r.page).toBe("plan");
     expect(r.visibleMs).toBeGreaterThan(0);
     expect(r.visibleMs).toBeLessThanOrEqual(r.duree);
@@ -625,6 +625,70 @@ test.describe("la sonde silencieuse, ce qu'elle dit de l'appareil et du refus", 
     // Playwright pilote le navigateur : la fiche du lundi l'écartera
     expect(r.appareil.robot).toBe(true);
     expect(r.erreurs).toBeUndefined();
+  });
+
+  /* Les demandes du plan lui-même : ni l'entête, ni les vignettes, ni le fond. */
+  const lePlan = (u) => u.pathname === "/api/plan" &&
+    [...u.searchParams.keys()].every((k) => k === "slug" || k === "v");
+  /* Sous la version que l'entête annonce (`aide.js`) : sous une autre,
+     `demandePlan` l'écarterait d'emblée, et la reprise ne serait pas éprouvée. */
+  // un JSON arrêté au milieu, comme un téléchargement coupé dans un hall
+  const TRONQUE = '{"plans":[{"id":"p1","nom":"Hall';
+
+  /** Les erreurs envoyées au relais, sans rien laisser partir. */
+  async function signalements(page) {
+    const signalees = [];
+    await page.route("**/api/erreur", (r) => {
+      signalees.push(...JSON.parse(r.request().postData() || "null").erreurs.map((e) => e.message));
+      return r.fulfill({ status: 204, body: "" });
+    });
+    return signalees;
+  }
+
+  test("un plan reçu illisible se redemande au réseau, et la reprise se signale", async ({ page }) => {
+    const erreurs = await prepare(page);
+    const envois = await releve(page);
+    const signalees = await signalements(page);
+    let demandes = 0;
+    // posée après celle de `prepare`, cette route passe devant elle ; la seconde fois, elle s'efface
+    await page.route(lePlan, (r) => (++demandes === 1
+      ? r.fulfill({ status: 200, contentType: "application/json", headers: { "X-Version": "essai" }, body: TRONQUE })
+      : r.fallback()));
+    await page.goto(PLAN);
+    // le visiteur ne voit rien : le plan paraît
+    await attendLaListe(page);
+    expect(demandes).toBe(2);
+    await expect(page.locator("#list .empty")).toHaveCount(0);
+    await expect.poll(() => signalees.length, { timeout: 5_000 }).toBeGreaterThan(0);
+    expect(signalees[0]).toContain("Plan illisible : tronquee, réseau, repris");
+    await cache(page);
+    await expect.poll(() => envois.length).toBeGreaterThan(0);
+    expect(envois.at(-1).resume.chargement.panne).toBeUndefined();
+    expect(erreurs).toEqual([]);
+  });
+
+  test("un plan toujours illisible : la panne dit ce qui est arrivé, et « Réessayer » recharge", async ({ page }) => {
+    const erreurs = await prepare(page);
+    const envois = await releve(page);
+    const signalees = await signalements(page);
+    let casse = true;
+    await page.route(lePlan, (r) => (casse
+      ? r.fulfill({ status: 200, contentType: "application/json", headers: { "X-Version": "essai" }, body: TRONQUE })
+      : r.fallback()));
+    await page.goto(PLAN);
+    await expect(page.locator("#list .empty")).toContainText("Plan indisponible : réponse illisible");
+    await expect.poll(() => envois.length, { timeout: 5_000 }).toBeGreaterThan(0);
+    // ce qui était arrivé à la place du plan, sans rien de son contenu
+    expect(envois.at(-1).resume.chargement.panne).toEqual({
+      sorte: "http", statut: 200, lecture: { recu: "tronquee", octets: TRONQUE.length } });
+    await expect.poll(() => signalees.length, { timeout: 5_000 }).toBeGreaterThan(0);
+    expect(signalees[0]).toContain("Plan illisible : tronquee, réseau");
+    expect(signalees[0]).not.toContain("repris");
+    // le relais répond de nouveau : le bouton suffit
+    casse = false;
+    await page.locator("#list .empty .reessai").click();
+    await attendLaListe(page);
+    expect(erreurs).toEqual([]);
   });
 
   test("une exception au démarrage : signalée, jointe au relevé, et non prise pour le réseau", async ({ page }) => {

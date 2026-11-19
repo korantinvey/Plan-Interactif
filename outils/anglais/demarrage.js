@@ -9,6 +9,7 @@ module.exports = {
   "Plan indisponible : une erreur de la page l'a empêché de paraître. Rechargez-la.":
     "Map unavailable: an error in the page kept it from appearing. Please reload it.",
   "réponse illisible": "unreadable response",
+  "Réessayer": "Try again",
   "Chargement du plan…": "Loading the map…",
   "Session expirée, reconnectez-vous.": "Session expired, please sign in again.",
   "Session expirée.": "Session expired.",

@@ -592,6 +592,35 @@ test.describe("le salon que nomme l'adresse", { tag: "@base" }, () => {
       expect(await page.evaluate(async () =>
         (await (await navigator.serviceWorker.ready).navigationPreload.getState()).enabled)).toBe(true);
     });
+
+    /* Sous une adresse versionnée, ce que le service range se ressert un an
+       sans toucher le réseau : un plan qui ne se lit pas ne doit pas y entrer,
+       sans quoi chaque ouverture du salon finirait sur « réponse illisible »
+       (`_sw.js` `seLit`). */
+    test("le service de second plan ne garde pas un plan illisible", async ({ page, context }) => {
+      await prepare(page);
+      await context.route("**/api/**", (r) => {
+        const v = new URL(r.request().url()).searchParams.get("v");
+        if (v === "tronque") return r.fulfill({ status: 200, contentType: "application/json", body: '{"plans":[{"id"' });
+        if (v === "entier") return r.fulfill({ status: 200, contentType: "application/json", body: '{"plans":[]}' });
+        return r.fulfill({ status: 204, body: "" });
+      });
+      await page.goto(PLAN);
+      await page.evaluate(() => navigator.serviceWorker.ready);
+      await page.goto(PLAN);
+      await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+      /* Deux salons : sous le même, ranger le sain effacerait le tronqué comme
+         une version d'avant (`oublieLesVersionsDAvant`), et l'essai ne verrait rien. */
+      const adresse = (v) => "/api/plan?slug=essai-" + v + "&v=" + v;
+      const demande = (v) => page.evaluate(async (a) => { await (await fetch(a)).text(); }, adresse(v));
+      const gardee = (v) => page.evaluate(async (a) =>
+        !!(await (await caches.open("plan-durable")).match(a)), adresse(v));
+      // le tronqué d'abord : quand le sain est rangé, le service a jugé l'autre
+      await demande("tronque");
+      await demande("entier");
+      await expect.poll(() => gardee("entier")).toBe(true);
+      expect(await gardee("tronque")).toBe(false);
+    });
   });
 });
 

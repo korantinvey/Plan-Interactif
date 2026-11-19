@@ -256,12 +256,35 @@ async function dabordCache(e, requete, ou) {
      ménage reconnaît l'entrée qu'on vient de poser à sa version, et la
      retiendrait pour une ancienne s'il passait avant. */
   e.waitUntil(caches.open(ou).then(async (c) => {
+    if (adresse.pathname === "/api/plan" && !(await seLit(copie.clone()))) return;
     await c.put(requete, copie);
     if (adresse.pathname !== "/api/plan") return;
     if (adresse.searchParams.get("v")) await oublieLesVersionsDAvant(c, adresse);
     if (adresse.searchParams.get("vignettes")) await borneLesLots(c);
   }).catch(() => {}));
   return reponse;
+}
+
+/**
+ * Une réponse du relais qui se lit : du JSON entier, ou ce qui n'en est pas.
+ *
+ * Ce qui entre ici se ressert un an sans jamais toucher le réseau. Un corps
+ * qui ne se lit pas — une page HTML servie à la place, un JSON arrêté au
+ * milieu — y serait resté aussi longtemps, et chaque ouverture du salon sur
+ * ce téléphone aurait fini sur « réponse illisible » jusqu'à la
+ * synchronisation suivante (les 18 et 19 novembre 2026, six visites sous
+ * Chrome pour Android, quatre de la copie gardée : `demarrage.mjs`
+ * `litLePlan`). La lecture se fait en arrière-plan, après que la réponse est
+ * repartie vers la page : le visiteur ne l'attend pas.
+ */
+async function seLit(reponse) {
+  if (!(reponse.headers.get("Content-Type") || "").includes("json")) return true;
+  try {
+    JSON.parse(await reponse.text());
+    return true;
+  } catch (_) {
+    return false;
+  }
 }
 
 /**
