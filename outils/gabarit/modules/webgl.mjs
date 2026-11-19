@@ -2012,8 +2012,9 @@ function emplacementGl(/** @type {Element} */ g, /** @type {number[]} */ m, /** 
    du bloc — les couleurs de la page, la vue immersive, le trajet tracé,
    l'édition. Ses attributs et son contenu, le guet les surveille déjà. Au repeint suivant, un
    emplacement que le guet n'a pas vu changer et dont la signature tient verse
-   sa conversion gardée ; les autres se refont. Un tap ne coûte plus que les
-   deux stands qui changent, quelle que soit la taille du salon.
+   sa conversion gardée ; les autres se refont. Un tap ne reconvertit plus que
+   les stands qui changent, quelle que soit la taille du salon — les noms, et
+   les couleurs que le moteur renvoie pour tout le bloc, restent à refaire.
 
    Ce qui se verse est identique à ce que la conversion aurait produit
    (`compareConversions`, que les essais imposent dans chaque ambiance) : les
@@ -2086,9 +2087,11 @@ function emplacementGarde(/** @type {Element} */ g, /** @type {number[]} */ m, /
   // le volume choisi que sa conversion retient (`formeGl`) : gardé avec elle
   const avant = CHOISI;
   CHOISI = null;
-  emplacementGl(g, m, op, sous, etat);
-  const choisi = CHOISI;
-  CHOISI = choisi || avant;
+  /** @type {any} */
+  let choisi = null;
+  // une conversion qui lève rend le volume choisi d'avant, comme si elle n'avait pas eu lieu
+  try { emplacementGl(g, m, op, sous, etat); choisi = CHOISI; }
+  finally { CHOISI = choisi || avant; }
   if (enRoute(sous)) CONVERTIS.delete(g);
   else CONVERTIS.set(g, { signe, age, op, m: m.slice(), sous, choisi });
   verse(sous, acc);
@@ -2137,10 +2140,9 @@ export function compareConversions(){
     CONTEXTE = contexteEmplacements(racine, acc);
     const avant = SANS_MEMOIRE;
     SANS_MEMOIRE = sans;
-    try { parcoursGl(racine, M_ID, 1, acc); }
-    finally { JETONS = null; CONTEXTE = ""; SANS_MEMOIRE = avant; }
-    const choisi = cleChoisi();
-    CHOISI = garde;
+    let choisi = "";
+    try { parcoursGl(racine, M_ID, 1, acc); choisi = cleChoisi(); }
+    finally { JETONS = null; CONTEXTE = ""; SANS_MEMOIRE = avant; CHOISI = garde; }
     return JSON.stringify({ acc, choisi }, (k, v) =>
       v instanceof Element ? (v.getAttribute("data-id") || v.getAttribute("data-aj") || v.localName)
         : v instanceof Map ? [...v.entries()] : k === "hausse" ? Boolean(v) : v);
