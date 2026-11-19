@@ -28,7 +28,11 @@ Ce que les revues de CodeRabbit ont trouvé côté Supabase (#531, #533, #535,
   mécanisme et même clé : un verrou consultatif et un verrou de ligne ne se
   bloquent pas l'un l'autre. Le schéma suppose l'isolation par défaut,
   `read committed` : en `repeatable read`, l'image de la base est prise avant
-  l'attente du verrou, et la transaction relirait l'ancienne liste. Une
+  l'attente du verrou, et la transaction relirait l'ancienne liste. Même en
+  `read committed`, le verrou se prend dans sa propre instruction
+  (`perform pg_advisory_xact_lock(…)`) et la lecture vient dans la suivante :
+  une instruction lit la base telle qu'elle était à son début, et celle qui
+  attendrait le verrou avant de lire relirait l'ancienne liste. Une
   transaction ordinaire, sans verrou, n'y suffit pas : deux administrateurs
   simultanés y lisaient la même liste et laissaient l'union des deux.
 - **Ce qui est réservé à l'administrateur l'est dans la base** (déclencheur),
