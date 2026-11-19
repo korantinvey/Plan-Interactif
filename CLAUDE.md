@@ -422,6 +422,15 @@ Ce qui ne se voit ni à la lecture d'un module ni dans la carte.
   l'instantané (`modules/fiche-zone.mjs` `enregistreZoneAjoutee`).
 - **Le thème du plan est le clair, seul** ; la nuit ne vit que dans la console.
 
+## Les leçons des revues
+
+Ce que CodeRabbit relève et qui se vérifie juste vit dans `.claude/rules/`, un
+fichier par zone du code. Chacun ne se charge que quand on ouvre un fichier de
+sa zone (son en-tête `paths:`) : ce guide n'en grossit pas. Une remarque juste
+qui dit une **famille** d'erreurs, pas un cas isolé, s'ajoute à la règle de sa
+zone, en une ligne, avec le numéro de la PR. Si une machine peut la vérifier,
+elle devient un contrôle de `npm run verifie` et quitte la règle.
+
 ## Déploiement
 
 Rien ne se déploie à la main. Une poussée sur `main` applique les migrations et
