@@ -12,7 +12,7 @@
  * `/api/sonde` et la RPC `sonde_admin` sont interceptés : rien ne sort.
  */
 const { test, expect } = require("@playwright/test");
-const { prepare, attendLaListe, remplaceMapLibre, DONNEES } = require("./aide.js");
+const { prepare, attendLaListe, remplaceMapLibre, standAViser, DONNEES } = require("./aide.js");
 const { incoherences } = require("../../scripts/sonde-coherence.js");
 
 /** Le résumé ne contredit aucune règle de vraisemblance : une mesure faussée échoue ici. */
@@ -94,7 +94,7 @@ test.describe("la sonde silencieuse", { tag: "@base" }, () => {
     expect(e.visite).toMatch(UUID);
     const r = e.resume;
     expect(r.format).toBe("sonde-plan/1");
-    expect(r.rev).toBe(5);
+    expect(r.rev).toBe(6);
     expect(r.page).toBe("plan");
     expect(r.visibleMs).toBeGreaterThan(0);
     expect(r.visibleMs).toBeLessThanOrEqual(r.duree);
@@ -535,6 +535,50 @@ test.describe("la sonde de l'administration", () => {
   });
 });
 
+/* Un tap lent sur iPhone ne disait que sa durée : l'attente, le traitement et
+   l'image qui l'a suivi se séparent désormais (`sonde.mjs` `partsDeLInteraction`). */
+test.describe("la sonde silencieuse, ce qu'un tap lent a coûté", () => {
+  test("la pire interaction dit où son temps est passé, et qu'elle portait sur le plan", async ({ page }) => {
+    const erreurs = await prepare(page);
+    const envois = await releve(page);
+    await page.goto(PLAN.replace("&rendu=svg", ""));
+    await attendLaListe(page);
+    await affiche(page);
+    await page.waitForFunction(() => window.__essais.GL.actif, null, { timeout: 30_000 });
+    /* Un relâché qui travaille 200 ms : c'est le traitement qui doit les porter,
+       bien que l'appui, rapporté le premier, ait la même durée que lui. */
+    await page.evaluate(() => document.getElementById("stage").addEventListener("pointerup", () => {
+      const t = performance.now();
+      while (performance.now() - t < 200) { /* le travail qu'un geste demanderait */ }
+    }, true));
+    const p = await standAViser(page);
+    expect(p).not.toBeNull();
+    await page.mouse.click(p.x, p.y);
+    await expect(page.locator("#detail")).toBeVisible();
+    await page.waitForTimeout(300);
+    /* La mesure du geste arrive après l'image qui le montre : on cache la page
+       pour faire partir le relevé, jusqu'à ce qu'il la porte. */
+    await expect.poll(async () => {
+      await cache(page);
+      const dernier = envois.at(-1);
+      return Boolean(dernier && dernier.resume.reactivite.pire);
+    }, { timeout: 15_000 }).toBe(true);
+    const r = envois.at(-1).resume;
+    const d = r.reactivite.pire;
+    expect(r.reactivite.pireMs).toBeGreaterThanOrEqual(200);
+    expect(d.traitementMs).toBeGreaterThanOrEqual(190);
+    expect(d.attenteMs).toBeGreaterThanOrEqual(0);
+    expect(d.presentationMs).toBeGreaterThanOrEqual(0);
+    expect(d.surLePlan).toBe(true);
+    /* La règle du découpage seule : l'image bloquée exprès compte parfois dans
+       la fluidité sans geste (« fluidite »), la même incohérence que des
+       relevés réels portent déjà (18 et 19 novembre 2026), et dont cet essai
+       n'est pas l'objet. */
+    expect(incoherences(r).filter((x) => x.cle === "decoupe")).toEqual([]);
+    expect(erreurs).toEqual([]);
+  });
+});
+
 test.describe("la sonde silencieuse, ce qu'elle tient pour le plan", () => {
   /* Taper dans la recherche, faire défiler la liste : des images que le plan
      ne dessine pas. Elles comptaient dans sa fluidité. */
@@ -761,3 +805,4 @@ test.describe("la sonde silencieuse, ce qu'elle dit de l'appareil et du refus", 
     expect(erreurs).toEqual([]);
   });
 });
+
