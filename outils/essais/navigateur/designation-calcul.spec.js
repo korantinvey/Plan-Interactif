@@ -17,7 +17,7 @@ const { test, expect } = require("@playwright/test");
 const { prepare, attendLaListe, standAViser } = require("./aide.js");
 
 /** La grille comparée : le calcul, la carte, et ce qui ne s'accorde pas même à un demi-pixel près. */
-const compare = (page, pendantLaMontee = false) => page.evaluate(async (attendre) => {
+const compare = (page, pendantLaMontee = false, autour = null) => page.evaluate(async ({ attendre, autour }) => {
   const d = window.__essais.GL.deck, cv = d.canvas.getBoundingClientRect();
   /* Un stand en mouvement : sa couche de montée à une hauteur intermédiaire
      (`animeCouche` pose `elevationScale` d'après `echelleHausse`). La couche
@@ -25,13 +25,38 @@ const compare = (page, pendantLaMontee = false) => page.evaluate(async (attendre
   const monte = () => (d.props.layers || []).flat(Infinity).some((l) => l && /-hausse-/.test(l.id) &&
     l.props.elevationScale > 0 && l.props.elevationScale < 1);
   /* Pendant la montée : la grille se lit dans l'image même où la couche du
-     stand qui monte est là — rien ne se peint entre les deux. */
-  if (attendre) await new Promise((ok) => { const f = () => (monte() ? ok() : requestAnimationFrame(f)); f(); });
+     stand qui monte est là — rien ne se peint entre les deux. Une montée
+     jamais vue ne retient pas l'essai jusqu'à son délai : elle se dit
+     (`enMontee`), et l'essai échoue là-dessus. */
+  if (attendre) {
+    const hausse = () => (d.props.layers || []).flat(Infinity).some((l) => l && /-hausse-/.test(l.id));
+    const fin = performance.now() + 5000;
+    await new Promise((ok) => { const f = () => (hausse() || performance.now() > fin ? ok() : requestAnimationFrame(f)); f(); });
+    /* La montée suit l'horloge : au rendu logiciel, la page gèle plus d'une
+       seconde quand le stand part, et la première image qui suit le trouve
+       arrivé. Sa couche, encore là, est alors reposée à mi-hauteur — ce que
+       la montée lui fait à chaque image — le temps de la grille, qui se lit
+       sans rendre la main : l'image suivante la refait d'après l'horloge. */
+    if (hausse() && !monte()) {
+      const mi = (ls) => ls.map((l) => (Array.isArray(l) ? mi(l)
+        : l && /-hausse-/.test(l.id) ? l.clone({ elevationScale: .5 }) : l));
+      d.setProps({ layers: mi(d.props.layers) });
+    }
+  }
   const cle = (o) => (o ? o.layer.id + "#" + o.index : "rien");
   const enMontee = monte();
   const r = { points: 0, trouves: 0, abstenus: 0, loin: [], enMontee };
   // une grille lâche : chaque question à la carte graphique logicielle du banc coûte cher, en immersif surtout
-  for (let y = 6; y < cv.height; y += 31) for (let x = 6; x < cv.width; x += 31) {
+  const points = [];
+  for (let y = 6; y < cv.height; y += 31) for (let x = 6; x < cv.width; x += 31) points.push([x, y]);
+  /* Et serrée autour du stand qui monte : sa hauteur ne change la réponse que
+     sur une bande au bord de son toit, que la grille lâche enjambe — un
+     calcul qui ignorait la hauteur de la montée y passait inaperçu. */
+  if (autour) {
+    const cx = autour.x - cv.left, cy = autour.y - cv.top;
+    for (let y = cy - 48; y <= cy + 48; y += 6) for (let x = cx - 48; x <= cx + 48; x += 6) points.push([x, y]);
+  }
+  for (const [x, y] of points) {
     const c = d.designe({ x, y, radius: 0 });
     if (c === undefined) { r.abstenus++; continue; }
     const g = cle(d.pickObject({ x, y, radius: 0 }));
@@ -43,11 +68,14 @@ const compare = (page, pendantLaMontee = false) => page.evaluate(async (attendre
     if (!pres) r.loin.push([x, y, cle(c), g]);
   }
   return r;
-}, pendantLaMontee);
+}, { attendre: pendantLaMontee, autour });
 
 for (const ambiance of ["classique", "immersif"]) {
   test(`la désignation calculée est celle de la carte graphique — ${ambiance}`, async ({ page }) => {
-    test.setTimeout(120_000);
+    /* Trois grilles de près de mille questions, chacune posée aussi à la carte
+       graphique logicielle : une vingtaine de secondes l'une en immersif, le
+       double quand un autre essai se partage le processeur. */
+    test.setTimeout(240_000);
     const erreurs = await prepare(page);
     await page.goto(`/plan?plan=smcl-2026&ambiance=${ambiance}`);
     await attendLaListe(page);
@@ -67,11 +95,15 @@ for (const ambiance of ["classique", "immersif"]) {
     // un stand choisi monte : sa couche et ses hauteurs changent pendant qu'on vise
     const p = await standAViser(page);
     expect(p).not.toBeNull();
-    await page.mouse.click(p.x, p.y);
     /* En immersif, la grille se lit pendant la montée même, et dit qu'elle l'a
-       vue. À plat, rien ne monte : la grille se lit sur le stand choisi. */
+       vue. À plat, rien ne monte : la grille se lit sur le stand choisi.
+       La montée se guette avant le clic : elle dure à peine plus d'une
+       seconde, et sur le poste de la CI le clic rendait parfois la main
+       après elle — l'essai attendait alors une montée finie jusqu'à son délai. */
     const monte = ambiance === "immersif";
-    const pendant = await compare(page, monte);
+    const guet = monte ? compare(page, true, p) : null;
+    await page.mouse.click(p.x, p.y);
+    const pendant = await (guet || compare(page, false));
     // une grille où le calcul s'abstiendrait partout ne comparerait rien
     expect({ abstenus: pendant.abstenus, compares: pendant.points > 0, loin: pendant.loin })
       .toEqual({ abstenus: 0, compares: true, loin: [] });
