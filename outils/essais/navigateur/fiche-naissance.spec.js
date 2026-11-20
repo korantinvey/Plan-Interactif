@@ -29,6 +29,7 @@ test("la fiche naît du point touché, mesuré sur le tiroir où elle arrive @te
   await page.goto("/plan?plan=smcl-2026");
   await attendLaListe(page);
   await page.waitForFunction(() => document.documentElement.classList.contains("plan-affiche"), null, { timeout: 30_000 });
+  test.skip(await page.evaluate(() => innerWidth > 900), "la fiche ne naît du toucher que sur écran étroit");
   const p = await standAViser(page);
   expect(p).not.toBeNull();
   await page.touchscreen.tap(p.x, p.y);
