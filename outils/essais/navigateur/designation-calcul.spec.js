@@ -19,27 +19,31 @@ const { prepare, attendLaListe, standAViser } = require("./aide.js");
 /** La grille comparée : le calcul, la carte, et ce qui ne s'accorde pas même à un demi-pixel près. */
 const compare = (page, pendantLaMontee = false, autour = null) => page.evaluate(async ({ attendre, autour }) => {
   const d = window.__essais.GL.deck, cv = d.canvas.getBoundingClientRect();
-  /* Un stand en mouvement : sa couche de montée à une hauteur intermédiaire
-     (`animeCouche` pose `elevationScale` d'après `echelleHausse`). La couche
-     reste un instant après l'arrivée, à l'échelle 1 : ce n'est plus la montée. */
-  const monte = () => (d.props.layers || []).flat(Infinity).some((l) => l && /-hausse-/.test(l.id) &&
-    l.props.elevationScale > 0 && l.props.elevationScale < 1);
+  /* Un stand en mouvement : sa couche porte `hausse` (`webgl.mjs` `animeCouche`
+     en règle `elevationScale` d'après `echelleHausse`). Celle que l'appui pose
+     garde l'identifiant de sa couche de volumes, suffixé `-tot` ; la
+     reconversion la nomme `-hausse-` : c'est la propriété qui les dit toutes
+     deux. La couche reste un instant après l'arrivée, à l'échelle 1 : ce
+     n'est plus la montée. */
+  const bouge = (l) => Boolean(l && (l.props.hausse || /-hausse-/.test(l.id)));
+  const couches = () => (d.props.layers || []).flat(Infinity);
+  const monte = () => couches().some((l) => bouge(l) && l.props.elevationScale > 0 && l.props.elevationScale < 1);
   /* Pendant la montée : la grille se lit dans l'image même où la couche du
      stand qui monte est là — rien ne se peint entre les deux. Une montée
      jamais vue ne retient pas l'essai jusqu'à son délai : elle se dit
      (`enMontee`), et l'essai échoue là-dessus. */
   if (attendre) {
-    const hausse = () => (d.props.layers || []).flat(Infinity).some((l) => l && /-hausse-/.test(l.id));
     const fin = performance.now() + 5000;
-    await new Promise((ok) => { const f = () => (hausse() || performance.now() > fin ? ok() : requestAnimationFrame(f)); f(); });
+    await new Promise((ok) => { const f = () => (couches().some(bouge) || performance.now() > fin ? ok() : requestAnimationFrame(f)); f(); });
     /* La montée suit l'horloge : au rendu logiciel, la page gèle plus d'une
        seconde quand le stand part, et la première image qui suit le trouve
-       arrivé. Sa couche, encore là, est alors reposée à mi-hauteur — ce que
-       la montée lui fait à chaque image — le temps de la grille, qui se lit
-       sans rendre la main : l'image suivante la refait d'après l'horloge. */
-    if (hausse() && !monte()) {
-      const mi = (ls) => ls.map((l) => (Array.isArray(l) ? mi(l)
-        : l && /-hausse-/.test(l.id) ? l.clone({ elevationScale: .5 }) : l));
+       arrivé, ou presque — à 0,99 de sa hauteur, un calcul qui l'ignorerait
+       ne s'écarterait pas d'un demi-pixel. Sa couche est donc toujours
+       reposée à mi-hauteur — ce que la montée lui fait à chaque image — le
+       temps de la grille, qui se lit sans rendre la main : l'image suivante
+       la refait d'après l'horloge. */
+    if (couches().some(bouge)) {
+      const mi = (ls) => ls.map((l) => (Array.isArray(l) ? mi(l) : bouge(l) ? l.clone({ elevationScale: .5 }) : l));
       d.setProps({ layers: mi(d.props.layers) });
     }
   }

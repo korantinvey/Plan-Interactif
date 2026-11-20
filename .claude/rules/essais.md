@@ -21,3 +21,8 @@ fautif (#533, #547, #556, #557).
   l'état final (#547).
 - **Mettre un accent dans les données** : un compte d'octets fait par
   `length` (unités UTF-16) ne se trahit qu'avec un caractère non ASCII (#557).
+- **Ne pas régler un essai à l'horloge du poste** : la CI gèle le rendu jusqu'à
+  deux secondes et laisse plus de 400 ms entre deux ordres de l'essai. Guetter
+  avant d'agir, relever à l'appel plutôt qu'image par image, reconnaître une
+  couche à sa propriété (`props.hausse`) plutôt qu'à son identifiant, et dire
+  « scénario non exploitable » quand le préalable manque (#568).
