@@ -14,18 +14,29 @@
 const { test, expect } = require("@playwright/test");
 const { prepare, attendLaListe, standAViser } = require("./aide.js");
 
-/** L'animation de naissance de la fiche, et ce qu'elle vise, lus à l'image où elle part. */
-const naissance = (page) => page.waitForFunction(() => {
-  const p = document.getElementById("detail");
-  const a = p.getAnimations().find((x) => x.playState === "running" && x.effect &&
-    /scale\(0?\.16\)/.test(String(x.effect.getKeyframes()[0].transform)));
-  if (!a) return false;
-  const [ox, oy] = p.style.transformOrigin.split(" ").map(parseFloat);
-  return { ox, oy, gauche: p.offsetLeft, haut: p.offsetTop };
-}, null, { timeout: 5_000, polling: "raf" }).then((h) => h.jsonValue());
+/**
+ * L'animation de naissance de la fiche, et ce qu'elle vise, relevés à l'appel
+ * même qui la lance. Guettée image par image, elle échappait à l'essai sur le
+ * poste de la CI : la page s'y fige parfois plus longtemps que ses 380 ms
+ * (« GPU stall due to ReadPixels »), et la fiche ouverte n'avait plus
+ * d'animation en cours quand l'essai regardait.
+ */
+const guetteNaissance = (page) => page.addInitScript(() => {
+  const animate = Element.prototype.animate;
+  Element.prototype.animate = function (images, options) {
+    if (this.id === "detail" && Array.isArray(images) && /scale\(0?\.16\)/.test(String(images[0] && images[0].transform))) {
+      const [ox, oy] = this.style.transformOrigin.split(" ").map(parseFloat);
+      window.__naissance = { ox, oy, gauche: this.offsetLeft, haut: this.offsetTop };
+    }
+    return animate.call(this, images, options);
+  };
+});
+const naissance = (page) => page.waitForFunction(() => window.__naissance, null, { timeout: 5_000 })
+  .then((h) => h.jsonValue());
 
 test("la fiche naît du point touché, mesuré sur le tiroir où elle arrive @telephone", async ({ page }) => {
   const erreurs = await prepare(page);
+  await guetteNaissance(page);
   await page.goto("/plan?plan=smcl-2026");
   await attendLaListe(page);
   await page.waitForFunction(() => document.documentElement.classList.contains("plan-affiche"), null, { timeout: 30_000 });
