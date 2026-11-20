@@ -76,6 +76,9 @@ module.exports = [
   "if (z < instanceZoomFiltre.x || z >= instanceZoomFiltre.y || ",
   "FiltreZoom", "-petit", "-grand", "-pleins-", "-ombres-", "-volumes-", "-decor", "-decor-plat", "-hausse-", "-tot", "-contour", "labels-sans|", "labels-hausse|", "labels-choisi|", "|caches|", "-traits-z-", "-textes-", "-image-",
   "xMidYMid meet", "zn masquee", "zn sel masquee", "-noms-",
+  // `modules/webgl.mjs` `marquesSurLesToits` : le suffixe de la couche qui porte les
+  // marques d'un stand en train de monter, un identifiant que la page ne montre pas
+  "-en-route",
   "-petit-halo-", "-phare-", "-jeton-", "-plaque", "lbl phare", "lbl pick", "-lueur", "gl-pret", "gl-attente",
   "LissageSdf",
   // `modules/logos-stands.mjs` : du code de shader et le nom de son extension

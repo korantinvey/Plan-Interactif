@@ -1067,7 +1067,9 @@ function assembleCouches(/** @type {boolean} */ enMouvement){
        est le trait de leur contour — et donc après tout le bloc. */
     const tuile = (TUILES.size > 0 || choisies.size > 0) && enTuiles(), apres = [];
     for (const c of couches){
-      out.push(animeCouche(c));
+      // une couche, ou deux : les marques en route ont la leur (`marquesSurLesToits`)
+      const animee = animeCouche(c);
+      if (Array.isArray(animee)) out.push(...animee); else out.push(animee);
       if (GL.camera && GL.survol && c.props.extruded) out.push(...coucheSurvolVolume(c));
       if (tuile) apres.push(...couchesTuiles(c, choisies));
       // la teinte du survol juste sur l'aplat : cloisons et noms restent devant
@@ -2420,22 +2422,40 @@ function standDeLaMarque(/** @type {Element} */ el){
    y va en une seconde : posée là d'emblée, elle sautait en haut au clic et
    en bas au départ, laissant le toit la rejoindre. Chaque marque retient
    donc son stand (`sur`), et le temps qu'il bouge, chaque image la repose à
-   la hauteur où il en est — comme le logo de son toit (`logosSurLesToits`). */
+   la hauteur où il en est — comme le logo de son toit (`logosSurLesToits`).
+
+   Seules les marques des stands qui bougent se reposent. La couche entière se
+   reposait à chaque image, son déclencheur changeant avec l'instant : le moteur
+   en refaisait toute la géométrie, toutes les marques du salon, pour celles d'un
+   stand qui monte (banc de FUNEXPO, 20 novembre 2026). La couche garde donc sa
+   géométrie et tait par la couleur les marques en route, ce qu'elle ne refait
+   qu'au départ et à l'arrivée ; une petite couche à part les porte, à la hauteur
+   du moment. Rend une couche, ou deux. */
+const TUE = [0, 0, 0, 0];
 function marquesSurLesToits(/** @type {any} */ c){
   if (!hausses.size) return c;
+  const poly = c instanceof deck.SolidPolygonLayer;
+  if (!poly && !(c instanceof deck.PathLayer)) return c;
   const t = instant(), z = new Map();
   for (const [g, h] of hausses) z.set(g, hauteurHausse(h, t) + AU_DESSUS_DU_TOIT);
   const bouge = (/** @type {any} */ d) => d.sur && z.has(d.sur);
+  const mobiles = (c.props.data || []).filter(bouge);
+  if (!mobiles.length) return c;
   const leve = (/** @type {any} */ d, /** @type {number[][]} */ pts) =>
     pts.map(p => [p[0], p[1], z.get(d.sur)]);
+  const acces = poly ? "getFillColor" : "getColor", couleur = c.props[acces];
+  // les stands en route : ce qui change le jeu des marques tues, et lui seul
+  const enRoute = [...z.keys()].map(g => g.getAttribute("data-id") || "").join("|");
+  const declencheurs = c.props.updateTriggers || {};
+  const tues = c.clone({
+    [acces]: (/** @type {any} */ d) => bouge(d) ? TUE : typeof couleur === "function" ? couleur(d) : couleur,
+    updateTriggers: { ...declencheurs, [acces]: JSON.stringify(declencheurs[acces] ?? "") + "#" + enRoute } });
   // l'instant, et non la clé de l'image, comme pour les logos
-  if (c instanceof deck.SolidPolygonLayer) return c.clone({
-    getPolygon: (/** @type {any} */ d) => bouge(d) ? d.polygon.map((/** @type {number[][]} */ a) => leve(d, a)) : d.polygon,
-    updateTriggers: { ...c.props.updateTriggers, getPolygon: t } });
-  if (c instanceof deck.PathLayer) return c.clone({
-    getPath: (/** @type {any} */ d) => bouge(d) ? leve(d, d.path) : d.path,
-    updateTriggers: { ...c.props.updateTriggers, getPath: t } });
-  return c;
+  const copie = c.clone({ id: c.id + "-en-route", data: mobiles,
+    ...(poly ? { getPolygon: (/** @type {any} */ d) => d.polygon.map((/** @type {number[][]} */ a) => leve(d, a)) }
+      : { getPath: (/** @type {any} */ d) => leve(d, d.path) }),
+    updateTriggers: { ...declencheurs, [poly ? "getPolygon" : "getPath"]: t } });
+  return [tues, copie];
 }
 
 function hauteurVolume(el, anneaux){
