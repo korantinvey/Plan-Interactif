@@ -298,7 +298,8 @@ export function dessineDists(){
      Ce qui décide de l'écriture se garde par calque — le relevé des marques,
      qui ne change qu'avec le pavillon ou les modes, et les stands éteints : un
      calque refait à neuf, ou vidé entre-temps, s'écrit. */
-  const eteints = [...dim].sort().join("|"), deja = ECRITS.get(g);
+  // en JSON : un identifiant qui porterait le séparateur confondrait deux ensembles (relu par CodeRabbit sur la #565)
+  const eteints = JSON.stringify([...dim].sort()), deja = ECRITS.get(g);
   if (deja && deja.traces === DISTS_VUES.traces && deja.eteints === eteints && g.firstChild) return;
   ECRITS.set(g, { traces: DISTS_VUES.traces, eteints });
   /* Le retrait se porte en attribut, comme le reste du style de la marque. */

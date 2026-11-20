@@ -2430,7 +2430,13 @@ function standDeLaMarque(/** @type {Element} */ el){
    stand qui monte (banc de FUNEXPO, 20 novembre 2026). La couche garde donc sa
    géométrie et tait par la couleur les marques en route, ce qu'elle ne refait
    qu'au départ et à l'arrivée ; une petite couche à part les porte, à la hauteur
-   du moment. Rend une couche, ou deux. */
+   du moment. Rend une couche, ou deux.
+
+   Les deux retiennent la couche dont elles viennent (`marquesDe`), et ne sont
+   plus des couches de marques : l'animation (`reanime`) reprend à chaque image
+   les couches de l'image d'avant, et transformer de nouveau la paire la
+   dédoublait — deux couches, puis quatre, puis huit (relu par CodeRabbit sur la
+   #565). La paire se refait donc depuis sa source (`animeCouche`). */
 const TUE = [0, 0, 0, 0];
 function marquesSurLesToits(/** @type {any} */ c){
   if (!hausses.size) return c;
@@ -2447,11 +2453,11 @@ function marquesSurLesToits(/** @type {any} */ c){
   // les stands en route : ce qui change le jeu des marques tues, et lui seul
   const enRoute = [...z.keys()].map(g => g.getAttribute("data-id") || "").join("|");
   const declencheurs = c.props.updateTriggers || {};
-  const tues = c.clone({
+  const tues = c.clone({ marques: false, marquesDe: c, roleMarques: "tues",
     [acces]: (/** @type {any} */ d) => bouge(d) ? TUE : typeof couleur === "function" ? couleur(d) : couleur,
     updateTriggers: { ...declencheurs, [acces]: JSON.stringify(declencheurs[acces] ?? "") + "#" + enRoute } });
   // l'instant, et non la clé de l'image, comme pour les logos
-  const copie = c.clone({ id: c.id + "-en-route", data: mobiles,
+  const copie = c.clone({ id: c.id + "-en-route", data: mobiles, marques: false, marquesDe: c, roleMarques: "copie",
     ...(poly ? { getPolygon: (/** @type {any} */ d) => d.polygon.map((/** @type {number[][]} */ a) => leve(d, a)) }
       : { getPath: (/** @type {any} */ d) => leve(d, d.path) }),
     updateTriggers: { ...declencheurs, [poly ? "getPolygon" : "getPath"]: t } });
@@ -2465,15 +2471,23 @@ function marquesSurLesToits(/** @type {any} */ c){
  * logicielle de l'intégration, la première image après un choix vient après la
  * fin de la montée, qu'aucune image ne montre.
  */
-export function marquesEnRoute(/** @type {string} */ id){
+export function marquesEnRoute(/** @type {string} */ id, images = 1){
   const g = $("stands").querySelector('g.stand[data-id="' + CSS.escape(id) + '"]');
   if (!g || !GL.deck) return null;
   const couches = /** @type {any[]} */ ((GL.deck.props.layers || []).flat(Infinity).filter(Boolean))
     .filter(c => c.props.marques);
   const avant = hausses.get(g);
-  hausses.set(g, { de: 0, vers: HAUTEUR_STAND * HAUSSE_CHOIX, t0: performance.now() });
-  try { return couches.map(c => ({ avant: c, apres: [].concat(marquesSurLesToits(c)) })); }
-  finally { if (avant) hausses.set(g, avant); else hausses.delete(g); }
+  // une hauteur qui ne bouge pas : celle qu'on attend, quel que soit l'instant
+  const haut = HAUTEUR_STAND * HAUSSE_CHOIX;
+  hausses.set(g, { de: haut, vers: haut, t0: performance.now() });
+  try {
+    return { attendue: haut + AU_DESSUS_DU_TOIT, couches: couches.map(c => {
+      // image après image, comme l'animation reprend les couches de la précédente (`reanime`)
+      let l = [c];
+      for (let k = 0; k < images; k++) l = l.flatMap(x => [].concat(animeCouche(x)));
+      return { avant: c, apres: l };
+    }) };
+  } finally { if (avant) hausses.set(g, avant); else hausses.delete(g); }
 }
 
 function hauteurVolume(el, anneaux){
@@ -4228,6 +4242,9 @@ function aUnInstant(/** @type {() => any} */ f){
   try { return f(); } finally { INSTANT_IMAGE = null; }
 }
 function animeCouche(c){
+  /* La paire des marques en route se refait depuis sa source : la couche qui
+     les tait la porte, la copie s'efface — sans quoi chaque image la dédoublerait. */
+  if (c.props.marquesDe) return c.props.roleMarques === "copie" ? [] : marquesSurLesToits(c.props.marquesDe);
   if (c.props.marques) return marquesSurLesToits(c);
   if (c.props.jeton) return c.clone({ modelMatrix: matriceJeton(c.props.jeton, GL.temps) });
   if (c.props.hausse) return c.clone({ elevationScale: echelleHausse(c.props.hausse, instant()) });
