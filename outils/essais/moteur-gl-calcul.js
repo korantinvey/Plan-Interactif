@@ -7,8 +7,8 @@
  * qu'il faut qu'il rejoue comme elle, et que la comparaison dans le
  * navigateur (`navigateur/designation-calcul.spec.js`) ne croise pas
  * forcément sur un salon : la découpe par le plan proche — un stand tout
- * près de l'œil, en immersif —, la profondeur arrondie aux vingt-quatre bits
- * du tampon, l'ordre des triangles, et la projection gardée tant que la vue
+ * près de l'œil, en immersif —, la profondeur arrondie aux seize bits du
+ * tampon de désignation, l'ordre des triangles, et la projection gardée tant que la vue
  * ne bouge pas.
  *
  *   node outils/essais/moteur-gl-calcul.js     (lancé par `npm run essais`)
@@ -28,19 +28,23 @@ const module_ = (nom) => import(pathToFileURL(path.join(__dirname, "..", "gabari
   const I = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 
   console.log("La profondeur du tampon");
-  dit(K.profondeur24(1) === K.PROFONDEUR_VIDE, "le lointain vaut le tampon vidé");
-  dit(K.profondeur24(-1) === 0, "le proche vaut zéro");
-  dit(K.profondeur24(1e-9) === K.profondeur24(0), "deux profondeurs à moins d'un cran se confondent, comme dans le tampon");
+  dit(K.profondeur16(1) === K.PROFONDEUR_VIDE, "le lointain vaut le tampon vidé");
+  dit(K.profondeur16(-1) === 0, "le proche vaut zéro");
+  dit(K.profondeur16(1e-9) === K.profondeur16(0), "deux profondeurs à moins d'un cran se confondent, comme dans le tampon");
   dit(K.COMPARAISONS["less-equal"](5, 5) && !K.COMPARAISONS.less(5, 5), "à égalité, « moins ou égal » passe, « moins » non");
+  // deux surfaces que seize bits confondent et que vingt-quatre départageraient : le tampon de la désignation en a seize
+  dit(K.PROFONDEUR_VIDE === 0xffff, "seize bits, comme le tampon de la désignation");
+  dit(K.profondeur16(1e-5) === K.profondeur16(0) && Math.round((1e-5 * .5 + .5) * 0xffffff) !== Math.round(.5 * 0xffffff),
+    "à un cent-millième d'écart, confondues en seize bits, que vingt-quatre départageaient");
   dit(K.COMPARAISONS.equal === undefined, "une comparaison que le calcul ne rejoue pas manque : il s'abstiendra");
 
   console.log("Un triangle et le point");
   const a = [-1, -1, 0, 1], b = [1, -1, 0, 1], c = [0, 1, 0, 1];
-  dit(K.couvre(a, b, c, [0, 0]) === K.profondeur24(0), "dedans : sa profondeur");
+  dit(K.couvre(a, b, c, [0, 0]) === K.profondeur16(0), "dedans : sa profondeur");
   dit(K.couvre(a, b, c, [.9, .9]) === -1, "dehors : rien");
-  dit(K.couvre(c, b, a, [0, 0]) === K.profondeur24(0), "tourné dans l'autre sens : la carte ne retire aucune face");
+  dit(K.couvre(c, b, a, [0, 0]) === K.profondeur16(0), "tourné dans l'autre sens : la carte ne retire aucune face");
   dit(K.couvre(a, b, c, [0, -1]) >= 0, "sur un bord : couvert");
-  dit(K.couvre([-1, -1, .5, 1], [1, -1, .5, 1], [0, 1, -.5, 1], [0, 0]) === K.profondeur24(0),
+  dit(K.couvre([-1, -1, .5, 1], [1, -1, .5, 1], [0, 1, -.5, 1], [0, 0]) === K.profondeur16(0),
     "la profondeur suit le triangle, à plat sur l'écran");
 
   console.log("La découpe par les plans proche et lointain");

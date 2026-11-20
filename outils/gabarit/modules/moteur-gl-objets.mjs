@@ -452,7 +452,8 @@ export class SimpleMeshLayer extends Couche {
     }
     const k = p.sizeScale ?? 1, ip = e.ipos;
     if (!e.places || e.places.mat !== e.mat || e.places.ipos !== ip || e.places.k !== k){
-      const M = e.M, nv = M.n, ni = M.indices ? M.indices.length : nv;
+      // des triangles entiers par exemplaire : la carte n'en dessine pas d'autres, et ne les mêle pas d'un exemplaire au suivant
+      const M = e.M, nv = M.n, ni = 3 * Math.floor((M.indices ? M.indices.length : nv) / 3);
       const pos = new Float32Array(e.total * nv * 3), indices = new Uint32Array(e.total * ni), objets = new Float32Array(e.total * nv);
       for (let i = 0; i < e.total; i++){
         const t = e.mat.subarray(i * 12, i * 12 + 12);

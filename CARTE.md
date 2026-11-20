@@ -1547,17 +1547,17 @@ Importé par :
 
 plan-admin
 
-### `modules/gestes.mjs` — 686 l. → plan, plan-admin
+### `modules/gestes.mjs` — 691 l. → plan, plan-admin
 
 - l.1 · Les gestes sur le plan — glisser, pincer, la molette, l'appui qui ouvre
 - l.74 · 8. Interactions du plan
 
 Fonctions :
 
-`poseGestesAdmin` 72 · `milieu` 104 · `commencePince` 110 · `suitPince` 124
-`noteGlisser` 208 · `stoppeElan` 214 · `lanceElan` 220 · `plieLesBandes` 252
-`rendLesBandes` 275 · `saisitPlan` 281 · `cibleElargie` 318 · `planifieFiltre` 361
-`brancheGestes` 375 · `brancheLangue` 669
+`poseGestesAdmin` 72 · `milieu` 107 · `commencePince` 113 · `suitPince` 127
+`noteGlisser` 211 · `stoppeElan` 217 · `lanceElan` 223 · `plieLesBandes` 255
+`rendLesBandes` 278 · `saisitPlan` 284 · `cibleElargie` 321 · `planifieFiltre` 364
+`brancheGestes` 378 · `brancheLangue` 674
 
 Importe :
 
@@ -2097,14 +2097,14 @@ Importe :
 
 mot-de-passe
 
-### `modules/moteur-gl-calcul.mjs` — 163 l. → plan, plan-admin
+### `modules/moteur-gl-calcul.mjs` — 169 l. → plan, plan-admin
 
 - l.1 · Le moteur du plan — la désignation par le calcul
 
 Fonctions :
 
-`profondeur24` 36 · `coupe` 45 · `PROCHE` 58 · `LOINTAIN` 59 · `couvre` 68
-`dansTriangle` 86 · `projette` 108 · `traverse` 152
+`profondeur16` 42 · `coupe` 51 · `PROCHE` 64 · `LOINTAIN` 65 · `couvre` 74
+`dansTriangle` 92 · `projette` 114 · `traverse` 158
 
 Importé par :
 
@@ -2152,7 +2152,7 @@ Importé par :
 
 moteur-gl
 
-### `modules/moteur-gl-objets.mjs` — 530 l. → plan, plan-admin
+### `modules/moteur-gl-objets.mjs` — 531 l. → plan, plan-admin
 
 - l.1 · Le moteur du plan — les images, les objets, les textures
 

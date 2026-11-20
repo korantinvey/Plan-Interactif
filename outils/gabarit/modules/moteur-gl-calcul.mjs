@@ -12,9 +12,11 @@
 
    Ici, la même passe se rejoue sur le processeur, triangle par triangle : les
    sommets que la carte a reçus, la même matrice, la même découpe par les
-   plans proche et lointain, la profondeur arrondie aux vingt-quatre bits du
-   tampon et comparée comme le moteur la compare (`depthCompare`, « moins ou
-   égal » par défaut : à profondeur égale, ce qui se peint après l'emporte).
+   plans proche et lointain, la profondeur arrondie aux seize bits du tampon
+   de la désignation (`DEPTH_COMPONENT16`, `moteur-gl.mjs`
+   `TamponDesignation`) et comparée comme le moteur la compare
+   (`depthCompare`, « moins ou égal » par défaut : à profondeur égale, ce qui
+   se peint après l'emporte).
    Quelques milliers de triangles pour un salon entier, moins d'une
    milliseconde.
 
@@ -22,8 +24,12 @@
    (`outils/essais/moteur-gl-calcul.js`).
    ============================================================ */
 
-/** La profondeur d'un tampon vidé à 1, en vingt-quatre bits. */
-export const PROFONDEUR_VIDE = 0xffffff;
+/* Seize bits, ceux du tampon de la désignation : deux surfaces qui s'y
+   confondent se départagent par l'ordre du dessin, et le calcul doit les
+   confondre aussi, sans quoi il choisirait la première là où la carte
+   retenait la seconde. */
+/** La profondeur d'un tampon vidé à 1, en seize bits. */
+export const PROFONDEUR_VIDE = 0xffff;
 
 /** Les comparaisons de profondeur que le calcul sait rejouer ; une autre le fait s'abstenir. */
 export const COMPARAISONS = /** @type {Record<string, (z: number, tenu: number) => boolean>} */ ({
@@ -33,7 +39,7 @@ export const COMPARAISONS = /** @type {Record<string, (z: number, tenu: number) 
 });
 
 /** La profondeur d'un point de l'espace normalisé (-1 à 1), telle que le tampon la garde. */
-export const profondeur24 = (/** @type {number} */ zNdc) => Math.round((zNdc * .5 + .5) * PROFONDEUR_VIDE);
+export const profondeur16 = (/** @type {number} */ zNdc) => Math.round((zNdc * .5 + .5) * PROFONDEUR_VIDE);
 
 /**
  * Un polygone de l'espace de découpe, gardé du côté où `plan(v) ≥ 0`
@@ -59,7 +65,7 @@ const PROCHE = (/** @type {number[]} */ v) => v[2] + v[3];
 const LOINTAIN = (/** @type {number[]} */ v) => v[3] - v[2];
 
 /**
- * La profondeur en vingt-quatre bits où le triangle `a b c` (espace de
+ * La profondeur en seize bits où le triangle `a b c` (espace de
  * découpe) couvre le point `q` de l'écran (espace normalisé), ou -1 s'il ne
  * le couvre pas. Les bords comptent : un point posé juste sur la couture de
  * deux triangles revient à l'un d'eux, comme à la carte graphique.
@@ -77,7 +83,7 @@ export function couvre(a, b, c, q){
   // le polygone coupé, en éventail depuis son premier sommet
   for (let k = 1; k + 1 < n.length; k++){
     const z = dansTriangle(n[0], n[k], n[k + 1], q);
-    if (z !== null) return profondeur24(z);
+    if (z !== null) return profondeur16(z);
   }
   return -1;
 }

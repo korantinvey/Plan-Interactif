@@ -17,10 +17,15 @@ const { test, expect } = require("@playwright/test");
 const { prepare, attendLaListe, standAViser } = require("./aide.js");
 
 /** La grille comparée : le calcul, la carte, et ce qui ne s'accorde pas même à un demi-pixel près. */
-const compare = (page) => page.evaluate(() => {
+const compare = (page, pendantLaMontee = false) => page.evaluate(async (attendre) => {
   const d = window.__essais.GL.deck, cv = d.canvas.getBoundingClientRect();
+  const monte = () => (d.props.layers || []).flat(Infinity).some((l) => l && /-hausse-/.test(l.id));
+  /* Pendant la montée : la grille se lit dans l'image même où la couche du
+     stand qui monte est là — rien ne se peint entre les deux. */
+  if (attendre) await new Promise((ok) => { const f = () => (monte() ? ok() : requestAnimationFrame(f)); f(); });
   const cle = (o) => (o ? o.layer.id + "#" + o.index : "rien");
-  const r = { points: 0, trouves: 0, abstenus: 0, loin: [] };
+  const enMontee = monte();
+  const r = { points: 0, trouves: 0, abstenus: 0, loin: [], enMontee };
   // une grille lâche : chaque question à la carte graphique logicielle du banc coûte cher, en immersif surtout
   for (let y = 6; y < cv.height; y += 31) for (let x = 6; x < cv.width; x += 31) {
     const c = d.designe({ x, y, radius: 0 });
@@ -34,7 +39,7 @@ const compare = (page) => page.evaluate(() => {
     if (!pres) r.loin.push([x, y, cle(c), g]);
   }
   return r;
-});
+}, pendantLaMontee);
 
 for (const ambiance of ["classique", "immersif"]) {
   test(`la désignation calculée est celle de la carte graphique — ${ambiance}`, async ({ page }) => {
@@ -59,10 +64,18 @@ for (const ambiance of ["classique", "immersif"]) {
     const p = await standAViser(page);
     expect(p).not.toBeNull();
     await page.mouse.click(p.x, p.y);
-    await page.waitForTimeout(150);
-    expect((await compare(page)).loin).toEqual([]);
+    /* En immersif, la grille se lit pendant la montée même, et dit qu'elle l'a
+       vue. À plat, rien ne monte : la grille se lit sur le stand choisi. */
+    const monte = ambiance === "immersif";
+    const pendant = await compare(page, monte);
+    // une grille où le calcul s'abstiendrait partout ne comparerait rien
+    expect({ abstenus: pendant.abstenus, compares: pendant.points > 0, loin: pendant.loin })
+      .toEqual({ abstenus: 0, compares: true, loin: [] });
+    if (monte) expect(pendant.enMontee).toBe(true);
     await page.waitForTimeout(1500);
-    expect((await compare(page)).loin).toEqual([]);
+    const apres = await compare(page);
+    expect({ abstenus: apres.abstenus, compares: apres.points > 0, loin: apres.loin })
+      .toEqual({ abstenus: 0, compares: true, loin: [] });
 
     // un rayon : le calcul s'abstient, la carte répond
     expect(await page.evaluate(() => window.__essais.GL.deck.designe({ x: 100, y: 100, radius: 3 }))).toBeUndefined();

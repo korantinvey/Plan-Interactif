@@ -77,6 +77,9 @@ export function poseGestesAdmin(/** @type {GestesAdmin} */ g){ admin = g; }
 /** Le glissé en cours, ou rien : la carte graphique le lit pour taire son survol. */
 /** @type {any} */
 export let drag = null;
+/* Combien d'appuis ont commencé : un clic dont la réponse arrive après qu'un
+   autre appui a commencé — fût-il déjà relâché — ne tranche plus rien. */
+let appuis = 0;
 /* Le temps qu'un doigt posé sans bouger met à dire qu'il choisit : le stand
    appuyé commence alors à monter. Plus bref, c'est un appui, que le relâché
    tranche ; un glissement part presque toujours avant. */
@@ -378,6 +381,7 @@ export function brancheGestes(){
      « versPlan », le glisser, la molette. Rien à faire avant le premier plan. */
   svg.addEventListener("pointerdown", e => {
     if (!view) return;
+    appuis++;
     poseAppuiTactile(e.pointerType === "touch" || e.pointerType === "pen");
     // la main posée l'emporte sur la molette : un glissement qui finissait sa
     // course tirerait la vue sous le doigt qui vient de la saisir
@@ -508,7 +512,8 @@ export function brancheGestes(){
        gelait la page le temps que la carte finisse son image. Un appui neuf
        entre-temps l'emporte : le clic d'avant ne tranche plus rien. */
     if (d.cible === undefined && d.avance && !d.avance.fini){
-      d.avance.promesse.then(() => { if (!drag) tranche(d, e); });
+      const rang = appuis;
+      d.avance.promesse.then(() => { if (rang === appuis) tranche(d, e); });
       return;
     }
     tranche(d, e);
