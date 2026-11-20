@@ -21,6 +21,7 @@ import { $ } from "./dom.mjs";
 import { ETROIT } from "./ecran.mjs";
 import { hauteurVue, suisLeCadre } from "./cadre-visible.mjs";
 import { fermeCriteres } from "./panneau-criteres.mjs";
+import { chronometre } from "./journal-travaux.mjs";
 
 /* ============================================================
    Ce que les tiroirs lisent d'un geste
@@ -221,7 +222,9 @@ function tiroirListe(){
      police servie, du retour à la ligne des puces, de la longueur du nom de
      pavillon dans le compteur. On la mesure, et on la redonne au CSS, qui s'en
      sert aussi pour poser les commandes du plan au-dessus du tiroir. */
-  function mesure(){
+  // le journal des travaux dit à la sonde ce qui a tenu la page (`journal-travaux.mjs`)
+  function mesure(){ chronometre("tiroir", mesureLaHauteur); }
+  function mesureLaHauteur(){
     if (!etroit()) return;
     const part = s => { const n = tiroir.querySelector(s); return n ? n.offsetHeight : 0; };
     const h = prise.offsetHeight + part(".search") + part(".actifs") +
@@ -451,7 +454,9 @@ function tiroirCrante({ panneau, prise, cle, demi, ouvre = "demi" }){
      un numéro de stand, trois pour une enseigne longue suivie de ses
      pastilles, davantage quand la zone porte un logo ; celui du parcours
      change de titre selon qu'on y lit sa liste ou sa journée. */
-  function mesure(){
+  // le journal des travaux dit à la sonde ce qui a tenu la page (`journal-travaux.mjs`)
+  function mesure(){ chronometre("tiroir", mesureLaHauteur); }
+  function mesureLaHauteur(){
     if (!etroit()) return;
     const hd = tiroir.querySelector(".detail-hd");
     const h = poignee.offsetHeight + (hd ? hd.offsetHeight : 0);

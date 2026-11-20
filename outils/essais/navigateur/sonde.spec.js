@@ -94,7 +94,7 @@ test.describe("la sonde silencieuse", { tag: "@base" }, () => {
     expect(e.visite).toMatch(UUID);
     const r = e.resume;
     expect(r.format).toBe("sonde-plan/1");
-    expect(r.rev).toBe(6);
+    expect(r.rev).toBe(7);
     expect(r.page).toBe("plan");
     expect(r.visibleMs).toBeGreaterThan(0);
     expect(r.visibleMs).toBeLessThanOrEqual(r.duree);
@@ -600,6 +600,54 @@ test.describe("la sonde silencieuse, ce qu'un tap lent a coûté", () => {
     // seul l'appui passe le seuil : le relâché ne compte pas, mais il découpe
     expect(pire.n).toBe(1);
     expect(pire.pire).toMatchObject({ attenteMs: 120, traitementMs: 70, presentationMs: 10, surLePlan: true });
+    expect(erreurs).toEqual([]);
+  });
+
+  /* Les doigts levés lents sur iPhone attendaient la page sans dire ce qui la
+     tenait (FUNEXPO, 19 et 20 novembre 2026). Un travail inscrit au journal
+     tient la page de l'appui jusqu'après le relâché : l'attente du relâché doit
+     le nommer, le battement doit avoir vu le fil tenu, et le geste se dire un
+     tap — sans chemin, un doigt. */
+  test("l'attente d'un doigt levé dit ce qui tenait la page, et ce qu'était le geste", async ({ page }) => {
+    const erreurs = await prepare(page);
+    const envois = await releve(page);
+    await page.goto(PLAN.replace("&rendu=svg", ""));
+    await attendLaListe(page);
+    await affiche(page);
+    await page.waitForFunction(() => window.__essais.GL.actif, null, { timeout: 30_000 });
+    // au doigt posé, un travail de 250 ms commence : le relâché arrive pendant lui
+    await page.evaluate(() => document.getElementById("stage").addEventListener("pointerdown", () => {
+      setTimeout(() => window.__essais.sonde.chronometre("essai", () => {
+        const t = performance.now();
+        while (performance.now() - t < 250) { /* la page tenue */ }
+      }), 0);
+    }, { capture: true, once: true }));
+    const p = await standAViser(page);
+    expect(p).not.toBeNull();
+    await page.mouse.move(p.x, p.y);
+    await page.mouse.down();
+    await page.waitForTimeout(30);
+    await page.mouse.up();
+    await page.waitForTimeout(300);
+    await expect.poll(async () => {
+      await cache(page);
+      const dernier = envois.at(-1);
+      return Boolean(dernier && dernier.resume.reactivite.pire && dernier.resume.reactivite.pire.occupe);
+    }, { timeout: 15_000 }).toBe(true);
+    const r = envois.at(-1).resume;
+    const d = r.reactivite.pire;
+    expect(r.rev).toBe(7);
+    expect(d.attenteMs).toBeGreaterThanOrEqual(150);
+    // l'attente est la nôtre, et le travail qui la tenait est nommé le premier
+    expect(d.occupe.nosMs).toBeGreaterThanOrEqual(150);
+    expect(d.occupe.travaux[0]).toMatchObject({ n: "essai" });
+    expect(d.occupe.travaux[0].ms).toBeGreaterThanOrEqual(150);
+    // le battement veillait depuis l'appui : il a vu le fil tenu
+    expect(d.occupe.bloqueMs).toBeGreaterThanOrEqual(100);
+    expect(d.geste).toMatchObject({ px: 0, doigts: 1 });
+    expect(d.geste.ms).toBeGreaterThanOrEqual(0);
+    expect(incoherences(r).filter((x) => x.cle === "decoupe" || x.cle === "attente-occupee")).toEqual([]);
+    expect(octets(r)).toBeLessThanOrEqual(PLAFOND);
     expect(erreurs).toEqual([]);
   });
 });

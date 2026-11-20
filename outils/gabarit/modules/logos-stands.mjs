@@ -50,6 +50,7 @@ import { creeEvenement } from "./evenement.mjs";
 import { ETROIT } from "./ecran.mjs";
 import { densiteRendu } from "./densite-rendu.mjs";
 import { placementLogo, PLACE_LIBELLES, PREFIXE_LOGO } from "./libelle-place.mjs";
+import { chronometre } from "./journal-travaux.mjs";
 
 /** La classe que la racine porte quand l'option est prise. */
 export const CLASSE_LOGOS = "logos-stands";
@@ -335,6 +336,10 @@ function image(/** @type {string} */ cle){
  * imprimé sur le toit, sans plaque ni bord.
  */
 function sansFond(/** @type {CanvasImageSource} */ i, /** @type {number} */ w, /** @type {number} */ h){
+  // le journal des travaux dit à la sonde ce qui a tenu la page (`journal-travaux.mjs`)
+  return chronometre("logos", () => detoureIci(i, w, h));
+}
+function detoureIci(/** @type {CanvasImageSource} */ i, /** @type {number} */ w, /** @type {number} */ h){
   const toile = document.createElement("canvas");
   toile.width = w; toile.height = h;
   const ctx = toile.getContext("2d", { willReadFrequently: true });

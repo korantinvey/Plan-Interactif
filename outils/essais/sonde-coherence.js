@@ -43,7 +43,9 @@ const SAIN = {
     battement: { n: 2, totalMs: 300, maxMs: 200, avantAffichage: 1, pendantGeste: 0, couvertMs: 9000 } },
   reactivite: { n: 1, pireMs: 120, survols: { n: 0, pireMs: 0 },
     // ses parts tiennent dans sa durée : la règle « decoupe » ne dit rien
-    pire: { attenteMs: 10, traitementMs: 70, presentationMs: 40, surLePlan: true } },
+    pire: { attenteMs: 40, traitementMs: 40, presentationMs: 40, surLePlan: true, geste: { ms: 90, px: 0, doigts: 1 },
+      // ce qui a tenu l'attente tient dans l'attente : la règle « attente-occupee » ne dit rien
+      occupe: { nosMs: 30, bloqueMs: 0, travaux: [{ n: "noms", ms: 22, x: 1 }, { n: "liste", ms: 8, x: 1 }] } } },
   gpu: { repeints: { n: 8, p50: 6.1, p95: 40, max: 58.9 }, pertesContexte: 0 },
   appareil: { mobile: false, reseau: { type: "4g", debitMbps: 10 } },
 };
@@ -83,6 +85,8 @@ const SAIN = {
     ["reactivite", (r) => { r.reactivite = { n: 0, pireMs: 8900 }; }],
     // des parts qui débordent la durée du geste : un découpage faussé
     ["decoupe", (r) => { r.reactivite.pire = { attenteMs: 60, traitementMs: 60, presentationMs: 60 }; }],
+    // un travail nommé plus long que l'attente qu'il est censé couvrir
+    ["attente-occupee", (r) => { r.reactivite.pire.occupe.travaux[0].ms = 300; }],
     ["pertes", (r) => { r.gpu.raisonsPertes = [{ raison: "x" }]; }],
     ["panne-affichee", (r) => { r.chargement.panne = { sorte: "reseau" }; }],
     ["aller-retour-nul", (r) => { r.appareil.reseau.rttMs = 0; }],
