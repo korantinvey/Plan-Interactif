@@ -224,6 +224,8 @@ export const GL = {
   libelles: [], cleLibelles: "", couchesLibelles: null, pastilles: [], dessines: new Map(),
   // les noms du stand choisi, écrits à part (`libelles.mjs` `libellesWebgl`)
   libellesChoisis: [], pastillesChoisies: [], cleChoisis: "", versionChoisis: 0,
+  // les stands dont la dernière écriture des noms a remesuré les siens (`libelles.mjs` `nomsGardes`)
+  nomsRefaits: 0,
   groupes: new Map(), survol: null, focus: null, libellesPhare: [], temps: 0, imageAnim: 0, cleAnim: "",
   modeles: new Map(), tailles: new Map(), duree: 0, reconstruits: 0,
   // les stands et les zones que le dernier repeint a reconvertis, les autres repris tels quels (`emplacementGarde`)

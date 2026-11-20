@@ -76,6 +76,9 @@ export function injecteALaFiche(o){ Object.assign(prete, o); }
    7. Sélection et fiche
    ============================================================ */
 let anim = null;
+/* L'image où l'animation de naissance part (`anime`) : en attente, une autre
+   ouverture ou une fermeture l'annule. */
+let naissance = 0;
 
 /**
  * L'étirement de la fiche depuis la forme qu'on a choisie.
@@ -106,19 +109,38 @@ $("plan").addEventListener("pointerup", e => { toucher = { x: e.clientX, y: e.cl
 
 export function anime(mesure, sens){
   const p = $("detail");
-  if (anim){ anim.cancel(); anim = null; }
+  /* L'animation d'avant s'arrête, et rend le glissement CSS : son rejet, qui
+     arrive après coup, ne doit pas l'ôter à celle qui la remplace. */
+  if (anim){ anim.cancel(); anim = null; p.classList.remove("glisse"); }
+  if (naissance){ cancelAnimationFrame(naissance); naissance = 0; p.classList.remove("glisse"); }
   if (!REDUIT && ETROIT() && sens > 0 && performance.now() - toucher.t < 700){
-    /* « offsetTop » ignore la transformation : c'est la place du tiroir
-       arrivé, et non celle d'où il glisse encore. */
-    p.style.transformOrigin = (toucher.x - p.offsetLeft) + "px " + (toucher.y - p.offsetTop) + "px";
-    /* Les deux bouts, écrits l'un et l'autre : une image-clé seule se place
-       à la fin de l'animation, et la fiche se réduisait alors vers le stand
-       au lieu d'en sortir. Le glissement CSS du tiroir se tait le temps du
-       geste — c'est l'animation qui mène, jusqu'à la place qu'il atteint. */
+    const { x, y } = toucher;
+    /* Le glissement CSS du tiroir se tait le temps du geste — c'est
+       l'animation qui mène, jusqu'à la place qu'il atteint. Il se tait dès
+       maintenant : l'animation ne part qu'à l'image suivante. */
     p.classList.add("glisse");
-    anim = p.animate([{ transform: "scale(.16)", opacity: 0, offset: 0 }, { transform: "none", opacity: 1 }],
-      { duration: 380, easing: "cubic-bezier(.2,.9,.25,1)" });
-    anim.finished.then(() => p.classList.remove("glisse"), () => p.classList.remove("glisse"));
+    /* La place du tiroir se lit à l'image suivante, et non ici. Lue au milieu
+       du geste qui ouvre la fiche, elle obligeait le navigateur à remettre
+       toute la page en page sur-le-champ, puis une seconde fois à l'image, les
+       noms et le plan s'étant réécrits entre-temps — au banc de FUNEXPO
+       (téléphone émulé, processeur ralenti quatre fois), le quart du coût d'une
+       ouverture, que le doigt levé attendait. À l'image suivante, tout est
+       écrit, la mise en page se fait une fois, et rien n'a été peint entre les
+       deux : la fiche naît du toucher comme avant. « offsetTop » ignore la
+       transformation : c'est la place du tiroir arrivé, et non celle d'où il
+       glisse encore. */
+    naissance = requestAnimationFrame(() => {
+      naissance = 0;
+      p.style.transformOrigin = (x - p.offsetLeft) + "px " + (y - p.offsetTop) + "px";
+      /* Les deux bouts, écrits l'un et l'autre : une image-clé seule se place
+         à la fin de l'animation, et la fiche se réduisait alors vers le stand
+         au lieu d'en sortir. */
+      const a = anim = p.animate([{ transform: "scale(.16)", opacity: 0, offset: 0 }, { transform: "none", opacity: 1 }],
+        { duration: 380, easing: "cubic-bezier(.2,.9,.25,1)" });
+      // une animation remplacée a rendu la classe en s'arrêtant : la suivante la tient à son tour
+      const fin = () => { if (anim === a){ anim = null; p.classList.remove("glisse"); } };
+      a.finished.then(fin, fin);
+    });
     return;
   }
   if (REDUIT || ETROIT()){ if (sens < 0) p.classList.remove("open"); return; }

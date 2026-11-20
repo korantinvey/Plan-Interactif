@@ -18,7 +18,7 @@ import { TUTO } from "./tutoriel.mjs";
 import { P_NOM, P_CODE } from "./polices-plan.mjs";
 import { view } from "./vue.mjs";
 import { _lg, largeur } from "./texte-plan.mjs";
-import { libelles } from "./libelles.mjs";
+import { libelles, compareNoms } from "./libelles.mjs";
 import { lancePlan } from "./lancement.mjs";
 import { COMPTES_LOGOS } from "./logos-stands.mjs";
 /* Ce qui dit si l'on édite n'est plus importé par personne : la vue et le
@@ -65,7 +65,7 @@ globalThis.__essais = {
      en accepte (`scan-parcours.mjs`) */
   qr: { qrTrame, qrSvg }, fragmentDuCode,
   emplacements: { jetonsEmplacements, styleEmplacement, etatEmplacement, couleurGl },
-  compareLectures, compareConversions,
+  compareLectures, compareConversions, compareNoms,
   get P_NOM(){ return P_NOM; },
   get P_CODE(){ return P_CODE; },
   get TUTO(){ return TUTO; },

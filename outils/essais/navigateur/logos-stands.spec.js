@@ -135,6 +135,8 @@ test("de près, le nom couvert par son logo ne se mesure plus", async ({ page })
   const ids = await poses();
   expect(ids.length).toBeGreaterThan(0);
   expect(await nommes(ids)).toEqual([]);
+  // les noms gardés stand par stand ont suivi les logos posés (`libelles.mjs` `nomsGardes`)
+  expect(await page.evaluate(() => window.__essais.compareNoms())).toBe("");
 
   while (await zoom() >= SEUIL) {
     await page.evaluate(() => document.getElementById("zOut").click());
@@ -147,6 +149,8 @@ test("de près, le nom couvert par son logo ne se mesure plus", async ({ page })
     const ids = c.props.data.map((e) => e.id);
     return window.__essais.GL.libelles.some((d) => ids.includes(d.lbl) && d.cls.startsWith("nm"));
   }, null, { timeout: ATTENTE_LOGOS });
+  // et de même au retour : un nom gardé du temps où son logo le couvrait serait resté coupé au seuil
+  expect(await page.evaluate(() => window.__essais.compareNoms())).toBe("");
   expect(erreurs).toEqual([]);
 });
 

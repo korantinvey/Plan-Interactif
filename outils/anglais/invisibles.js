@@ -164,4 +164,6 @@ module.exports = [
   // `modules/webgl.mjs` `compareConversions` : l'écart que seuls les essais
   // lisent, jamais affiché
   " : diffère à partir de « ",
+  // `modules/libelles.mjs` `compareNoms` : le même écart, pour les noms gardés stand par stand
+  "diffère à partir de « ",
 ];
