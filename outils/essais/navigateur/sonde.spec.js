@@ -80,6 +80,29 @@ async function glisse(page) {
 const affiche = (page) => page.waitForFunction(
   () => document.documentElement.classList.contains("plan-affiche"), null, { timeout: 30_000 });
 
+/** Deux images passées : ce qu'on vient de faire est peint. */
+const deuxImages = (page) => page.evaluate(() => new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok))));
+
+/**
+ * Un point du plan où rien n'est désigné : ni stand, ni zone, ni panneau
+ * par-dessus. Un appui là ne fait rien monter et le relâché n'ouvre rien —
+ * le geste ne coûte que ce qu'on lui fait coûter. Rend `null` si le moteur ne
+ * sait pas trancher par le calcul (`moteur-gl.mjs` `designe`).
+ */
+const pointVide = (page) => page.evaluate(() => {
+  const d = /** @type {any} */ (globalThis).__essais.GL.deck;
+  const st = document.getElementById("stage").getBoundingClientRect(), cv = d.canvas.getBoundingClientRect();
+  for (let y = st.top + 40; y < st.bottom - 40; y += 15) {
+    for (let x = st.left + 40; x < st.right - 40; x += 15) {
+      const e = document.elementFromPoint(x, y);
+      if (!e || !e.closest("#stage") ||
+          e.closest("#viseur, .tools, .zoombar, #poi, #side, #detail, #parcours, #itineraire, .topbar")) continue;
+      if (d.designe({ x: x - cv.left, y: y - cv.top }) === null) return { x, y };
+    }
+  }
+  return null;
+});
+
 test.describe("la sonde silencieuse", { tag: "@base" }, () => {
   test("après l'affichage, le résumé part, sans l'agent complet", async ({ page }) => {
     const erreurs = await prepare(page);
@@ -615,18 +638,25 @@ test.describe("la sonde silencieuse, ce qu'un tap lent a coûté", () => {
     await attendLaListe(page);
     await affiche(page);
     await page.waitForFunction(() => window.__essais.GL.actif, null, { timeout: 30_000 });
-    // au doigt posé, un travail de 250 ms commence : le relâché arrive pendant lui
-    await page.evaluate(() => document.getElementById("stage").addEventListener("pointerdown", () => {
-      setTimeout(() => window.__essais.sonde.chronometre("essai", () => {
-        const t = performance.now();
-        while (performance.now() - t < 250) { /* la page tenue */ }
-      }), 0);
-    }, { capture: true, once: true }));
-    const p = await standAViser(page);
+    /* L'ordre se tient sans compter sur l'horloge : sur le poste de la CI,
+       « mouse.down » rendait la main plus d'une seconde après l'appui, et le
+       relâché, prévu trente millisecondes plus tard, arrivait bien après le
+       travail. Le doigt se pose donc là où rien ne monte ni ne s'ouvre — un
+       stand qui monte y gelait la page une seconde et demie au rendu
+       logiciel, et ce gel devenait la pire interaction de la visite —, son
+       image passe, puis le travail commence et le relâché part aussitôt :
+       il arrive pendant le travail, quelle que soit la lenteur du poste. */
+    const p = await pointVide(page);
     expect(p).not.toBeNull();
     await page.mouse.move(p.x, p.y);
     await page.mouse.down();
-    await page.waitForTimeout(30);
+    await deuxImages(page);
+    await page.evaluate(() => {
+      setTimeout(() => window.__essais.sonde.chronometre("essai", () => {
+        const t = performance.now();
+        while (performance.now() - t < 400) { /* la page tenue */ }
+      }), 0);
+    });
     await page.mouse.up();
     await page.waitForTimeout(300);
     await expect.poll(async () => {
