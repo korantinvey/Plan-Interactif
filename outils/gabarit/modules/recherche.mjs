@@ -60,6 +60,7 @@ import { dessineDessins } from "./dessin.mjs";
 import { view } from "./vue.mjs";
 import { poseToutAuParcours } from "./tout-au-parcours.mjs";
 import { poseRetires, emplacements, groupeEmplacement } from "./etat-emplacements.mjs";
+import { chronometre } from "./journal-travaux.mjs";
 
 
 /* Le secteur n'est offert comme critère que là où le plan sectorise et le
@@ -724,7 +725,9 @@ function sousLigne(o){
   return [quand, o.salle].filter(Boolean).join(" · ");
 }
 
-export function liste(){
+// le journal des travaux dit à la sonde ce qui a tenu la page (`journal-travaux.mjs`)
+export function liste(){ return chronometre("liste", ecritLaListe); }
+function ecritLaListe(){
   const box = $("list");
   const q = state.qn;
   /* Une pastille du cartouche choisie pose sa propre question : la liste

@@ -82,6 +82,14 @@
          traitement, l'image qui l'a suivie, si elle portait sur le plan, et
          les repeints du plan tombés pendant elle. Avant, seuls sa durée et son
          type : un tap lent sur iPhone ne disait pas ce qui le retenait.
+     7 — 20 novembre 2026. La pire interaction dit ce qu'était le geste
+         (`pire.geste` : depuis quand le doigt était posé, le chemin qu'il a
+         fait, combien de doigts), et ce qui a tenu la page pendant son
+         attente (`pire.occupe`) : nos travaux inscrits au journal
+         (`journal-travaux.mjs`), les blocages du fil que le battement a vus,
+         les images que la boucle a attendues. Avant, l'attente d'un doigt
+         levé sur iPhone ne disait pas si elle était la nôtre ou celle du
+         navigateur.
    ============================================================ */
 import { API, SLUG, PLAN_ADMIN, BORNE, entetesApi, configProjet } from "./salon.mjs";
 import { GL, RENDU_WEBGL, REPEINT_FINI, CONTEXTE_PERDU, COMPTES_DECK, IMAGE_DECK, TOILE_PRETE, carteDuWebgl, sousPixelOffert } from "./webgl.mjs";
@@ -92,11 +100,12 @@ import { bilanErreurs } from "./erreurs.mjs";
 import { TOUS } from "./donnees.mjs";
 import { bilanLogos } from "./logos-stands.mjs";
 import { mesureOuverte, supportMesure } from "./mesure.mjs";
+import { noteTravail, chronometre, travauxEntre } from "./journal-travaux.mjs";
 import { SACCADE, FIN_GESTE, TRANCHES, PREMIERE_LENTE, centile, fichier, observe, chargement, appareil, carteGraphique, trajetDecoupe } from "./mesures-page.mjs";
 
 const PERF = /[?&]perf(?:[=&]|$)/.test(location.search);
 // ce que mesure chaque champ a changé : voir l'en-tête
-const REVISION = 6;
+const REVISION = 7;
 const SONDE_API = API ? API.replace(/[^/]*$/, "sonde") : "";
 const PAGE = PLAN_ADMIN ? "admin" : BORNE ? "borne" : "plan";
 
@@ -265,6 +274,31 @@ const lcpVu = () => J.lcp !== undefined && J.lcp < premierDepart ? J.lcp : undef
 let geste = null;
 const doigts = new Map();
 let boucle = 0, precedente = 0, images = 0;
+/* Depuis quand la boucle d'images tourne sans s'être tue : avant, une image en
+   retard ne se voyait pas, et `pendantLAttente` ne doit pas dire zéro. Tue,
+   la période s'inscrit au journal (`BOUCLE`) : l'attente d'un geste se découpe
+   après lui, quand la boucle s'est souvent déjà arrêtée. */
+let imagesDepuis = 0;
+function boucleTue(){
+  if (imagesDepuis) noteTravail(BOUCLE, imagesDepuis);
+  imagesDepuis = 0;
+}
+
+/* Chaque pointeur posé, et ce qu'il a fait : la pire interaction y retrouve
+   le sien, par l'instant de l'événement (`timeStamp`, que l'entrée du
+   navigateur reprend en `startTime`). Un doigt levé après un glisser et un
+   tap ne se distinguaient pas : l'un et l'autre sont un « pointerup ». */
+/** @type {Map<number, { t: number, chemin: number }>} */
+const poses = new Map();
+const POINTEURS_RECENTS = 12;
+/** @type {{ t: number, nom: string, ms: number, px: number, doigts: number }[]} */
+const pointeursRecents = [];
+function retiensPointeur(/** @type {PointerEvent} */ e, /** @type {number} */ ms, /** @type {number} */ px){
+  pointeursRecents.push({ t: e.timeStamp, nom: e.type, ms: Math.max(0, Math.round(ms)), px: Math.round(px),
+    // le plus de doigts posés pendant le geste : le dernier doigt levé d'un pincement en dit deux
+    doigts: Math.max(1, doigts.size + (e.type === "pointerdown" ? 0 : 1), geste ? geste.doigts : 0) });
+  if (pointeursRecents.length > POINTEURS_RECENTS) pointeursRecents.shift();
+}
 
 const vueDuMoment = () => GL.camera ? "immersif" : "classique";
 
@@ -318,10 +352,13 @@ function image(/** @type {number} */ ts){
   boucle = 0;
   images++;
   try {
-    if (document.hidden || !geste){ precedente = 0; return; }
+    if (document.hidden || !geste){ precedente = 0; boucleTue(); return; }
     const t = performance.now();
+    if (!precedente) imagesDepuis = ts;
     if (precedente){
       const dt = ts - precedente;
+      // une image attendue : ce que l'attente d'un geste peut y retrouver (`pendantLAttente`)
+      if (dt >= RETARD_GEL && dt < 2000) noteTravail(IMAGE, precedente, ts);
       // un retour d'arrière-plan n'est pas une saccade
       if (dt < 2000){
         const v = geste.plan ? V.vues[vueDuMoment()] : V.horsPlan;
@@ -336,18 +373,20 @@ function image(/** @type {number} */ ts){
     if (t - geste.dernier >= FIN_GESTE){
       // le doigt levé, le geste est fini ; posé sans bouger, il attend le mouvement suivant
       if (!doigts.size) clos();
-      precedente = 0;
+      precedente = 0; boucleTue();
       return;
     }
     precedente = ts;
     boucle = requestAnimationFrame(image);
-  } catch (e) { precedente = 0; }
+  } catch (e) { precedente = 0; boucleTue(); }
 }
 
 function ecouteGestes(){
   const o = { capture: true, passive: true };
   addEventListener("pointerdown", sur((/** @type {PointerEvent} */ e) => {
     doigts.set(e.pointerId, [e.clientX, e.clientY]);
+    poses.set(e.pointerId, { t: e.timeStamp, chemin: 0 });
+    retiensPointeur(e, 0, 0);
     const g = geste && geste.type === "appui" && doigts.size > 1 ? geste : commence("appui", surLePlan(e));
     g.doigts = Math.max(g.doigts, doigts.size);
     g.dernier = performance.now();
@@ -355,13 +394,20 @@ function ecouteGestes(){
   addEventListener("pointermove", sur((/** @type {PointerEvent} */ e) => {
     const avant = doigts.get(e.pointerId);
     if (!avant || !geste) return;
-    geste.chemin += Math.hypot(e.clientX - avant[0], e.clientY - avant[1]);
+    const pas = Math.hypot(e.clientX - avant[0], e.clientY - avant[1]);
+    geste.chemin += pas;
+    const p = poses.get(e.pointerId);
+    if (p) p.chemin += pas;
     doigts.set(e.pointerId, [e.clientX, e.clientY]);
     geste.dernier = performance.now();
     relance();
   }), o);
   const leve = sur((/** @type {PointerEvent} */ e) => {
-    if (!doigts.delete(e.pointerId) || !geste) return;
+    const p = poses.get(e.pointerId);
+    poses.delete(e.pointerId);
+    if (!doigts.delete(e.pointerId)) return;
+    if (p) retiensPointeur(e, e.timeStamp - p.t, p.chemin);
+    if (!geste) return;
     geste.dernier = performance.now();
     relance();
   });
@@ -686,6 +732,10 @@ const BATTEMENT = 50;
 const RETARD_GEL = 50;
 const TRAINE_OUVERTURE = 10000;
 let battant = 0, attendu = 0, battements = 0, cadreVisible = true;
+/* Depuis quand le battement veille sans s'être tu : avant, un blocage ne se
+   voyait pas, et `pendantLAttente` ne doit pas dire zéro. Tu, la période
+   s'inscrit au journal (`VEILLE`), comme celle de la boucle d'images. */
+let veilleDepuis = 0;
 
 function doitBattre(){
   if (document.hidden || !cadreVisible || !V) return false;
@@ -698,7 +748,13 @@ function doitBattre(){
 /** Un battement — et le premier, d'où qu'on l'appelle : une chaîne seulement. */
 function bat(){
   if (battant) return;
-  if (!doitBattre()){ attendu = 0; return; }
+  if (!doitBattre()){
+    attendu = 0;
+    if (veilleDepuis) noteTravail(VEILLE, veilleDepuis);
+    veilleDepuis = 0;
+    return;
+  }
+  if (!veilleDepuis) veilleDepuis = performance.now();
   attendu = performance.now() + BATTEMENT;
   battant = setTimeout(battu, BATTEMENT);
 }
@@ -712,6 +768,9 @@ function battu(){
     const b = V.battement, retard = t - attendu;
     b.couvertMs += t - attendu + BATTEMENT;
     if (retard >= RETARD_GEL){
+      // le fil tenu, quelle qu'en soit la cause : ce que l'attente d'un geste peut y retrouver
+      noteTravail(BLOQUE, attendu, t);
+      revoisLaPire(attendu, t);
       b.n++; b.totalMs += retard; b.maxMs = Math.max(b.maxMs, retard);
       if (J["plan-affiche"] === undefined) b.avantAffichage++;
       if (geste) b.pendantGeste++;
@@ -892,6 +951,85 @@ const entreesRecentes = [];
 /** @type {any} */
 let pireEntree = null;
 
+/* Les deux signaux de la sonde, inscrits au journal à côté de nos travaux :
+   le fil tenu que le battement a vu, l'image que la boucle a attendue. */
+const BLOQUE = "bloque", IMAGE = "image";
+/* Et les périodes où le battement et la boucle veillaient : hors d'elles, ce
+   qu'ils n'ont pas vu ne prouve rien. */
+const VEILLE = "veille", BOUCLE = "boucle";
+/* Une attente plus courte n'a rien à expliquer : celle d'un doigt levé sur
+   iPhone dépassait cent millisecondes. */
+const ATTENTE_DITE = 30;
+/* Les travaux nommés de l'attente : les plus longs, et pas plus — le résumé
+   frôle déjà son plafond (`PLAFOND`). */
+const TRAVAUX_DITS = 5;
+
+/** La longueur couverte par des intervalles, ce qui se chevauche compté une fois. */
+function couvert(/** @type {[number, number][]} */ l){
+  if (!l.length) return 0;
+  l.sort((x, y) => x[0] - y[0]);
+  let total = 0, [debut, fin] = l[0];
+  for (const [a, b] of l){
+    if (a > fin){ total += fin - debut; debut = a; fin = b; }
+    else if (b > fin) fin = b;
+  }
+  return total + (fin - debut);
+}
+
+/**
+ * Ce qui a tenu la page de `a` à `b`, l'attente d'une interaction.
+ *
+ * Trois sources, qui se recoupent : nos travaux, inscrits au journal par ceux
+ * qui les font (`journal-travaux.mjs`) — `nosMs`, et les plus longs par nom ;
+ * le fil tenu que le battement a vu, quelle qu'en soit la cause (`bloqueMs`) ;
+ * les images que la boucle a attendues (`imageMs`). Une attente que rien ne
+ * couvre est celle du navigateur : il a retenu le geste avant de le donner à la
+ * page. Le battement et la boucle ne veillent que pendant un geste : quand ils
+ * ne veillaient pas dès `a`, leur part n'est pas dite plutôt que dite nulle.
+ * @typedef {{ nosMs: number, bloqueMs?: number, imageMs?: number,
+ *   travaux?: { n: string, ms: number, x: number }[] }} Occupe
+ */
+function pendantLAttente(/** @type {number} */ a, /** @type {number} */ b){
+  /** @type {Map<string, [number, number][]>} */
+  const parNom = new Map();
+  for (const x of travauxEntre(a, b)){
+    if (!parNom.has(x.nom)) parNom.set(x.nom, []);
+    /** @type {[number, number][]} */ (parNom.get(x.nom)).push([Math.max(a, x.debut), Math.min(b, x.debut + x.duree)]);
+  }
+  const signaux = [BLOQUE, IMAGE, VEILLE, BOUCLE];
+  const nos = [...parNom].filter(([nom]) => !signaux.includes(nom));
+  /** @type {Occupe} */
+  const o = { nosMs: Math.round(couvert(nos.flatMap(([, l]) => l))) };
+  /* Veillait-il pendant toute l'attente ? Sa période close est au journal,
+     l'ouverte ici. Close avant la fin, elle n'a pas vu la suite : une part
+     dite nulle mentirait (relu par CodeRabbit sur la #564). */
+  const veillait = (/** @type {string} */ nom, /** @type {number} */ depuis) => (depuis > 0 && depuis <= a) ||
+    travauxEntre(a, b).some(x => x.nom === nom && x.debut <= a && x.debut + x.duree >= b);
+  if (veillait(VEILLE, veilleDepuis)) o.bloqueMs = Math.round(couvert(parNom.get(BLOQUE) || []));
+  if (veillait(BOUCLE, imagesDepuis)) o.imageMs = Math.round(couvert(parNom.get(IMAGE) || []));
+  const travaux = nos.map(([n, l]) => ({ n, ms: Math.round(couvert(l)), x: l.length }))
+    .sort((x, y) => y.ms - x.ms).slice(0, TRAVAUX_DITS);
+  if (travaux.length) o.travaux = travaux;
+  return o;
+}
+
+/**
+ * Le battement en retard peut passer après l'observateur qui a découpé la pire
+ * interaction : son blocage manquait alors à `occupe`, figé sans lui (relu par
+ * CodeRabbit sur la #564). Un blocage qui recouvre l'attente de la pire la fait
+ * redécouper — tout juste après elle, ses voisines de la même image sont encore
+ * parmi les entrées récentes.
+ */
+function revoisLaPire(/** @type {number} */ debut, /** @type {number} */ fin){
+  const e = pireEntree, r = V && V.reactivite;
+  if (!e || !r || !r.pire || !(debut < e.processingStart && fin > e.startTime)) return;
+  r.pire = partsDeLInteraction(e, entreesRecentes) || r.pire;
+}
+
+/** Le pointeur d'une entrée, tel que la sonde l'a vu : à la milliseconde près. */
+const pointeurDe = (/** @type {any} */ e) =>
+  pointeursRecents.find(p => p.nom === e.name && Math.abs(p.t - e.startTime) <= 1);
+
 /* Les derniers repeints du plan, l'instant de leur fin avec : la pire
    interaction y retrouve ceux qui sont tombés pendant elle. Une poignée
    suffit — l'entrée de l'interaction arrive dans l'image qui la suit. */
@@ -902,8 +1040,9 @@ const repeintsRecents = [];
 /**
  * Où le temps d'une interaction est passé.
  *
- * Les taps lents sur iPhone (le quart des visites de FUNEXPO au-delà de
- * 470 ms, les 18 et 19 novembre 2026) ne disaient que leur durée, et Safari
+ * Les taps lents sur iPhone (une visite de FUNEXPO sur vingt au-delà de
+ * 470 ms, le quart de celles qui avaient un geste lent, du 17 au 19 novembre
+ * 2026) ne disaient que leur durée, et Safari
  * ne rapporte pas les longues images qui l'auraient expliquée. Or les entrées
  * d'un geste savent, partout, quand la page a commencé et fini de les
  * traiter : de quoi séparer une page déjà occupée quand le doigt arrive
@@ -916,8 +1055,11 @@ const repeintsRecents = [];
  * de la même durée : le découpage les prend ensemble, comme `web-vitals` — du
  * début du traitement du premier à la fin de celui du dernier. Pris seul, l'appui
  * laissait le travail du relâché, qui le suit, dans l'image d'après.
+ * Le geste dit d'où vient le doigt (`geste`), et une attente longue ce qui
+ * l'a tenue (`occupe`, `pendantLAttente`).
  * @typedef {{ attenteMs: number, traitementMs: number, presentationMs: number,
- *   surLePlan?: true, repeints?: number, repeintMs?: number, blocs?: number }} Decoupe
+ *   surLePlan?: true, repeints?: number, repeintMs?: number, blocs?: number,
+ *   geste?: { ms: number, px: number, doigts: number }, occupe?: Occupe }} Decoupe
  */
 function partsDeLInteraction(/** @type {any} */ e, /** @type {any[]} */ recentes){
   const fin = e.startTime + e.duration;
@@ -938,6 +1080,12 @@ function partsDeLInteraction(/** @type {any} */ e, /** @type {any[]} */ recentes
   };
   const cible = e.target;
   if (cible && typeof cible.closest === "function" && cible.closest("#stage")) d.surLePlan = true;
+  // le doigt levé d'un tap, ou celui qui finit un glisser : depuis quand il était posé, et son chemin
+  // le relâché d'abord : l'appui de la même image n'a ni durée ni chemin (relu par CodeRabbit sur la #564)
+  const vus = image.map(pointeurDe).filter(Boolean);
+  const p = vus.find(x => x && x.nom !== "pointerdown") || vus[0];
+  if (p) d.geste = { ms: p.ms, px: p.px, doigts: p.doigts };
+  if (d.attenteMs >= ATTENTE_DITE) d.occupe = pendantLAttente(premier.startTime, premier.processingStart);
   const pendant = repeintsRecents.filter(p => p.fin >= e.startTime && p.fin - p.duree <= fin);
   if (pendant.length){
     d.repeints = pendant.length;
@@ -1223,6 +1371,9 @@ function tronque(/** @type {any} */ r){
     t: p.t, avantAffichage: p.avantAffichage, travaux: p.travaux, invocation: p.invocation }));
   const lourds = r.chargement && r.chargement.lourds;
   while (lourds && lourds.length && octets(r) > PLAFOND) lourds.pop();
+  // les travaux de l'attente, nommés un à un : les parts qui les résument restent
+  const occupe = r.reactivite && r.reactivite.pire && r.reactivite.pire.occupe;
+  if (occupe && octets(r) > PLAFOND) delete occupe.travaux;
   if (octets(r) > PLAFOND) coupe(r, 60);
   for (const [groupe, champ] of [["gpu", "logos"], ["gels", "pires"], ["erreurs", "premieres"], ["appareil", "carte"], ["appareil", ""]]){
     if (octets(r) <= PLAFOND) break;
@@ -1347,6 +1498,10 @@ let dernierDepart = 0;
 
 /** Le résumé du moment part — ou attend en file. `dernier` : la page s'en va. */
 function envoie(dernier = false){
+  // ce que coûte la sonde se dit comme le reste : elle tient la page elle aussi
+  chronometre("sonde", () => envoieLeResume(dernier));
+}
+function envoieLeResume(/** @type {boolean} */ dernier){
   if (!V || !actif()) return;
   // `visibilitychange` et `pagehide` arrivent souvent ensemble : un départ suffit
   if (dernier && Date.now() - dernierDepart < 1000) return;
@@ -1392,7 +1547,9 @@ function demarre(){
   ecouteNavigateur();
   ecouteBattement();
   REPEINT_FINI.ecoute(sur((/** @type {number} */ duree, /** @type {number} */ blocs) => {
-    repeintsRecents.push({ fin: performance.now(), duree, blocs });
+    const fin = performance.now();
+    repeintsRecents.push({ fin, duree, blocs });
+    noteTravail("repeint", fin - duree, fin);
     if (repeintsRecents.length > REPEINTS_RECENTS) repeintsRecents.shift();
     V.nRepeints++;
     V.maxRepeint = Math.max(V.maxRepeint, duree);
@@ -1454,6 +1611,8 @@ function demarre(){
     get visite(){ return V.id; },
     // une entrée d'événement fabriquée, reçue comme celles du navigateur
     recoisEntree,
+    // un travail inscrit au journal, comme ceux de la page (`journal-travaux.mjs`)
+    chronometre,
     // les comptes cumulés de deck.gl et de luma.gl, tels que le prochain gel les lirait
     get travaux(){ return travauxDeck(); } };
 }

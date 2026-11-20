@@ -41,6 +41,7 @@ import { logoPose, cedeAuLogo, nomTu } from "./logos-stands.mjs";
 import { boite } from "./forme-choisie.mjs";
 import { TYPES_MEUBLES } from "./decor.mjs";
 import { decoupeStand, poseLibellesDessines, rafraichitFleches, societeDeForme, nomSurLePlan } from "./dessin.mjs";
+import { chronometre } from "./journal-travaux.mjs";
 
 
 
@@ -109,7 +110,9 @@ function partsLibres(p){
   return map;
 }
 
-export function libelles(){
+// le journal des travaux dit à la sonde ce qui a tenu la page (`journal-travaux.mjs`)
+export function libelles(){ return chronometre("noms", ecritLibelles); }
+function ecritLibelles(){
   if (GL.actif){
     libellesWebgl();
     /* Ce qui garde sa taille à l'écran — pastilles de l'itinéraire, pointes
@@ -295,7 +298,8 @@ function tassementImmersif(){
   return [1 - perte * Math.sin(cap) ** 2, 1 - perte * Math.cos(cap) ** 2];
 }
 
-export function libellesWebgl(){
+export function libellesWebgl(){ return chronometre("noms", prepareLibellesWebgl); }
+function prepareLibellesWebgl(){
   if (!GL.actif) return;
   // le placement à la main a réécrit « #labels » : les témoins de style y reviennent
   if (!$("labels").querySelector("[data-modele]")) poseModelesLibelles();

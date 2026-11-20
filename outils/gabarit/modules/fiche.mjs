@@ -50,6 +50,7 @@ import { poseDistsFiche } from "./distinctions.mjs";
 import { decoupeStand, marqueStandsDessines } from "./dessin.mjs";
 import { montePlan, chargeFond, PAVILLON_QUITTE } from "./rendu.mjs";
 import { poseChoisi, cleDuGroupe } from "./etat-emplacements.mjs";
+import { chronometre } from "./journal-travaux.mjs";
 
 /**
  * Ce que la fiche emprunte aux modules qui l'importent : le montage du plan
@@ -169,6 +170,10 @@ export const rangSociete = (el) =>
  * nommer celle qu'on a choisie.
  */
 export function select(id, recentrer, canal, iSoc){
+  // le journal des travaux dit à la sonde ce qui a tenu la page (`journal-travaux.mjs`)
+  return chronometre("fiche", () => choisitLeStand(id, recentrer, canal, iSoc));
+}
+function choisitLeStand(id, recentrer, canal, iSoc){
   const o = parId.get(id);
   if (!o) return;
   /* Changer de pavillon change la liste elle-même — son sommaire est celui du
@@ -823,6 +828,9 @@ function rangeMarque(){
  * seule à savoir ce qu'elle masque.
  */
 export function ouvre(o, depuis, canal, iSoc, recentrer){
+  return chronometre("fiche", () => ouvreLaFiche(o, depuis, canal, iSoc, recentrer));
+}
+function ouvreLaFiche(o, depuis, canal, iSoc, recentrer){
   const zone = o.kind === "zone";
   const heberges = (!zone && o.coex) || [];
   /* Le choix retiré, le stand mène droit à son titulaire — c'est lui qui loue
@@ -1147,7 +1155,8 @@ export function ouvre(o, depuis, canal, iSoc, recentrer){
   // une zone organisateur n'est pas un exposant : elle ne compte pas ici
   if (!zone) mesure("fiche_stand", canal, o.id);
 }
-export function ferme(){
+export function ferme(){ return chronometre("fiche", fermeLaFiche); }
+function fermeLaFiche(){
   const id = state.sel, ouvert = $("detail").classList.contains("open");
   /* La forme d'où la fiche est partie, relevée tant que la sélection tient
      encore : c'est elle qui dit si l'on repliait vers un emplacement ou vers

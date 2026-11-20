@@ -1365,19 +1365,20 @@ Importé par :
 reglage-application · reglage-fiche · reglage-sponsor · reglage-suggestion · reglages
 reprise-emplacements · volets
 
-### `modules/fiche.mjs` — 1203 l. → plan, plan-admin
+### `modules/fiche.mjs` — 1212 l. → plan, plan-admin
 
 - l.1 · La sélection et la fiche d'un exposant
-- l.74 · 7. Sélection et fiche
+- l.75 · 7. Sélection et fiche
 
 Fonctions :
 
-`injecteALaFiche` 72 · `anime` 106 · `noeud` 144 · `canalPlan` 154 · `rangSociete` 162
-`select` 171 · `centre` 204 · `brancheActesFiche` 215 · `centreEtBaisseLaFiche` 231
-`centrePoint` 249 · `programme` 281 · `produits` 330 · `ficheProduit` 358 · `ficheConf` 428
-`poseAppuiTactile` 581 · `ecarteClicFantome` 584 · `nomSociete` 593 · `choisitExposant` 607
-`poseMarque` 645 · `montreMarque` 705 · `poseCode` 728 · `rangeMarque` 769 · `ouvre` 825
-`ferme` 1150 · `onglet` 1169 · `brancheFiche` 1187
+`injecteALaFiche` 73 · `anime` 107 · `noeud` 145 · `canalPlan` 155 · `rangSociete` 163
+`select` 172 · `choisitLeStand` 176 · `centre` 209 · `brancheActesFiche` 220
+`centreEtBaisseLaFiche` 236 · `centrePoint` 254 · `programme` 286 · `produits` 335
+`ficheProduit` 363 · `ficheConf` 433 · `poseAppuiTactile` 586 · `ecarteClicFantome` 589
+`nomSociete` 598 · `choisitExposant` 612 · `poseMarque` 650 · `montreMarque` 710
+`poseCode` 733 · `rangeMarque` 774 · `ouvre` 830 · `ouvreLaFiche` 833 · `ferme` 1158
+`fermeLaFiche` 1159 · `onglet` 1178 · `brancheFiche` 1196
 
 Éléments :
 
@@ -1386,9 +1387,9 @@ Fonctions :
 Importe :
 
 corps-fiche · dessin · distinctions · dom · donnees · ecran · etat-emplacements · fenetre
-forme-choisie · libelles · marque · mesure · mode-admin · noms-zones · parcours · recherche
-rendu · sur · temps · texte · tiroir-itineraire · tiroirs · tiroirs-exclusifs · vignettes
-vue · webgl
+forme-choisie · journal-travaux · libelles · marque · mesure · mode-admin · noms-zones
+parcours · recherche · rendu · sur · temps · texte · tiroir-itineraire · tiroirs
+tiroirs-exclusifs · vignettes · vue · webgl
 
 Importé par :
 
@@ -1782,6 +1783,18 @@ Importé par :
 
 distinctions · parcours · trace-itineraire · tutoriel
 
+### `modules/journal-travaux.mjs` — 61 l. → plan, plan-admin
+
+- l.1 · Le journal des travaux — ce que la page a fait, et quand
+
+Fonctions :
+
+`noteTravail` 37 · `chronometre` 51 · `travauxEntre` 61
+
+Importé par :
+
+fiche · libelles · logos-stands · recherche · sonde · tiroirs
+
 ### `modules/journee.mjs` — 1282 l. → plan, plan-admin
 
 - l.1 · 11 ter. Organiser sa visite — la question posée, et le tiroir
@@ -1847,21 +1860,23 @@ Importé par :
 edition-en-cours · gestes-admin · libelles · logos-stands · nom-emplacement · pile
 placement-libelles · tutoriel · webgl
 
-### `modules/libelles.mjs` — 415 l. → plan, plan-admin
+### `modules/libelles.mjs` — 419 l. → plan, plan-admin
 
 - l.1 · Les libellés du plan — le nom de l'exposant prime sur le numéro
-- l.54 · 4. Libellés — le nom de l'exposant prime sur le numéro
+- l.55 · 4. Libellés — le nom de l'exposant prime sur le numéro
 
 Fonctions :
 
-`partsLibres` 77 · `libelles` 112 · `libelleZone` 195 · `emplacementWebgl` 223
-`tassementImmersif` 293 · `libellesWebgl` 298
+`partsLibres` 78 · `libelles` 114 · `ecritLibelles` 115 · `libelleZone` 198
+`emplacementWebgl` 226 · `tassementImmersif` 296 · `libellesWebgl` 301
+`prepareLibellesWebgl` 302
 
 Importe :
 
 calques-dessin · camera · cartouche-poi · decor · dessin · dom · donnees · filtre
-forme-choisie · libelle-place · logos-stands · nom-emplacement · noms-zones · place-libre
-polices-plan · texte · texte-plan · trace-itineraire · vous-etes-ici · vue · webgl
+forme-choisie · journal-travaux · libelle-place · logos-stands · nom-emplacement
+noms-zones · place-libre · polices-plan · texte · texte-plan · trace-itineraire
+vous-etes-ici · vue · webgl
 
 Importé par :
 
@@ -1896,30 +1911,30 @@ Importé par :
 
 lancement
 
-### `modules/logos-stands.mjs` — 1401 l. → plan, plan-admin
+### `modules/logos-stands.mjs` — 1406 l. → plan, plan-admin
 
 - l.1 · Les logos sur les stands, vus de près
 
 Fonctions :
 
-`finesse` 93 · `palier` 107 · `tassement` 118 · `annoncePret` 174 · `pret` 180
-`geleLogos` 187 · `arriveeSansFond` 240 · `grande` 256 · `pompeGrandes` 273
-`demandeGrande` 277 · `image` 317 · `sansFond` 337 · `lanceTravailleur` 376
-`demandeDetourage` 397 · `pompe` 404 · `parLaPageSeule` 424 · `detoureRevenu` 433
-`largeurDeToile` 450 · `cleDeToile` 453 · `toileDejaRangee` 459 · `toileProche` 480
-`toile` 501 · `logoPose` 538 · `nomTu` 546 · `sourceDuToit` 555 · `cedeAuLogo` 568
-`CARRE` 597 · `filtrage` 630 · `plancheDe` 647 · `extensionPlanche` 683 · `bilanLogos` 796
-`rendPlanche` 815 · `taillesDe` 827 · `rangPour` 836 · `nouvellePlanche` 845 · `vaA` 863
-`videE` 864 · `place` 869 · `libere` 908 · `liberable` 930 · `envoie` 940
-`cedeLaPlace` 962 · `recopie` 993 · `range` 1008 · `plancheGardee` 1061
-`oubliePlancheBientot` 1106 · `pres` 1118 · `solVu` 1129 · `logosARevoir` 1146
-`groupe` 1162 · `oublie` 1173 · `annoncePoses` 1216 · `matriceDuToit` 1238
-`coucheDeChauffe` 1254 · `couchesLogos` 1264 · `poseLogos` 1285
+`finesse` 94 · `palier` 108 · `tassement` 119 · `annoncePret` 175 · `pret` 181
+`geleLogos` 188 · `arriveeSansFond` 241 · `grande` 257 · `pompeGrandes` 274
+`demandeGrande` 278 · `image` 318 · `sansFond` 338 · `detoureIci` 342
+`lanceTravailleur` 381 · `demandeDetourage` 402 · `pompe` 409 · `parLaPageSeule` 429
+`detoureRevenu` 438 · `largeurDeToile` 455 · `cleDeToile` 458 · `toileDejaRangee` 464
+`toileProche` 485 · `toile` 506 · `logoPose` 543 · `nomTu` 551 · `sourceDuToit` 560
+`cedeAuLogo` 573 · `CARRE` 602 · `filtrage` 635 · `plancheDe` 652 · `extensionPlanche` 688
+`bilanLogos` 801 · `rendPlanche` 820 · `taillesDe` 832 · `rangPour` 841
+`nouvellePlanche` 850 · `vaA` 868 · `videE` 869 · `place` 874 · `libere` 913
+`liberable` 935 · `envoie` 945 · `cedeLaPlace` 967 · `recopie` 998 · `range` 1013
+`plancheGardee` 1066 · `oubliePlancheBientot` 1111 · `pres` 1123 · `solVu` 1134
+`logosARevoir` 1151 · `groupe` 1167 · `oublie` 1178 · `annoncePoses` 1221
+`matriceDuToit` 1243 · `coucheDeChauffe` 1259 · `couchesLogos` 1269 · `poseLogos` 1290
 
 Importe :
 
-camera · densite-rendu · detourage · dom · donnees · ecran · evenement · libelle-place
-vignettes · vue-etat
+camera · densite-rendu · detourage · dom · donnees · ecran · evenement · journal-travaux
+libelle-place · vignettes · vue-etat
 
 Importé par :
 
@@ -2736,28 +2751,28 @@ Importé par :
 
 abords-salles · itineraire · trajet · troncon
 
-### `modules/recherche.mjs` — 1086 l. → plan, plan-admin
+### `modules/recherche.mjs` — 1089 l. → plan, plan-admin
 
 - l.1 · La recherche, la liste et les critères — sans mot-clé ni critère retenu on
 
 Fonctions :
 
-`appliqueSecteurs` 73 · `filtreTheme` 91 · `themeFiltrable` 148 · `ordreCriteres` 164
-`clesCriteres` 191 · `texteCriteres` 205 · `texteAnglaisPerso` 221 · `indexeCriteres` 235
-`refaitCriteres` 269 · `critereActif` 276 · `basculeCritere` 278 · `videCriteres` 287
-`majVideQ` 296 · `videRecherche` 309 · `nCriteres` 324 · `majCriteres` 333
-`remplitCriteres` 400 · `basculeCriteres` 539 · `ouvreCriteres` 544 · `marqueRetrait` 578
-`appliqueFiltre` 601 · `oublieRetrait` 617 · `reprendRecherche` 626 · `rangSorte` 639
-`codeCase` 676 · `caseNumero` 693 · `sousLigne` 713 · `liste` 727 · `marqueChoisie` 870
-`prechargeMarque` 896 · `prechargeLesVignettes` 947 · `chargeUnLot` 993
-`policesArrivees` 1035 · `brancheRecherche` 1058
+`appliqueSecteurs` 74 · `filtreTheme` 92 · `themeFiltrable` 149 · `ordreCriteres` 165
+`clesCriteres` 192 · `texteCriteres` 206 · `texteAnglaisPerso` 222 · `indexeCriteres` 236
+`refaitCriteres` 270 · `critereActif` 277 · `basculeCritere` 279 · `videCriteres` 288
+`majVideQ` 297 · `videRecherche` 310 · `nCriteres` 325 · `majCriteres` 334
+`remplitCriteres` 401 · `basculeCriteres` 540 · `ouvreCriteres` 545 · `marqueRetrait` 579
+`appliqueFiltre` 602 · `oublieRetrait` 618 · `reprendRecherche` 627 · `rangSorte` 640
+`codeCase` 677 · `caseNumero` 694 · `sousLigne` 714 · `liste` 729 · `ecritLaListe` 730
+`marqueChoisie` 873 · `prechargeMarque` 899 · `prechargeLesVignettes` 950
+`chargeUnLot` 996 · `policesArrivees` 1038 · `brancheRecherche` 1061
 
 Importe :
 
 bandes · cartouche-poi · configuration · corps-fiche · dessin · distinctions · dom · donnees
-ecran · etat-emplacements · filtre · libelles · marque · noms-zones · panneau-criteres
-polices-plan · salon · secteurs · sur · temps · texte · texte-plan · tiroirs
-tout-au-parcours · vignettes · vue
+ecran · etat-emplacements · filtre · journal-travaux · libelles · marque · noms-zones
+panneau-criteres · polices-plan · salon · secteurs · sur · temps · texte · texte-plan
+tiroirs · tout-au-parcours · vignettes · vue
 
 Importé par :
 
@@ -3198,33 +3213,34 @@ Importé par :
 
 edition · outil-dessin · outil-escalier · reprise-emplacements
 
-### `modules/sonde.mjs` — 1459 l. → plan, plan-admin
+### `modules/sonde.mjs` — 1618 l. → plan, plan-admin
 
 - l.1 · La sonde silencieuse — chaque visite dépose son résumé de performance
 
 Fonctions :
 
-`sur` 122 · `ms` 123 · `enCreux` 124 · `uuid` 127 · `echantillonne` 143 · `vue0` 164
-`nouvelleVisite` 179 · `cumuleVu` 222 · `poseVu` 234 · `invisibleAvantAffichage` 247
-`lcpVu` 254 · `vueDuMoment` 269 · `surLePlan` 276 · `commence` 281 · `sorte` 292
-`clos` 295 · `relance` 311 · `image` 317 · `ecouteGestes` 347 · `nomDuScript` 384 · `lu` 403
-`cumulDeck` 413 · `travauxDeck` 418 · `releveInstant` 444 · `travauxPendant` 454
-`cleAttente` 542 · `lesAttentes` 554 · `guetteCompilation` 562 · `imageDOuverture` 595
-`decoupe` 618 · `gel` 637 · `doitBattre` 690 · `bat` 699 · `battu` 706
-`ecouteBattement` 725 · `dansLaCarte` 768 · `gelPendantLaCarte` 774 · `etapeDeLaCarte` 780
-`laCarteDesEnvirons` 810 · `ecouteNavigateur` 826 · `recoisEntree` 867
-`partsDeLInteraction` 922 · `memoire` 950 · `contexteDuPlan` 963 · `lisAppareil` 975
-`handicapDeclare` 1011 · `finDesDonnees` 1025 · `trajetDesDonnees` 1040
-`dureeDuContexte` 1052 · `appelsEnEchec` 1066 · `leChargement` 1088 · `lesTrajets` 1124
-`fluidite` 1129 · `laCarte` 1138 · `resumeSonde` 1161 · `leBattement` 1195 · `octets` 1201
-`coupe` 1204 · `tronque` 1215 · `fraiche` 1249 · `litLaFile` 1252 · `ecritLaFile` 1260
-`retire` 1272 · `corps` 1275 · `versionDesPages` 1283 · `envoieUne` 1294 · `pousse` 1320
-`actif` 1345 · `envoie` 1349 · `brancheSonde` 1374 · `demarre` 1387
+`sur` 131 · `ms` 132 · `enCreux` 133 · `uuid` 136 · `echantillonne` 152 · `vue0` 173
+`nouvelleVisite` 188 · `cumuleVu` 231 · `poseVu` 243 · `invisibleAvantAffichage` 256
+`lcpVu` 263 · `boucleTue` 282 · `retiensPointeur` 296 · `vueDuMoment` 303 · `surLePlan` 310
+`commence` 315 · `sorte` 326 · `clos` 329 · `relance` 345 · `image` 351 · `ecouteGestes` 384
+`nomDuScript` 430 · `lu` 449 · `cumulDeck` 459 · `travauxDeck` 464 · `releveInstant` 490
+`travauxPendant` 500 · `cleAttente` 588 · `lesAttentes` 600 · `guetteCompilation` 608
+`imageDOuverture` 641 · `decoupe` 664 · `gel` 683 · `doitBattre` 740 · `bat` 749
+`battu` 762 · `ecouteBattement` 784 · `dansLaCarte` 827 · `gelPendantLaCarte` 833
+`etapeDeLaCarte` 839 · `laCarteDesEnvirons` 869 · `ecouteNavigateur` 885
+`recoisEntree` 926 · `couvert` 968 · `pendantLAttente` 992 · `revoisLaPire` 1023
+`pointeurDe` 1030 · `partsDeLInteraction` 1064 · `memoire` 1098 · `contexteDuPlan` 1111
+`lisAppareil` 1123 · `handicapDeclare` 1159 · `finDesDonnees` 1173 · `trajetDesDonnees` 1188
+`dureeDuContexte` 1200 · `appelsEnEchec` 1214 · `leChargement` 1236 · `lesTrajets` 1272
+`fluidite` 1277 · `laCarte` 1286 · `resumeSonde` 1309 · `leBattement` 1343 · `octets` 1349
+`coupe` 1352 · `tronque` 1363 · `fraiche` 1400 · `litLaFile` 1403 · `ecritLaFile` 1411
+`retire` 1423 · `corps` 1426 · `versionDesPages` 1434 · `envoieUne` 1445 · `pousse` 1471
+`actif` 1496 · `envoie` 1500 · `envoieLeResume` 1504 · `brancheSonde` 1529 · `demarre` 1542
 
 Importe :
 
-affichage · demarrage · donnees · environs · erreurs · logos-stands · mesure · mesures-page
-salon · webgl
+affichage · demarrage · donnees · environs · erreurs · journal-travaux · logos-stands
+mesure · mesures-page · salon · webgl
 
 Importé par :
 
@@ -3475,22 +3491,22 @@ Importé par :
 
 apparence · fiche · parcours · points-interet · rendu · tiroir-itineraire · tiroir-parcours
 
-### `modules/tiroirs.mjs` — 729 l. → plan, plan-admin
+### `modules/tiroirs.mjs` — 734 l. → plan, plan-admin
 
 - l.1 · Les tiroirs des écrans étroits — la liste, et ceux que la hauteur mène
-- l.25 · Ce que les tiroirs lisent d'un geste
-- l.165 · Le tiroir de la liste — écrans étroits
-- l.412 · Les tiroirs menés par la hauteur — écrans étroits
+- l.26 · Ce que les tiroirs lisent d'un geste
+- l.166 · Le tiroir de la liste — écrans étroits
+- l.415 · Les tiroirs menés par la hauteur — écrans étroits
 
 Fonctions :
 
-`traceurDeGeste` 49 · `cranVoisin` 68 · `enHaut` 86 · `aSonGeste` 93 · `meneParLeCorps` 120
-`retraitBas` 188 · `mesureTiroir` 201 · `montreTiroir` 204 · `hisseTiroir` 208
-`tiroirListe` 215 · `tiroirCrante` 440 · `rangeDansLaPartVue` 697 · `brancheTiroirs` 709
+`traceurDeGeste` 50 · `cranVoisin` 69 · `enHaut` 87 · `aSonGeste` 94 · `meneParLeCorps` 121
+`retraitBas` 189 · `mesureTiroir` 202 · `montreTiroir` 205 · `hisseTiroir` 209
+`tiroirListe` 216 · `tiroirCrante` 443 · `rangeDansLaPartVue` 702 · `brancheTiroirs` 714
 
 Importe :
 
-cadre-visible · dom · ecran · panneau-criteres
+cadre-visible · dom · ecran · journal-travaux · panneau-criteres
 
 Importé par :
 

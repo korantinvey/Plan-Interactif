@@ -94,7 +94,7 @@ test.describe("la sonde silencieuse", { tag: "@base" }, () => {
     expect(e.visite).toMatch(UUID);
     const r = e.resume;
     expect(r.format).toBe("sonde-plan/1");
-    expect(r.rev).toBe(6);
+    expect(r.rev).toBe(7);
     expect(r.page).toBe("plan");
     expect(r.visibleMs).toBeGreaterThan(0);
     expect(r.visibleMs).toBeLessThanOrEqual(r.duree);
@@ -600,6 +600,117 @@ test.describe("la sonde silencieuse, ce qu'un tap lent a coûté", () => {
     // seul l'appui passe le seuil : le relâché ne compte pas, mais il découpe
     expect(pire.n).toBe(1);
     expect(pire.pire).toMatchObject({ attenteMs: 120, traitementMs: 70, presentationMs: 10, surLePlan: true });
+    expect(erreurs).toEqual([]);
+  });
+
+  /* Les doigts levés lents sur iPhone attendaient la page sans dire ce qui la
+     tenait (FUNEXPO, 19 et 20 novembre 2026). Un travail inscrit au journal
+     tient la page de l'appui jusqu'après le relâché : l'attente du relâché doit
+     le nommer, le battement doit avoir vu le fil tenu, et le geste se dire un
+     tap — sans chemin, un doigt. */
+  test("l'attente d'un doigt levé dit ce qui tenait la page, et ce qu'était le geste", async ({ page }) => {
+    const erreurs = await prepare(page);
+    const envois = await releve(page);
+    await page.goto(PLAN.replace("&rendu=svg", ""));
+    await attendLaListe(page);
+    await affiche(page);
+    await page.waitForFunction(() => window.__essais.GL.actif, null, { timeout: 30_000 });
+    // au doigt posé, un travail de 250 ms commence : le relâché arrive pendant lui
+    await page.evaluate(() => document.getElementById("stage").addEventListener("pointerdown", () => {
+      setTimeout(() => window.__essais.sonde.chronometre("essai", () => {
+        const t = performance.now();
+        while (performance.now() - t < 250) { /* la page tenue */ }
+      }), 0);
+    }, { capture: true, once: true }));
+    const p = await standAViser(page);
+    expect(p).not.toBeNull();
+    await page.mouse.move(p.x, p.y);
+    await page.mouse.down();
+    await page.waitForTimeout(30);
+    await page.mouse.up();
+    await page.waitForTimeout(300);
+    await expect.poll(async () => {
+      await cache(page);
+      const dernier = envois.at(-1);
+      return Boolean(dernier && dernier.resume.reactivite.pire && dernier.resume.reactivite.pire.occupe);
+    }, { timeout: 15_000 }).toBe(true);
+    const r = envois.at(-1).resume;
+    const d = r.reactivite.pire;
+    expect(r.rev).toBe(7);
+    expect(d.attenteMs).toBeGreaterThanOrEqual(150);
+    // l'attente est la nôtre, et le travail qui la tenait est nommé le premier
+    expect(d.occupe.nosMs).toBeGreaterThanOrEqual(150);
+    expect(d.occupe.travaux[0]).toMatchObject({ n: "essai" });
+    expect(d.occupe.travaux[0].ms).toBeGreaterThanOrEqual(150);
+    // le battement veillait depuis l'appui : il a vu le fil tenu
+    expect(d.occupe.bloqueMs).toBeGreaterThanOrEqual(100);
+    expect(d.geste).toMatchObject({ px: 0, doigts: 1 });
+    expect(d.geste.ms).toBeGreaterThanOrEqual(0);
+    expect(incoherences(r).filter((x) => x.cle === "decoupe" || x.cle === "attente-occupee")).toEqual([]);
+    expect(octets(r)).toBeLessThanOrEqual(PLAFOND);
+    expect(erreurs).toEqual([]);
+  });
+
+  /* Trois défauts relevés par CodeRabbit sur la #564, que le clic réel ne
+     provoque pas à coup sûr : les entrées se fabriquent, et passent par la même
+     réception que celles du navigateur. Les pointeurs, eux, sont de vrais
+     événements, que la sonde entend comme les autres — posés sur le corps de la
+     page, hors du plan, pour que ses gestes ne les reprennent pas. */
+  test("l'attente suit le journal : relâché d'abord, blocage vu après, veille close avant la fin", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await releve(page);
+    await page.goto(PLAN);
+    await attendLaListe(page);
+    const r = await page.evaluate(async () => {
+      const S = window.__essais.sonde, corps = document.body;
+      const pointe = (type, x) => {
+        const e = new PointerEvent(type, { pointerId: 77, bubbles: true, clientX: x, clientY: 10 });
+        corps.dispatchEvent(e);
+        return e;
+      };
+      const tient = (ms) => { const t = performance.now(); while (performance.now() - t < ms) { /* la page tenue */ } };
+      const pire = () => JSON.parse(JSON.stringify(S.resume.reactivite.pire || null));
+
+      // l'appui et le relâché d'un glisser de trente pixels, peints dans la même image
+      const bas = pointe("pointerdown", 10);
+      tient(20);
+      pointe("pointermove", 40);
+      const haut = pointe("pointerup", 40);
+      const fin = haut.timeStamp + 5000;
+      S.recoisEntree({ name: "pointerdown", interactionId: 9001, startTime: bas.timeStamp, duration: fin - bas.timeStamp,
+        processingStart: bas.timeStamp + 1, processingEnd: bas.timeStamp + 2, target: corps });
+      S.recoisEntree({ name: "pointerup", interactionId: 9001, startTime: haut.timeStamp, duration: fin - haut.timeStamp,
+        processingStart: haut.timeStamp + 1, processingEnd: haut.timeStamp + 2, target: corps });
+      const geste = pire().geste;
+
+      /* Une attente qui recouvre un blocage à venir : le découpage se fait
+         avant que le battement en retard l'inscrive. */
+      const a = performance.now();
+      S.recoisEntree({ name: "pointerup", interactionId: 9002, startTime: a, duration: 6000,
+        processingStart: a + 400, processingEnd: a + 401, target: corps });
+      const avant = pire().occupe;
+      tient(300);
+      await new Promise((ok) => setTimeout(ok, 150));
+      const apres = pire().occupe;
+
+      /* La page cachée, le battement se tait et sa veille se clôt : une
+         attente qui court au-delà n'a plus de témoin. */
+      Object.defineProperty(document, "hidden", { value: true, configurable: true });
+      document.dispatchEvent(new Event("visibilitychange", { bubbles: true }));
+      await new Promise((ok) => setTimeout(ok, 150));
+      const b = performance.now();
+      S.recoisEntree({ name: "pointerup", interactionId: 9003, startTime: a, duration: 7000,
+        processingStart: b, processingEnd: b + 1, target: corps });
+      return { geste, avant, apres, close: pire().occupe, ms: Math.round(haut.timeStamp - bas.timeStamp) };
+    });
+    // le relâché dit la durée et le chemin du geste, non l'appui de la même image
+    expect(r.geste).toMatchObject({ px: 30, ms: r.ms, doigts: 1 });
+    expect(r.geste.ms).toBeGreaterThanOrEqual(20);
+    // le blocage inscrit après le découpage y entre
+    expect(r.avant.bloqueMs || 0).toBeLessThan(100);
+    expect(r.apres.bloqueMs).toBeGreaterThanOrEqual(200);
+    // la veille close avant la fin de l'attente : sa part est tue, non dite nulle
+    expect(r.close).not.toHaveProperty("bloqueMs");
     expect(erreurs).toEqual([]);
   });
 });

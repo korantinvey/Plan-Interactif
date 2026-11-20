@@ -300,6 +300,27 @@ const REGLES = [
     },
   },
   {
+    cle: "attente-occupee",
+    texte: "ce qui a tenu l'attente au-delà de l'attente",
+    test(r) {
+      const d = r && r.reactivite && r.reactivite.pire;
+      const o = d && d.occupe;
+      if (!o) return;
+      const attente = n(d.attenteMs) || 0;
+      // chaque part est la longueur couverte dans l'attente, arrondie à la milliseconde
+      for (const k of ["nosMs", "bloqueMs", "imageMs"]) {
+        if (n(o[k]) !== undefined && (o[k] < 0 || o[k] > attente + 1)) return k + " " + o[k] + " ms > attente " + attente + " ms";
+      }
+      const t = Array.isArray(o.travaux) ? o.travaux : [];
+      if (t.length > 5) return t.length + " travaux nommés";
+      for (let i = 0; i < t.length; i++) {
+        // un travail nommé est une part de nos travaux, qui les recouvre tous
+        if (!(n(t[i].ms) >= 0) || t[i].ms > (n(o.nosMs) || 0) + 1) return t[i].n + " " + t[i].ms + " ms > nos travaux " + o.nosMs + " ms";
+        if (i && t[i].ms > t[i - 1].ms) return "travaux non triés";
+      }
+    },
+  },
+  {
     cle: "pertes",
     texte: "plus de raisons que de pertes du dessin",
     test(r) {
