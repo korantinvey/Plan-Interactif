@@ -1365,20 +1365,20 @@ Importé par :
 reglage-application · reglage-fiche · reglage-sponsor · reglage-suggestion · reglages
 reprise-emplacements · volets
 
-### `modules/fiche.mjs` — 1242 l. → plan, plan-admin
+### `modules/fiche.mjs` — 1262 l. → plan, plan-admin
 
 - l.1 · La sélection et la fiche d'un exposant
 - l.75 · 7. Sélection et fiche
 
 Fonctions :
 
-`injecteALaFiche` 73 · `anime` 116 · `noeud` 175 · `canalPlan` 185 · `rangSociete` 193
-`select` 202 · `choisitLeStand` 206 · `centre` 239 · `brancheActesFiche` 250
-`centreEtBaisseLaFiche` 266 · `centrePoint` 284 · `programme` 316 · `produits` 365
-`ficheProduit` 393 · `ficheConf` 463 · `poseAppuiTactile` 616 · `ecarteClicFantome` 619
-`nomSociete` 628 · `choisitExposant` 642 · `poseMarque` 680 · `montreMarque` 740
-`poseCode` 763 · `rangeMarque` 804 · `ouvre` 860 · `ouvreLaFiche` 863 · `ferme` 1188
-`fermeLaFiche` 1189 · `onglet` 1208 · `brancheFiche` 1226
+`injecteALaFiche` 73 · `anime` 123 · `noeud` 195 · `canalPlan` 205 · `rangSociete` 213
+`select` 222 · `choisitLeStand` 226 · `centre` 259 · `brancheActesFiche` 270
+`centreEtBaisseLaFiche` 286 · `centrePoint` 304 · `programme` 336 · `produits` 385
+`ficheProduit` 413 · `ficheConf` 483 · `poseAppuiTactile` 636 · `ecarteClicFantome` 639
+`nomSociete` 648 · `choisitExposant` 662 · `poseMarque` 700 · `montreMarque` 760
+`poseCode` 783 · `rangeMarque` 824 · `ouvre` 880 · `ouvreLaFiche` 883 · `ferme` 1208
+`fermeLaFiche` 1209 · `onglet` 1228 · `brancheFiche` 1246
 
 Éléments :
 

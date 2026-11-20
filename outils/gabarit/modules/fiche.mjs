@@ -111,7 +111,14 @@ $("plan").addEventListener("pointerup", e => { toucher = { x: e.clientX, y: e.cl
    fiche s'ouvre sans s'étirer depuis le stand, pour dire si son animation est
    ce qui fige le stand qui monte au clic sur un PC à carte graphique intégrée
    (voir `webgl.mjs` `planifieWebgl`). À retirer une fois tranché. */
-const FICHE_SECHE = (new URLSearchParams(location.search).get("latence") || "").split(",").includes("fiche");
+const LATENCE = (new URLSearchParams(location.search).get("latence") || "").split(",");
+const FICHE_SECHE = LATENCE.includes("fiche");
+/* Et, pour dire lequel de ses ingrédients coûte : la même animation sans le
+   fondu (« anim-echelle »), sans la mise à l'échelle (« anim-opacite »), le
+   calque annoncé au navigateur pendant le mouvement (« anim-wc »), ou les
+   coins du modèle « verre » taillés par l'arrondi au lieu du « clip-path »
+   pendant le mouvement (« anim-sans-clip »). À retirer avec les deux autres. */
+const VARIANTE = LATENCE.find(v => v.startsWith("anim-")) || "";
 
 export function anime(mesure, sens){
   const p = $("detail");
@@ -157,13 +164,26 @@ export function anime(mesure, sens){
   const b = p.getBoundingClientRect();
   p.style.transformOrigin = (rect.left + rect.width / 2 - b.left) + "px " +
                             (rect.top + rect.height / 2 - b.top) + "px";
+  /** @type {Record<string, string | number>} */
   const seed = { transform: "scale(" + Math.max(.05, rect.width / b.width) + "," +
                             Math.max(.03, rect.height / b.height) + ")", opacity: 0 };
+  /** @type {Record<string, string | number>} */
   const plein = { transform: "none", opacity: 1 };
-  anim = p.animate(sens > 0 ? [seed, plein] : [plein, seed],
+  // le diagnostic : un ingrédient de moins, ou un réglage du calque le temps du mouvement
+  if (VARIANTE === "anim-opacite"){ delete seed.transform; delete plein.transform; }
+  if (VARIANTE === "anim-echelle"){ delete seed.opacity; delete plein.opacity; }
+  /** @type {(() => void)[]} */
+  const rends = [];
+  if (VARIANTE === "anim-wc"){ p.style.willChange = "transform, opacity"; rends.push(() => { p.style.willChange = ""; }); }
+  if (VARIANTE === "anim-sans-clip" && getComputedStyle(p).clipPath !== "none"){
+    Object.assign(p.style, { clipPath: "none", borderRadius: "20px 0 0 20px", overflow: "hidden" });
+    rends.push(() => { Object.assign(p.style, { clipPath: "", borderRadius: "", overflow: "" }); });
+  }
+  const a = anim = p.animate(sens > 0 ? [seed, plein] : [plein, seed],
     { duration: sens > 0 ? 340 : 200,
       easing: sens > 0 ? "cubic-bezier(.16,.84,.3,1)" : "cubic-bezier(.4,0,.75,.2)" });
-  if (sens < 0) anim.finished.then(() => p.classList.remove("open"), () => {});
+  if (rends.length){ const rend = () => rends.forEach(f => f()); a.finished.then(rend, rend); }
+  if (sens < 0) a.finished.then(() => p.classList.remove("open"), () => {});
 }
 /* La forme de l'emplacement, et non ce qu'un calque a posé dessus : un logo
    ou un stand dessiné porte le même identifiant, et c'est bien le stand qu'on
