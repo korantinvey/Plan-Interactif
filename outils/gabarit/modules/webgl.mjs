@@ -1097,6 +1097,13 @@ function memesElements(/** @type {any} */ neuves, /** @type {any} */ avant){
  *  ne change à l'image. */
 function cleReunion(/** @type {any} */ c){
   const p = c.props;
+  /* Les marques des distinctions ne se réunissent pas : réunie, la couche qui
+     tait les marques en route perdrait son accesseur de couleur pour celui de
+     sa voisine, et les montrerait à leur hauteur d'arrivée en plus de leur
+     copie ; et une couche de marques perdrait la propriété par laquelle
+     l'animation la retrouve d'une image à l'autre (relu par CodeRabbit sur la
+     #565). */
+  if (p.marques || p.roleMarques) return null;
   if (TEXTE_DE_CALQUE.test(c.id) && !p.passeSousPixel)
     return ["t", c.id.replace(/^.*-/, ""), p.fontFamily, p.fontWeight, p.pickable, p.modeFiltre, p.muetALEcran,
       p.billboard, p.etireAPlat, p.lineHeight, JSON.stringify(p.parameters || {})].join("|");
@@ -2485,7 +2492,8 @@ export function marquesEnRoute(/** @type {string} */ id, images = 1){
       // image après image, comme l'animation reprend les couches de la précédente (`reanime`)
       let l = [c];
       for (let k = 0; k < images; k++) l = l.flatMap(x => [].concat(animeCouche(x)));
-      return { avant: c, apres: l };
+      // ni la source ni la paire ne se réunissent avec une couche voisine (`cleReunion`)
+      return { avant: c, apres: l, reunissables: [c, ...l].filter(x => cleReunion(x)).map(x => x.id) };
     }) };
   } finally { if (avant) hausses.set(g, avant); else hausses.delete(g); }
 }

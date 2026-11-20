@@ -13,21 +13,23 @@
 const { test, expect } = require("@playwright/test");
 const { prepare, attendLaListe, DONNEES } = require("./aide.js");
 
-/** SMCL 2026, un stand sur trois nouveau venu, marqué d'une corne sur le plan. */
-function avecDistinctions() {
+/** SMCL 2026, un stand sur trois nouveau venu, marqué sur le plan dans ce mode. */
+function avecDistinctions(mode) {
   const d = JSON.parse(JSON.stringify(DONNEES));
   d.fiche = { ...(d.fiche || {}), stand: { ...((d.fiche || {}).stand || {}), nouveau: true } };
   d.plans.forEach((p) => {
     p.stands.forEach((s, i) => { if (i % 3 === 0) s.neuf = true; });
-    p.apparence = { ...(p.apparence || {}), reglages: { ...((p.apparence || {}).reglages || {}), _neuf: { plan: "corne" } } };
+    p.apparence = { ...(p.apparence || {}), reglages: { ...((p.apparence || {}).reglages || {}), _neuf: { plan: mode } } };
   });
   return d;
 }
 
-test("en immersif, seules les marques du stand qui monte se reposent à chaque image", async ({ page }) => {
+/* La corne se peint en aplats, le liseré en traits : ce sont les traits que la
+   réunion des couches voisines (`webgl.mjs` `cleReunion`) peut prendre. */
+for (const mode of ["corne", "lisere"]) test("en immersif, seules les marques du stand qui monte se reposent à chaque image — " + mode, async ({ page }) => {
   test.setTimeout(120_000);
   const erreurs = await prepare(page);
-  const corps = JSON.stringify(avecDistinctions());
+  const corps = JSON.stringify(avecDistinctions(mode));
   await page.route("**/api/plan*", (r) => new URL(r.request().url()).searchParams.get("entete")
     ? r.fulfill({ json: { v: "essai-marques" } })
     : r.fulfill({ status: 200, contentType: "application/json", headers: { "X-Version": "essai-marques" }, body: corps }));
@@ -48,7 +50,7 @@ test("en immersif, seules les marques du stand qui monte se reposent à chaque i
     const sienne = (d) => Boolean(d.sur && d.sur.getAttribute("data-id") === id);
     // trois images de suite : l'animation reprend chaque fois les couches de la précédente
     const { attendue, couches } = window.__essais.marquesEnRoute(id, 3);
-    return couches.map(({ avant, apres }) => {
+    return couches.map(({ avant, apres, reunissables }) => {
       const poly = "getFillColor" in avant.props && !("getColor" in avant.props);
       const acces = poly ? "getFillColor" : "getColor", geo = poly ? "getPolygon" : "getPath";
       const [tues, copie] = apres;
@@ -59,6 +61,7 @@ test("en immersif, seules les marques du stand qui monte se reposent à chaque i
       return {
         siennes: avant.props.data.filter(sienne).length,
         couches: apres.length,
+        reunissables,
         ids: apres.map((c) => c.id),
         source: avant.id,
         memesDonnees: tues.props.data === avant.props.data,
@@ -75,6 +78,8 @@ test("en immersif, seules les marques du stand qui monte se reposent à chaque i
   for (const c of r) {
     // deux couches par source, image après image : la paire se refait depuis elle, sans se dédoubler
     expect(c.couches).toBe(2);
+    // et rien ne les réunit à une voisine, qui leur prendrait leur couleur et leur animation
+    expect(c.reunissables).toEqual([]);
     expect(c.ids).toEqual([c.source, c.source + "-en-route"]);
     // la couche des marques garde ses données et sa géométrie : seule la couleur tait les marques en route
     expect(c.memesDonnees).toBe(true);
