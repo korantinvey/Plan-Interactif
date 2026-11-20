@@ -3213,7 +3213,7 @@ Importé par :
 
 edition · outil-dessin · outil-escalier · reprise-emplacements
 
-### `modules/sonde.mjs` — 1600 l. → plan, plan-admin
+### `modules/sonde.mjs` — 1618 l. → plan, plan-admin
 
 - l.1 · La sonde silencieuse — chaque visite dépose son résumé de performance
 
@@ -3226,16 +3226,16 @@ Fonctions :
 `nomDuScript` 430 · `lu` 449 · `cumulDeck` 459 · `travauxDeck` 464 · `releveInstant` 490
 `travauxPendant` 500 · `cleAttente` 588 · `lesAttentes` 600 · `guetteCompilation` 608
 `imageDOuverture` 641 · `decoupe` 664 · `gel` 683 · `doitBattre` 740 · `bat` 749
-`battu` 762 · `ecouteBattement` 783 · `dansLaCarte` 826 · `gelPendantLaCarte` 832
-`etapeDeLaCarte` 838 · `laCarteDesEnvirons` 868 · `ecouteNavigateur` 884
-`recoisEntree` 925 · `couvert` 967 · `pendantLAttente` 991 · `pointeurDe` 1014
-`partsDeLInteraction` 1048 · `memoire` 1080 · `contexteDuPlan` 1093 · `lisAppareil` 1105
-`handicapDeclare` 1141 · `finDesDonnees` 1155 · `trajetDesDonnees` 1170
-`dureeDuContexte` 1182 · `appelsEnEchec` 1196 · `leChargement` 1218 · `lesTrajets` 1254
-`fluidite` 1259 · `laCarte` 1268 · `resumeSonde` 1291 · `leBattement` 1325 · `octets` 1331
-`coupe` 1334 · `tronque` 1345 · `fraiche` 1382 · `litLaFile` 1385 · `ecritLaFile` 1393
-`retire` 1405 · `corps` 1408 · `versionDesPages` 1416 · `envoieUne` 1427 · `pousse` 1453
-`actif` 1478 · `envoie` 1482 · `envoieLeResume` 1486 · `brancheSonde` 1511 · `demarre` 1524
+`battu` 762 · `ecouteBattement` 784 · `dansLaCarte` 827 · `gelPendantLaCarte` 833
+`etapeDeLaCarte` 839 · `laCarteDesEnvirons` 869 · `ecouteNavigateur` 885
+`recoisEntree` 926 · `couvert` 968 · `pendantLAttente` 992 · `revoisLaPire` 1023
+`pointeurDe` 1030 · `partsDeLInteraction` 1064 · `memoire` 1098 · `contexteDuPlan` 1111
+`lisAppareil` 1123 · `handicapDeclare` 1159 · `finDesDonnees` 1173 · `trajetDesDonnees` 1188
+`dureeDuContexte` 1200 · `appelsEnEchec` 1214 · `leChargement` 1236 · `lesTrajets` 1272
+`fluidite` 1277 · `laCarte` 1286 · `resumeSonde` 1309 · `leBattement` 1343 · `octets` 1349
+`coupe` 1352 · `tronque` 1363 · `fraiche` 1400 · `litLaFile` 1403 · `ecritLaFile` 1411
+`retire` 1423 · `corps` 1426 · `versionDesPages` 1434 · `envoieUne` 1445 · `pousse` 1471
+`actif` 1496 · `envoie` 1500 · `envoieLeResume` 1504 · `brancheSonde` 1529 · `demarre` 1542
 
 Importe :
 

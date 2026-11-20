@@ -650,6 +650,69 @@ test.describe("la sonde silencieuse, ce qu'un tap lent a coûté", () => {
     expect(octets(r)).toBeLessThanOrEqual(PLAFOND);
     expect(erreurs).toEqual([]);
   });
+
+  /* Trois défauts relevés par CodeRabbit sur la #564, que le clic réel ne
+     provoque pas à coup sûr : les entrées se fabriquent, et passent par la même
+     réception que celles du navigateur. Les pointeurs, eux, sont de vrais
+     événements, que la sonde entend comme les autres — posés sur le corps de la
+     page, hors du plan, pour que ses gestes ne les reprennent pas. */
+  test("l'attente suit le journal : relâché d'abord, blocage vu après, veille close avant la fin", async ({ page }) => {
+    const erreurs = await prepare(page);
+    await releve(page);
+    await page.goto(PLAN);
+    await attendLaListe(page);
+    const r = await page.evaluate(async () => {
+      const S = window.__essais.sonde, corps = document.body;
+      const pointe = (type, x) => {
+        const e = new PointerEvent(type, { pointerId: 77, bubbles: true, clientX: x, clientY: 10 });
+        corps.dispatchEvent(e);
+        return e;
+      };
+      const tient = (ms) => { const t = performance.now(); while (performance.now() - t < ms) { /* la page tenue */ } };
+      const pire = () => JSON.parse(JSON.stringify(S.resume.reactivite.pire || null));
+
+      // l'appui et le relâché d'un glisser de trente pixels, peints dans la même image
+      const bas = pointe("pointerdown", 10);
+      tient(20);
+      pointe("pointermove", 40);
+      const haut = pointe("pointerup", 40);
+      const fin = haut.timeStamp + 5000;
+      S.recoisEntree({ name: "pointerdown", interactionId: 9001, startTime: bas.timeStamp, duration: fin - bas.timeStamp,
+        processingStart: bas.timeStamp + 1, processingEnd: bas.timeStamp + 2, target: corps });
+      S.recoisEntree({ name: "pointerup", interactionId: 9001, startTime: haut.timeStamp, duration: fin - haut.timeStamp,
+        processingStart: haut.timeStamp + 1, processingEnd: haut.timeStamp + 2, target: corps });
+      const geste = pire().geste;
+
+      /* Une attente qui recouvre un blocage à venir : le découpage se fait
+         avant que le battement en retard l'inscrive. */
+      const a = performance.now();
+      S.recoisEntree({ name: "pointerup", interactionId: 9002, startTime: a, duration: 6000,
+        processingStart: a + 400, processingEnd: a + 401, target: corps });
+      const avant = pire().occupe;
+      tient(300);
+      await new Promise((ok) => setTimeout(ok, 150));
+      const apres = pire().occupe;
+
+      /* La page cachée, le battement se tait et sa veille se clôt : une
+         attente qui court au-delà n'a plus de témoin. */
+      Object.defineProperty(document, "hidden", { value: true, configurable: true });
+      document.dispatchEvent(new Event("visibilitychange", { bubbles: true }));
+      await new Promise((ok) => setTimeout(ok, 150));
+      const b = performance.now();
+      S.recoisEntree({ name: "pointerup", interactionId: 9003, startTime: a, duration: 7000,
+        processingStart: b, processingEnd: b + 1, target: corps });
+      return { geste, avant, apres, close: pire().occupe, ms: Math.round(haut.timeStamp - bas.timeStamp) };
+    });
+    // le relâché dit la durée et le chemin du geste, non l'appui de la même image
+    expect(r.geste).toMatchObject({ px: 30, ms: r.ms, doigts: 1 });
+    expect(r.geste.ms).toBeGreaterThanOrEqual(20);
+    // le blocage inscrit après le découpage y entre
+    expect(r.avant.bloqueMs || 0).toBeLessThan(100);
+    expect(r.apres.bloqueMs).toBeGreaterThanOrEqual(200);
+    // la veille close avant la fin de l'attente : sa part est tue, non dite nulle
+    expect(r.close).not.toHaveProperty("bloqueMs");
+    expect(erreurs).toEqual([]);
+  });
 });
 
 test.describe("la sonde silencieuse, ce qu'elle tient pour le plan", () => {

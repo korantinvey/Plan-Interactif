@@ -770,6 +770,7 @@ function battu(){
     if (retard >= RETARD_GEL){
       // le fil tenu, quelle qu'en soit la cause : ce que l'attente d'un geste peut y retrouver
       noteTravail(BLOQUE, attendu, t);
+      revoisLaPire(attendu, t);
       b.n++; b.totalMs += retard; b.maxMs = Math.max(b.maxMs, retard);
       if (J["plan-affiche"] === undefined) b.avantAffichage++;
       if (geste) b.pendantGeste++;
@@ -999,15 +1000,30 @@ function pendantLAttente(/** @type {number} */ a, /** @type {number} */ b){
   const nos = [...parNom].filter(([nom]) => !signaux.includes(nom));
   /** @type {Occupe} */
   const o = { nosMs: Math.round(couvert(nos.flatMap(([, l]) => l))) };
-  // veillait-il dès le début de l'attente ? Sa période close est au journal, l'ouverte ici
+  /* Veillait-il pendant toute l'attente ? Sa période close est au journal,
+     l'ouverte ici. Close avant la fin, elle n'a pas vu la suite : une part
+     dite nulle mentirait (relu par CodeRabbit sur la #564). */
   const veillait = (/** @type {string} */ nom, /** @type {number} */ depuis) => (depuis > 0 && depuis <= a) ||
-    travauxEntre(a, b).some(x => x.nom === nom && x.debut <= a);
+    travauxEntre(a, b).some(x => x.nom === nom && x.debut <= a && x.debut + x.duree >= b);
   if (veillait(VEILLE, veilleDepuis)) o.bloqueMs = Math.round(couvert(parNom.get(BLOQUE) || []));
   if (veillait(BOUCLE, imagesDepuis)) o.imageMs = Math.round(couvert(parNom.get(IMAGE) || []));
   const travaux = nos.map(([n, l]) => ({ n, ms: Math.round(couvert(l)), x: l.length }))
     .sort((x, y) => y.ms - x.ms).slice(0, TRAVAUX_DITS);
   if (travaux.length) o.travaux = travaux;
   return o;
+}
+
+/**
+ * Le battement en retard peut passer après l'observateur qui a découpé la pire
+ * interaction : son blocage manquait alors à `occupe`, figé sans lui (relu par
+ * CodeRabbit sur la #564). Un blocage qui recouvre l'attente de la pire la fait
+ * redécouper — tout juste après elle, ses voisines de la même image sont encore
+ * parmi les entrées récentes.
+ */
+function revoisLaPire(/** @type {number} */ debut, /** @type {number} */ fin){
+  const e = pireEntree, r = V && V.reactivite;
+  if (!e || !r || !r.pire || !(debut < e.processingStart && fin > e.startTime)) return;
+  r.pire = partsDeLInteraction(e, entreesRecentes) || r.pire;
 }
 
 /** Le pointeur d'une entrée, tel que la sonde l'a vu : à la milliseconde près. */
@@ -1065,7 +1081,9 @@ function partsDeLInteraction(/** @type {any} */ e, /** @type {any[]} */ recentes
   const cible = e.target;
   if (cible && typeof cible.closest === "function" && cible.closest("#stage")) d.surLePlan = true;
   // le doigt levé d'un tap, ou celui qui finit un glisser : depuis quand il était posé, et son chemin
-  const p = image.map(pointeurDe).find(Boolean);
+  // le relâché d'abord : l'appui de la même image n'a ni durée ni chemin (relu par CodeRabbit sur la #564)
+  const vus = image.map(pointeurDe).filter(Boolean);
+  const p = vus.find(x => x && x.nom !== "pointerdown") || vus[0];
   if (p) d.geste = { ms: p.ms, px: p.px, doigts: p.doigts };
   if (d.attenteMs >= ATTENTE_DITE) d.occupe = pendantLAttente(premier.startTime, premier.processingStart);
   const pendant = repeintsRecents.filter(p => p.fin >= e.startTime && p.fin - p.duree <= fin);
