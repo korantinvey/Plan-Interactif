@@ -80,29 +80,6 @@ async function glisse(page) {
 const affiche = (page) => page.waitForFunction(
   () => document.documentElement.classList.contains("plan-affiche"), null, { timeout: 30_000 });
 
-/** Deux images passées : ce qu'on vient de faire est peint. */
-const deuxImages = (page) => page.evaluate(() => new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok))));
-
-/**
- * Un point du plan où rien n'est désigné : ni stand, ni zone, ni panneau
- * par-dessus. Un appui là ne fait rien monter et le relâché n'ouvre rien —
- * le geste ne coûte que ce qu'on lui fait coûter. Rend `null` si le moteur ne
- * sait pas trancher par le calcul (`moteur-gl.mjs` `designe`).
- */
-const pointVide = (page) => page.evaluate(() => {
-  const d = /** @type {any} */ (globalThis).__essais.GL.deck;
-  const st = document.getElementById("stage").getBoundingClientRect(), cv = d.canvas.getBoundingClientRect();
-  for (let y = st.top + 40; y < st.bottom - 40; y += 15) {
-    for (let x = st.left + 40; x < st.right - 40; x += 15) {
-      const e = document.elementFromPoint(x, y);
-      if (!e || !e.closest("#stage") ||
-          e.closest("#viseur, .tools, .zoombar, #poi, #side, #detail, #parcours, #itineraire, .topbar")) continue;
-      if (d.designe({ x: x - cv.left, y: y - cv.top }) === null) return { x, y };
-    }
-  }
-  return null;
-});
-
 test.describe("la sonde silencieuse", { tag: "@base" }, () => {
   test("après l'affichage, le résumé part, sans l'agent complet", async ({ page }) => {
     const erreurs = await prepare(page);
@@ -299,17 +276,40 @@ test.describe("la sonde silencieuse, ce qu'une longue image a fait", () => {
     const apres = await travaux();
     expect(apres.couches).toBeGreaterThanOrEqual(avant.couches);
     expect(apres.attrMs).toBeGreaterThanOrEqual(avant.attrMs);
+    /* La sonde ne garde que les trois pires gels de la visite. Au rendu
+       logiciel de la CI, l'ouverture en compte souvent trois de plus de
+       300 ms : le gel de l'essai n'y entrait pas (run 44815576781), et un gel
+       de l'ouverture paru après l'affichage pouvait passer pour le sien. Le
+       retour du cache arrière ouvre une visite neuve, que la sonde fait
+       elle-même : ses trois places sont libres. L'essai retrouve ensuite le
+       sien par son moment — Chromium ne nomme pas un rappel d'image —, à
+       cinquante millisecondes près : la longue image commence avec la tâche
+       qui l'a demandée, et avant que l'image tenue finisse. Un gel venu après
+       reste dehors, même plus long (relu par CodeRabbit sur la #569). */
+    await page.evaluate(() => dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })));
     // une image tenue un tiers de seconde, le plan déjà paru
-    await page.evaluate(() => new Promise((ok) => requestAnimationFrame(() => {
-      const t = performance.now();
-      while (performance.now() - t < 300) { /* l'image tenue */ }
-      ok();
-    })));
-    await expect.poll(() => page.evaluate(() => window.__essais.sonde.resume.gels.pires
-      .some((p) => p.ms >= 300 && p.t > 0 && !p.avantAffichage && p.travaux && typeof p.travaux === "object"))).toBe(true);
+    // l'instant de la visite où l'image est demandée, et celui où elle cesse d'être tenue
+    const [depuis, jusqua] = await page.evaluate(() => new Promise((ok) => {
+      const d = window.__essais.sonde.resume.duree, avant = performance.now();
+      requestAnimationFrame(() => {
+        const t = performance.now();
+        while (performance.now() - t < 300) { /* l'image tenue */ }
+        ok([d, d + performance.now() - avant]);
+      });
+    }));
+    const pires = () => page.evaluate(() => window.__essais.sonde.resume.gels.pires);
+    const lesien = (/** @type {any} */ p) => p.ms >= 300 && p.t >= depuis - 50 && p.t <= jusqua;
+    // dit, en cas d'échec, les gels que la visite gardait à la place
+    await expect.poll(async () => {
+      const l = await pires();
+      return l.some(lesien) ? "gardé" : JSON.stringify({ depuis, jusqua, pires: l.map((p) => [p.ms, p.t, p.invocation]) });
+    }, { timeout: 15_000 }).toBe("gardé");
+    const gel = (await pires()).find(lesien);
+    expect(gel.t).toBeGreaterThan(0);
+    expect(gel.avantAffichage).toBeUndefined();
+    expect(typeof gel.travaux).toBe("object");
     /* Et où l'image a passé son temps : dans un rappel d'image, que le rendu
        contient — non à la « ligne 1 » d'un paquet. */
-    const gel = await page.evaluate(() => window.__essais.sonde.resume.gels.pires.find((p) => p.ms >= 300 && !p.avantAffichage));
     expect(gel.invocation).toBe("user-callback");
     expect(gel.scriptsMs).toBeGreaterThanOrEqual(250);
     expect(gel.renduMs).toBeGreaterThanOrEqual(250);
@@ -630,77 +630,63 @@ test.describe("la sonde silencieuse, ce qu'un tap lent a coûté", () => {
      tenait (FUNEXPO, 19 et 20 novembre 2026). Un travail inscrit au journal
      tient la page de l'appui jusqu'après le relâché : l'attente du relâché doit
      le nommer, le battement doit avoir vu le fil tenu, et le geste se dire un
-     tap — sans chemin, un doigt. */
+     tap — sans chemin, un doigt.
+
+     Le geste se fabrique, comme dans l'essai d'à côté : les pointeurs sont de
+     vrais événements, que la sonde entend comme les autres, et les entrées du
+     navigateur passent par sa réception. Un vrai clic faisait dépendre l'essai
+     de l'ordre où Chromium le traite, que le rendu logiciel de la CI change :
+     l'image de l'appui y gelait plus d'une seconde et devenait la pire
+     interaction (run 44809728146), puis, le travail allongé d'autant, aucune
+     ne l'était plus (run 44812842460). Les pointeurs partent de `#stage`, au-dessus du
+     plan : ses gestes, qui écoutent `svg#plan`, ne les reprennent pas. */
   test("l'attente d'un doigt levé dit ce qui tenait la page, et ce qu'était le geste", async ({ page }) => {
-    /* Hors de la CI, pour l'instant : l'essai règle à quelques dizaines de
-       millisecondes près l'appui, le travail et le relâché, quand le poste de
-       la CI gèle le rendu jusqu'à deux secondes et laisse plus de 400 ms entre
-       deux ordres de l'essai — le relâché y arrivait le travail fini, ou était
-       traité avant lui (journal du run 44812277148, 20 novembre 2026). Il
-       garde un outil de diagnostic, non ce que voit le visiteur ; il se lance
-       à la main : `npx playwright test sonde.spec.js -g "doigt levé"`. */
-    test.skip(Boolean(process.env.CI), "réglé trop finement pour le poste de la CI — se lance à la main");
     const erreurs = await prepare(page);
     const envois = await releve(page);
-    await page.goto(PLAN.replace("&rendu=svg", ""));
+    await page.goto(PLAN);
     await attendLaListe(page);
     await affiche(page);
-    await page.waitForFunction(() => window.__essais.GL.actif, null, { timeout: 30_000 });
-    /* L'ordre se tient sans compter sur l'horloge : sur le poste de la CI,
-       « mouse.down » rendait la main plus d'une seconde après l'appui, et le
-       relâché, prévu trente millisecondes plus tard, arrivait bien après le
-       travail. Le doigt se pose donc là où rien ne monte ni ne s'ouvre — un
-       stand qui monte y gelait la page une seconde et demie au rendu
-       logiciel, et ce gel devenait la pire interaction de la visite —, son
-       image passe, puis le travail commence et le relâché part aussitôt :
-       il arrive pendant le travail, quelle que soit la lenteur du poste. */
-    const p = await pointVide(page);
-    expect(p).not.toBeNull();
-    // ce que le navigateur dit du geste, pour qu'un échec sur la CI s'explique dans son journal
-    await page.evaluate(() => {
-      window.__geste = { entrees: [], travail: null };
-      new PerformanceObserver((l) => {
-        for (const e of l.getEntries()) {
-          if (!/^pointer(down|up)$/.test(e.name)) continue;
-          window.__geste.entrees.push({ nom: e.name, id: e.interactionId, debut: Math.round(e.startTime),
-            duree: e.duration, attente: Math.round(e.processingStart - e.startTime),
-            traitement: Math.round(e.processingEnd - e.processingStart) });
-        }
-      }).observe({ type: "event", durationThreshold: 16 });
-    });
-    await page.mouse.move(p.x, p.y);
-    await page.mouse.down();
-    await deuxImages(page);
-    await page.evaluate(() => {
-      setTimeout(() => window.__essais.sonde.chronometre("essai", () => {
+    const ecart = await page.evaluate(async () => {
+      const S = window.__essais.sonde, scene = document.getElementById("stage");
+      const pointe = (type) => {
+        const e = new PointerEvent(type, { pointerId: 78, isPrimary: true, bubbles: true, clientX: 200, clientY: 200 });
+        scene.dispatchEvent(e);
+        return e;
+      };
+      // le doigt posé, la sonde commence le geste et son battement veille
+      const bas = pointe("pointerdown");
+      await new Promise((ok) => setTimeout(ok, 80));
+      /* Un travail commence : le relâché arrive pendant lui, et attend encore
+         200 ms sa fin — comptées depuis le relâché, non depuis le début, pour
+         qu'un poste qui suspend le fil n'abrège pas l'attente. */
+      /** @type {PointerEvent | undefined} */
+      let haut;
+      S.chronometre("essai", () => {
         const t = performance.now();
-        window.__geste.travail = Math.round(t);
-        while (performance.now() - t < 400) { /* la page tenue */ }
-      }), 0);
+        while (!haut || performance.now() - haut.timeStamp < 200) {
+          if (!haut && performance.now() - t >= 50) haut = pointe("pointerup");
+        }
+      });
+      const traite = performance.now();
+      // l'appui, peint dans son image ; le relâché, traité après le travail
+      S.recoisEntree({ name: "pointerdown", interactionId: 424242, startTime: bas.timeStamp, duration: 24,
+        processingStart: bas.timeStamp + 1, processingEnd: bas.timeStamp + 2, target: scene });
+      S.recoisEntree({ name: "pointerup", interactionId: 424242, startTime: haut.timeStamp,
+        duration: traite + 18 - haut.timeStamp, processingStart: traite, processingEnd: traite + 2, target: scene });
+      // le battement en retard inscrit le fil tenu, et redécoupe la pire
+      await new Promise((ok) => setTimeout(ok, 150));
+      return Math.round(haut.timeStamp - bas.timeStamp);
     });
-    await page.mouse.up();
-    await page.waitForTimeout(300);
-    try {
-      await expect.poll(async () => {
-        await cache(page);
-        const dernier = envois.at(-1);
-        return Boolean(dernier && dernier.resume.reactivite.pire && dernier.resume.reactivite.pire.occupe);
-      }, { timeout: 15_000 }).toBe(true);
-    } catch (e) {
-      const dernier = envois.at(-1), geste = await page.evaluate(() => window.__geste);
-      const mesures = JSON.stringify({ reactivite: dernier && dernier.resume.reactivite, geste });
-      /* Le préalable d'abord : un relâché arrivé hors du travail — après lui,
-         ou traité avant qu'il commence — ne dit rien de la sonde. Le
-         navigateur ne relève l'entrée du relâché que s'il a attendu. */
-      const releve = geste.entrees.find((x) => x.nom === "pointerup");
-      const pendant = Boolean(releve && geste.travail !== null &&
-        releve.debut >= geste.travail && releve.debut < geste.travail + 400);
-      if (!pendant) throw new Error("scénario non exploitable, le relâché n'est pas arrivé pendant le travail : " + mesures, { cause: e });
-      throw new Error("la sonde n'a pas dit ce qui tenait la page : " + mesures, { cause: e });
-    }
+    // dit, en cas d'échec, ce que le relevé portait à la place
+    await expect.poll(async () => {
+      await cache(page);
+      const x = envois.length ? envois.at(-1).resume.reactivite : null;
+      return !x || !x.pire ? "aucune pire" : x.pire.occupe ? "occupée" : x.pireType;
+    }, { timeout: 15_000 }).toBe("occupée");
     const r = envois.at(-1).resume;
     const d = r.reactivite.pire;
     expect(r.rev).toBe(7);
+    expect(r.reactivite.pireType).toBe("pointerup");
     expect(d.attenteMs).toBeGreaterThanOrEqual(150);
     // l'attente est la nôtre, et le travail qui la tenait est nommé le premier
     expect(d.occupe.nosMs).toBeGreaterThanOrEqual(150);
@@ -708,8 +694,10 @@ test.describe("la sonde silencieuse, ce qu'un tap lent a coûté", () => {
     expect(d.occupe.travaux[0].ms).toBeGreaterThanOrEqual(150);
     // le battement veillait depuis l'appui : il a vu le fil tenu
     expect(d.occupe.bloqueMs).toBeGreaterThanOrEqual(100);
-    expect(d.geste).toMatchObject({ px: 0, doigts: 1 });
-    expect(d.geste.ms).toBeGreaterThanOrEqual(0);
+    // un tap : depuis l'appui, sans chemin, un doigt
+    expect(d.geste).toMatchObject({ ms: ecart, px: 0, doigts: 1 });
+    expect(d.geste.ms).toBeGreaterThanOrEqual(80);
+    expect(d.surLePlan).toBe(true);
     expect(incoherences(r).filter((x) => x.cle === "decoupe" || x.cle === "attente-occupee")).toEqual([]);
     expect(octets(r)).toBeLessThanOrEqual(PLAFOND);
     expect(erreurs).toEqual([]);
