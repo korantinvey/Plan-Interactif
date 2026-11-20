@@ -573,7 +573,7 @@ export class Deck {
     for (const c of couches){
       if (c.constructor !== SolidPolygonLayer || (c.props.extensions || []).length) return undefined;
       // une couche dont le programme n'est pas prêt ne se peint pas : elle ne désigne rien non plus
-      const prog = this.programmes.get(c.constructor.programme().nom);
+      const prog = this.programmes.get(SolidPolygonLayer.programme().nom);
       if (!prog || !prog.lie || prog.erreur) continue;
       const r = c.props.parameters || {};
       const passe = COMPARAISONS[r.depthCompare === undefined ? "less-equal" : r.depthCompare];
