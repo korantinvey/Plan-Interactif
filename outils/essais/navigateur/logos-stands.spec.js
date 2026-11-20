@@ -101,11 +101,17 @@ test("le logo prend la place du nom", async ({ page }) => {
     for (const e of c.props.data) {
       const [x, y] = vp.project([e.x, e.y, e.z]);
       if (x < 40 || y < 40 || x > plan.width - 40 || y > plan.height - 40) continue;
-      return { z: e.z, pris: Boolean(d.pickObject({ x, y, radius: 2, layerIds: ["logos-stands"] })) };
+      /* Et le calcul qui répond à la souris sans la carte graphique
+         (`moteur-gl.mjs` `designe`) y trouve le même logo qu'elle. */
+      const cle = (o) => (o === undefined ? "abstenu" : o ? o.layer.id + "#" + o.index : "rien");
+      return { z: e.z, pris: Boolean(d.pickObject({ x, y, radius: 2, layerIds: ["logos-stands"] })),
+        calcul: cle(d.designe({ x, y, radius: 0 })), carte: cle(d.pickObject({ x, y, radius: 0 })) };
     }
     return false;
   }, null, { timeout: ATTENTE_LOGOS }).then((h) => h.jsonValue());
-  expect(vise).toEqual({ z: 0, pris: true });
+  expect(vise.calcul).toMatch(/^logos-stands#/);
+  expect(vise.calcul).toBe(vise.carte);
+  expect({ z: vise.z, pris: vise.pris }).toEqual({ z: 0, pris: true });
   expect(erreurs).toEqual([]);
 });
 

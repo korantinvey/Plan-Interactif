@@ -557,8 +557,9 @@ export class Deck {
    * les couches désignables rejouées dans l'ordre où la carte les peint, avec
    * ses règles de profondeur. Rend l'objet, `null` s'il n'y a rien, ou
    * `undefined` quand le calcul ne sait pas reproduire la carte — un rayon,
-   * une couche d'une autre sorte que les aplats, une extension, un décalage
-   * de profondeur : la carte graphique répond alors, comme avant.
+   * une couche d'une autre sorte que les aplats et les maillages (les logos),
+   * une extension dont il ignore l'effet, un décalage de profondeur : la
+   * carte graphique répond alors, comme avant.
    * @param {{ x: number, y: number, radius?: number }} o
    */
   designe(o){
@@ -571,9 +572,12 @@ export class Deck {
     const q = [(o.x / w) * 2 - 1, 1 - (o.y / h) * 2];
     let tenu = PROFONDEUR_VIDE, gagnant = null, objet = -1;
     for (const c of couches){
-      if (c.constructor !== SolidPolygonLayer || (c.props.extensions || []).length) return undefined;
+      // une sorte que le calcul sait rejouer, et rien qu'avec les extensions dont il connaît l'effet
+      const sorte = /** @type {any} */ (c.constructor);
+      if ((sorte !== SolidPolygonLayer && sorte !== SimpleMeshLayer) ||
+        (c.props.extensions || []).some((/** @type {any} */ x) => !sorte.extensionsDesignees.includes(nomExtension(x)))) return undefined;
       // une couche dont le programme n'est pas prêt ne se peint pas : elle ne désigne rien non plus
-      const prog = this.programmes.get(SolidPolygonLayer.programme().nom);
+      const prog = this.programmes.get(sorte.programme().nom);
       if (!prog || !prog.lie || prog.erreur) continue;
       const r = c.props.parameters || {};
       const passe = COMPARAISONS[r.depthCompare === undefined ? "less-equal" : r.depthCompare];
@@ -581,11 +585,12 @@ export class Deck {
       const ecrit = r.depthWriteEnabled === undefined ? true : Boolean(r.depthWriteEnabled);
       const m = c.props.modelMatrix ? mul4(ctx.vp, rapporte(c.props.modelMatrix, ctx.origine)) : ctx.vp;
       try {
-        c.designe(m, q, (/** @type {number} */ i, /** @type {number} */ z) => {
+        const su = /** @type {any} */ (c).designe(m, q, (/** @type {number} */ i, /** @type {number} */ z) => {
           if (!passe(z, tenu)) return;
           gagnant = c; objet = i;
           if (ecrit) tenu = z;
-        });
+        }, ctx);
+        if (su === false) return undefined;
       } catch (e) { return undefined; }
     }
     // depuis la création, pour les essais : combien de questions la carte n'a pas eu à entendre

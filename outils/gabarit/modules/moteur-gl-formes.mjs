@@ -333,6 +333,7 @@ export class SolidPolygonLayer extends Couche {
       pos = e.montes.pos;
     }
     e.projete = traverse(m, pos, e.indices, e.objets, q, rend, e.projete);
+    return true;
   }
 
   dessine(/** @type {any} */ ctx, /** @type {any} */ prog){
@@ -350,6 +351,8 @@ export class SolidPolygonLayer extends Couche {
 
   detruit(){ if (this.etat){ this.etat.a.detruit(); this.etat = null; } }
 }
+/** Aucune extension ne change ce qu'un aplat désigne sans que le calcul l'ignore. */
+SolidPolygonLayer.extensionsDesignees = [];
 SolidPolygonLayer.layerName = "SolidPolygonLayer";
 SolidPolygonLayer.defaultProps = { filled: true, extruded: false, wireframe: false, elevationScale: 1, material: true,
   getPolygon: (/** @type {any} */ d) => d.polygon, getFillColor: [0, 0, 0, 255], getElevation: 1000, _normalize: true };
