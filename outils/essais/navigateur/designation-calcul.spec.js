@@ -19,7 +19,11 @@ const { prepare, attendLaListe, standAViser } = require("./aide.js");
 /** La grille comparée : le calcul, la carte, et ce qui ne s'accorde pas même à un demi-pixel près. */
 const compare = (page, pendantLaMontee = false) => page.evaluate(async (attendre) => {
   const d = window.__essais.GL.deck, cv = d.canvas.getBoundingClientRect();
-  const monte = () => (d.props.layers || []).flat(Infinity).some((l) => l && /-hausse-/.test(l.id));
+  /* Un stand en mouvement : sa couche de montée à une hauteur intermédiaire
+     (`animeCouche` pose `elevationScale` d'après `echelleHausse`). La couche
+     reste un instant après l'arrivée, à l'échelle 1 : ce n'est plus la montée. */
+  const monte = () => (d.props.layers || []).flat(Infinity).some((l) => l && /-hausse-/.test(l.id) &&
+    l.props.elevationScale > 0 && l.props.elevationScale < 1);
   /* Pendant la montée : la grille se lit dans l'image même où la couche du
      stand qui monte est là — rien ne se peint entre les deux. */
   if (attendre) await new Promise((ok) => { const f = () => (monte() ? ok() : requestAnimationFrame(f)); f(); });
