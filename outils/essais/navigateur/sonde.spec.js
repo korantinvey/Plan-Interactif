@@ -648,22 +648,43 @@ test.describe("la sonde silencieuse, ce qu'un tap lent a coûté", () => {
        il arrive pendant le travail, quelle que soit la lenteur du poste. */
     const p = await pointVide(page);
     expect(p).not.toBeNull();
+    // ce que le navigateur dit du geste, pour qu'un échec sur la CI s'explique dans son journal
+    await page.evaluate(() => {
+      window.__geste = { entrees: [], travail: null };
+      new PerformanceObserver((l) => {
+        for (const e of l.getEntries()) {
+          if (!/^pointer(down|up)$/.test(e.name)) continue;
+          window.__geste.entrees.push({ nom: e.name, id: e.interactionId, debut: Math.round(e.startTime),
+            duree: e.duration, attente: Math.round(e.processingStart - e.startTime),
+            traitement: Math.round(e.processingEnd - e.processingStart) });
+        }
+      }).observe({ type: "event", durationThreshold: 16 });
+    });
     await page.mouse.move(p.x, p.y);
     await page.mouse.down();
     await deuxImages(page);
     await page.evaluate(() => {
       setTimeout(() => window.__essais.sonde.chronometre("essai", () => {
         const t = performance.now();
+        window.__geste.travail = Math.round(t);
         while (performance.now() - t < 400) { /* la page tenue */ }
       }), 0);
     });
     await page.mouse.up();
     await page.waitForTimeout(300);
-    await expect.poll(async () => {
-      await cache(page);
+    try {
+      await expect.poll(async () => {
+        await cache(page);
+        const dernier = envois.at(-1);
+        return Boolean(dernier && dernier.resume.reactivite.pire && dernier.resume.reactivite.pire.occupe);
+      }, { timeout: 15_000 }).toBe(true);
+    } catch (e) {
       const dernier = envois.at(-1);
-      return Boolean(dernier && dernier.resume.reactivite.pire && dernier.resume.reactivite.pire.occupe);
-    }, { timeout: 15_000 }).toBe(true);
+      throw new Error("la sonde n'a pas dit ce qui tenait la page : " + JSON.stringify({
+        reactivite: dernier && dernier.resume.reactivite,
+        geste: await page.evaluate(() => window.__geste),
+      }), { cause: e });
+    }
     const r = envois.at(-1).resume;
     const d = r.reactivite.pire;
     expect(r.rev).toBe(7);
