@@ -657,7 +657,12 @@ function tiroirCrante({ panneau, prise, cle, demi, ouvre = "demi" }){
   let ouvert = tiroir.classList.contains("open");
   new MutationObserver(() => {
     const o = tiroir.classList.contains("open");
-    if (o && !ouvert){ pose(ouvre); mesure(); }
+    /* La hauteur se mesure à l'image suivante : la classe change au milieu du
+       geste qui ouvre la fiche, avant qu'elle soit écrite, et la lire ici
+       obligeait le navigateur à une mise en page de plus, que le doigt levé
+       attendait (banc de FUNEXPO, 20 novembre 2026). Le cran d'ouverture n'en
+       a pas besoin ; le cran replié, si. */
+    if (o && !ouvert){ pose(ouvre); requestAnimationFrame(mesure); }
     ouvert = o;
   }).observe(tiroir, { attributes: true, attributeFilter: ["class"] });
 

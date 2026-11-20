@@ -22,7 +22,7 @@ import { $ } from "./dom.mjs";
 import { esc } from "./texte.mjs";
 import { parId, state, P } from "./donnees.mjs";
 import { P_NOM, P_CODE, injecteAuxPolices } from "./polices-plan.mjs";
-import { largeur, habille, lignesSvg, ancre, place, coupes } from "./texte-plan.mjs";
+import { largeur, habille, lignesSvg, ancre, place, coupes, versionDesMesures } from "./texte-plan.mjs";
 import { rectangleLibre } from "./place-libre.mjs";
 import { PLACE_LIBELLES, libSel, placementLibelle } from "./libelle-place.mjs";
 import { GL, planifieWebgl, poseModelesLibelles, injecteAuWebgl } from "./webgl.mjs";
@@ -31,7 +31,7 @@ import { view, cadrePlan, repeintLibelles, injecteALaVue } from "./vue.mjs";
 import { visibleSurPlan, visibleSociete } from "./filtre.mjs";
 import { phareZone } from "./cartouche-poi.mjs";
 import { libelleEmplacement, coexComptes, coexChoisit, decaleLibelle, facteurLibelle, libelleForce, nomCouche,
-  habilleNom, posePaliers, nomsPivotes }
+  habilleNom, posePaliers, nomsPivotes, etatDesNoms }
   from "./nom-emplacement.mjs";
 import { rafraichitBorne } from "./vous-etes-ici.mjs";
 import { rafraichitBouts } from "./trace-itineraire.mjs";
@@ -299,13 +299,64 @@ function tassementImmersif(){
 }
 
 export function libellesWebgl(){ return chronometre("noms", prepareLibellesWebgl); }
-function prepareLibellesWebgl(){
-  if (!GL.actif) return;
-  // le placement à la main a réécrit « #labels » : les témoins de style y reviennent
-  if (!$("labels").querySelector("[data-modele]")) poseModelesLibelles();
+/* L'écriture d'un nom, en une chaîne : c'est elle que la clé compare, et que la
+   mémoire de chaque stand garde (`nomsGardes`). */
+const ecrit = (/** @type {any} */ d) => d.text + d.position[0].toFixed(2) + d.position[1].toFixed(2) + d.taille.toFixed(3) +
+  (d.angle ? "^" + d.angle : "") + d.cls + d.z0.toFixed(3) + d.z1.toFixed(3) + (d.pick ? "*" : "") + (d.meuble ? "m" : "");
+const pastille = (/** @type {any} */ d) => d.path[0][0].toFixed(2) + d.path[0][1].toFixed(2) + d.cls + d.z0.toFixed(3);
+
+/* ------------------------------------------------------------
+   Les noms de chaque stand, gardés d'une écriture à l'autre
+
+   Choisir un stand, le quitter, refermer la fiche : chacun de ces gestes
+   refaisait les noms, et chaque fois tous les stands du pavillon se
+   remesuraient — coupes, tailles, paliers, numéros, pastilles — pour en
+   changer un seul, qui s'écrit d'ailleurs à part (`choisis`). C'était, au banc
+   de FUNEXPO (téléphone émulé, processeur ralenti quatre fois), plus du quart
+   de ce que coûte un tap ; et sur les téléphones du salon, la fiche tenait le
+   doigt cent vingt à cent cinquante millisecondes (sonde, révision 7,
+   20 novembre 2026). Chaque stand garde donc ce qu'il a écrit, et la signature
+   de ce dont cela dépend : son nom, son numéro, ses sociétés, sa place, sa part
+   libre, son placement à la main, son logo posé ; et, hors de lui, l'état des
+   noms du pavillon (`nom-emplacement.mjs` `etatDesNoms`), les polices et leurs
+   mesures. Ce qui se verse est ce que la mesure aurait produit
+   (`compareNoms`, que les essais imposent).
+   ------------------------------------------------------------ */
+/** @type {WeakMap<object, { signe: string, noms: any[], past: any[], ecrits: string[], pastillesEcrites: string[] }>} */
+const NOMS_GARDES = new WeakMap();
+/** Sans mémoire : ce que la mesure produit d'elle-même, pour les essais. */
+let SANS_MEMOIRE = false;
+/** Combien de stands la dernière écriture a remesurés. */
+let NOMS_REFAITS = 0;
+
+function nomsGardes(/** @type {any} */ s, /** @type {any} */ lib, /** @type {any} */ reg, /** @type {string} */ etat,
+    /** @type {(lib: any, choisi: boolean, noms: any[], past: any[]) => void} */ pose,
+    /** @type {any[]} */ noms, /** @type {any[]} */ past, /** @type {string[]} */ ecrits, /** @type {string[]} */ pastillesEcrites){
+  const signe = etat + "#" + (s.nom || "") + "|" + (s.code || "") + "|" + (s.coex ? s.coex.length : 0) + "|" +
+    ancre(s) + "|" + place(s) + "|" + (lib ? lib.c + ";" + lib.bb : "") + "|" + (reg ? JSON.stringify(reg) : "") + "|" +
+    (logoPose(s) ? 1 : 0) + (PLACE_LIBELLES && s.id === libSel ? 1 : 0);
+  let g = NOMS_GARDES.get(s);
+  if (!g || g.signe !== signe || SANS_MEMOIRE){
+    NOMS_REFAITS++;
+    const n = /** @type {any[]} */ ([]), p = /** @type {any[]} */ ([]);
+    pose(lib, false, n, p);
+    g = { signe, noms: n, past: p, ecrits: n.map(ecrit), pastillesEcrites: p.map(pastille) };
+    NOMS_GARDES.set(s, g);
+  }
+  noms.push(...g.noms); past.push(...g.past);
+  ecrits.push(...g.ecrits); pastillesEcrites.push(...g.pastillesEcrites);
+}
+
+/** Les noms du pavillon, tels que la carte graphique les peint, et les clés qui disent s'ils ont changé. */
+function calculeNoms(){
   const p = P(), items = [], pastilles = [], dessines = new Map();
+  /** @type {string[]} */
+  const ecrits = [], pastillesEcrites = [];
   const libres = partsLibres(p);
   posePaliers(p.stands, p.zones, GL.camera ? tassementImmersif() : undefined, libres);
+  // ce qui, hors de chaque stand, décide de ses noms : lu une fois pour tous
+  const etat = etatDesNoms() + "#" + P_NOM.join() + "#" + P_CODE.join() + "#" + versionDesMesures() + "#" + (PLACE_LIBELLES ? 1 : 0);
+  NOMS_REFAITS = 0;
   for (const z of p.zones){
     const sel = z.id === state.sel;
     if (!z.nom || (!sel && !visibleSurPlan(z))) continue;
@@ -319,6 +370,7 @@ function prepareLibellesWebgl(){
       pick: Boolean(PLACE_LIBELLES && z.id === libSel), lbl: z.id,
       // une zone meublée n'est qu'un sol en vue immersive : son nom s'y pose (`webgl.mjs` `positionTexte`)
       ...(TYPES_MEUBLES.includes(z.type || "") ? { meuble: true } : {}) });
+    ecrits.push(ecrit(items[items.length - 1]));
   }
   /* Le stand choisi s'écrit à part. Sélectionner ne change que deux noms —
      celui qu'on quitte, celui qu'on prend —, mais ils étaient mêlés aux
@@ -358,7 +410,7 @@ function prepareLibellesWebgl(){
     };
     // comme en SVG : la part libre d'un emplacement découpé, ou rien
     const lib = libres.get(s);
-    if (vu && lib !== null) poseNoms(lib, false, items, pastilles);
+    if (vu && lib !== null) nomsGardes(s, lib, reg, etat, poseNoms, items, pastilles, ecrits, pastillesEcrites);
     // choisi, il prend l'emplacement entier
     if (sel) poseNoms(undefined, true, choisis, pastillesChoisies);
   }
@@ -382,11 +434,18 @@ function prepareLibellesWebgl(){
         b[2] - b[0], b[3] - b[1], sel, null, dessines.get(dcal), null);
     }
   }
-  const ecrit = d => d.text + d.position[0].toFixed(2) + d.position[1].toFixed(2) + d.taille.toFixed(3) + (d.angle ? "^" + d.angle : "") + d.cls + d.z0.toFixed(3) + d.z1.toFixed(3) + (d.pick ? "*" : "") + (d.meuble ? "m" : "");
-  const pastille = d => d.path[0][0].toFixed(2) + d.path[0][1].toFixed(2) + d.cls + d.z0.toFixed(3);
-  const cle = items.map(ecrit).join("|") + "#" + pastilles.map(pastille).join("|") +
+  const cle = ecrits.join("|") + "#" + pastillesEcrites.join("|") +
     "#" + [...dessines].map(([g, l]) => g.dataset.dcal + ":" + l.map(ecrit).join("|")).join("#");
   const cleChoisis = choisis.map(ecrit).join("|") + "#" + pastillesChoisies.map(pastille).join("|");
+  return { items, pastilles, dessines, choisis, pastillesChoisies, cle, cleChoisis };
+}
+
+function prepareLibellesWebgl(){
+  if (!GL.actif) return;
+  // le placement à la main a réécrit « #labels » : les témoins de style y reviennent
+  if (!$("labels").querySelector("[data-modele]")) poseModelesLibelles();
+  const { items, pastilles, dessines, choisis, pastillesChoisies, cle, cleChoisis } = calculeNoms();
+  GL.nomsRefaits = NOMS_REFAITS;
   if (cle === GL.cleLibelles && cleChoisis === GL.cleChoisis) return;
   if (cle !== GL.cleLibelles){
     GL.cleLibelles = cle;
@@ -405,6 +464,24 @@ function prepareLibellesWebgl(){
   }
   GL.couchesLibelles = null;
   planifieWebgl();
+}
+
+/**
+ * Ce que la mémoire verse, comparé à ce que la mesure produit d'elle-même : la
+ * première différence, ou rien. Seuls les essais l'appellent (`plan.mjs` `__essais`).
+ */
+export function compareNoms(){
+  if (!GL.actif) return "";
+  const vers = (/** @type {any} */ r) => JSON.stringify({ i: r.items, p: r.pastilles, c: r.cle },
+    (k, v) => (v instanceof Element ? v.getAttribute("data-dcal") || v.localName : v));
+  const avec = vers(calculeNoms());
+  SANS_MEMOIRE = true;
+  let sans = "";
+  try { sans = vers(calculeNoms()); } finally { SANS_MEMOIRE = false; }
+  if (avec === sans) return "";
+  let i = 0;
+  while (i < avec.length && avec[i] === sans[i]) i++;
+  return "diffère à partir de « " + avec.slice(Math.max(0, i - 60), i + 60) + " »";
 }
 
 /* La vue et le rendu par la carte graphique, que ce module importe, refont

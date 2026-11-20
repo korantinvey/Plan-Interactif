@@ -224,6 +224,8 @@ export const GL = {
   libelles: [], cleLibelles: "", couchesLibelles: null, pastilles: [], dessines: new Map(),
   // les noms du stand choisi, écrits à part (`libelles.mjs` `libellesWebgl`)
   libellesChoisis: [], pastillesChoisies: [], cleChoisis: "", versionChoisis: 0,
+  // les stands dont la dernière écriture des noms a remesuré les siens (`libelles.mjs` `nomsGardes`)
+  nomsRefaits: 0,
   groupes: new Map(), survol: null, focus: null, libellesPhare: [], temps: 0, imageAnim: 0, cleAnim: "",
   modeles: new Map(), tailles: new Map(), duree: 0, reconstruits: 0,
   // les stands et les zones que le dernier repeint a reconvertis, les autres repris tels quels (`emplacementGarde`)
@@ -1065,7 +1067,9 @@ function assembleCouches(/** @type {boolean} */ enMouvement){
        est le trait de leur contour — et donc après tout le bloc. */
     const tuile = (TUILES.size > 0 || choisies.size > 0) && enTuiles(), apres = [];
     for (const c of couches){
-      out.push(animeCouche(c));
+      // une couche, ou deux : les marques en route ont la leur (`marquesSurLesToits`)
+      const animee = animeCouche(c);
+      if (Array.isArray(animee)) out.push(...animee); else out.push(animee);
       if (GL.camera && GL.survol && c.props.extruded) out.push(...coucheSurvolVolume(c));
       if (tuile) apres.push(...couchesTuiles(c, choisies));
       // la teinte du survol juste sur l'aplat : cloisons et noms restent devant
@@ -1093,6 +1097,13 @@ function memesElements(/** @type {any} */ neuves, /** @type {any} */ avant){
  *  ne change à l'image. */
 function cleReunion(/** @type {any} */ c){
   const p = c.props;
+  /* Les marques des distinctions ne se réunissent pas : réunie, la couche qui
+     tait les marques en route perdrait son accesseur de couleur pour celui de
+     sa voisine, et les montrerait à leur hauteur d'arrivée en plus de leur
+     copie ; et une couche de marques perdrait la propriété par laquelle
+     l'animation la retrouve d'une image à l'autre (relu par CodeRabbit sur la
+     #565). */
+  if (p.marques || p.roleMarques) return null;
   if (TEXTE_DE_CALQUE.test(c.id) && !p.passeSousPixel)
     return ["t", c.id.replace(/^.*-/, ""), p.fontFamily, p.fontWeight, p.pickable, p.modeFiltre, p.muetALEcran,
       p.billboard, p.etireAPlat, p.lineHeight, JSON.stringify(p.parameters || {})].join("|");
@@ -2418,22 +2429,73 @@ function standDeLaMarque(/** @type {Element} */ el){
    y va en une seconde : posée là d'emblée, elle sautait en haut au clic et
    en bas au départ, laissant le toit la rejoindre. Chaque marque retient
    donc son stand (`sur`), et le temps qu'il bouge, chaque image la repose à
-   la hauteur où il en est — comme le logo de son toit (`logosSurLesToits`). */
+   la hauteur où il en est — comme le logo de son toit (`logosSurLesToits`).
+
+   Seules les marques des stands qui bougent se reposent. La couche entière se
+   reposait à chaque image, son déclencheur changeant avec l'instant : le moteur
+   en refaisait toute la géométrie, toutes les marques du salon, pour celles d'un
+   stand qui monte (banc de FUNEXPO, 20 novembre 2026). La couche garde donc sa
+   géométrie et tait par la couleur les marques en route, ce qu'elle ne refait
+   qu'au départ et à l'arrivée ; une petite couche à part les porte, à la hauteur
+   du moment. Rend une couche, ou deux.
+
+   Les deux retiennent la couche dont elles viennent (`marquesDe`), et ne sont
+   plus des couches de marques : l'animation (`reanime`) reprend à chaque image
+   les couches de l'image d'avant, et transformer de nouveau la paire la
+   dédoublait — deux couches, puis quatre, puis huit (relu par CodeRabbit sur la
+   #565). La paire se refait donc depuis sa source (`animeCouche`). */
+const TUE = [0, 0, 0, 0];
 function marquesSurLesToits(/** @type {any} */ c){
   if (!hausses.size) return c;
+  const poly = c instanceof deck.SolidPolygonLayer;
+  if (!poly && !(c instanceof deck.PathLayer)) return c;
   const t = instant(), z = new Map();
   for (const [g, h] of hausses) z.set(g, hauteurHausse(h, t) + AU_DESSUS_DU_TOIT);
   const bouge = (/** @type {any} */ d) => d.sur && z.has(d.sur);
+  const mobiles = (c.props.data || []).filter(bouge);
+  if (!mobiles.length) return c;
   const leve = (/** @type {any} */ d, /** @type {number[][]} */ pts) =>
     pts.map(p => [p[0], p[1], z.get(d.sur)]);
+  const acces = poly ? "getFillColor" : "getColor", couleur = c.props[acces];
+  // les stands en route : ce qui change le jeu des marques tues, et lui seul
+  const enRoute = [...z.keys()].map(g => g.getAttribute("data-id") || "").join("|");
+  const declencheurs = c.props.updateTriggers || {};
+  const tues = c.clone({ marques: false, marquesDe: c, roleMarques: "tues",
+    [acces]: (/** @type {any} */ d) => bouge(d) ? TUE : typeof couleur === "function" ? couleur(d) : couleur,
+    updateTriggers: { ...declencheurs, [acces]: JSON.stringify(declencheurs[acces] ?? "") + "#" + enRoute } });
   // l'instant, et non la clé de l'image, comme pour les logos
-  if (c instanceof deck.SolidPolygonLayer) return c.clone({
-    getPolygon: (/** @type {any} */ d) => bouge(d) ? d.polygon.map((/** @type {number[][]} */ a) => leve(d, a)) : d.polygon,
-    updateTriggers: { ...c.props.updateTriggers, getPolygon: t } });
-  if (c instanceof deck.PathLayer) return c.clone({
-    getPath: (/** @type {any} */ d) => bouge(d) ? leve(d, d.path) : d.path,
-    updateTriggers: { ...c.props.updateTriggers, getPath: t } });
-  return c;
+  const copie = c.clone({ id: c.id + "-en-route", data: mobiles, marques: false, marquesDe: c, roleMarques: "copie",
+    ...(poly ? { getPolygon: (/** @type {any} */ d) => d.polygon.map((/** @type {number[][]} */ a) => leve(d, a)) }
+      : { getPath: (/** @type {any} */ d) => leve(d, d.path) }),
+    updateTriggers: { ...declencheurs, [poly ? "getPolygon" : "getPath"]: t } });
+  return [tues, copie];
+}
+
+/**
+ * Ce que `marquesSurLesToits` fait des couches des marques quand ce stand monte :
+ * le stand passe pour en route le temps de l'appel, et tout est rendu tel quel.
+ * Seuls les essais l'appellent (`plan.mjs` `__essais`) : sous la carte graphique
+ * logicielle de l'intégration, la première image après un choix vient après la
+ * fin de la montée, qu'aucune image ne montre.
+ */
+export function marquesEnRoute(/** @type {string} */ id, images = 1){
+  const g = $("stands").querySelector('g.stand[data-id="' + CSS.escape(id) + '"]');
+  if (!g || !GL.deck) return null;
+  const couches = /** @type {any[]} */ ((GL.deck.props.layers || []).flat(Infinity).filter(Boolean))
+    .filter(c => c.props.marques);
+  const avant = hausses.get(g);
+  // une hauteur qui ne bouge pas : celle qu'on attend, quel que soit l'instant
+  const haut = HAUTEUR_STAND * HAUSSE_CHOIX;
+  hausses.set(g, { de: haut, vers: haut, t0: performance.now() });
+  try {
+    return { attendue: haut + AU_DESSUS_DU_TOIT, couches: couches.map(c => {
+      // image après image, comme l'animation reprend les couches de la précédente (`reanime`)
+      let l = [c];
+      for (let k = 0; k < images; k++) l = l.flatMap(x => [].concat(animeCouche(x)));
+      // ni la source ni la paire ne se réunissent avec une couche voisine (`cleReunion`)
+      return { avant: c, apres: l, reunissables: [c, ...l].filter(x => cleReunion(x)).map(x => x.id) };
+    }) };
+  } finally { if (avant) hausses.set(g, avant); else hausses.delete(g); }
 }
 
 function hauteurVolume(el, anneaux){
@@ -4188,6 +4250,9 @@ function aUnInstant(/** @type {() => any} */ f){
   try { return f(); } finally { INSTANT_IMAGE = null; }
 }
 function animeCouche(c){
+  /* La paire des marques en route se refait depuis sa source : la couche qui
+     les tait la porte, la copie s'efface — sans quoi chaque image la dédoublerait. */
+  if (c.props.marquesDe) return c.props.roleMarques === "copie" ? [] : marquesSurLesToits(c.props.marquesDe);
   if (c.props.marques) return marquesSurLesToits(c);
   if (c.props.jeton) return c.clone({ modelMatrix: matriceJeton(c.props.jeton, GL.temps) });
   if (c.props.hausse) return c.clone({ elevationScale: echelleHausse(c.props.hausse, instant()) });

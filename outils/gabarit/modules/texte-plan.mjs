@@ -23,6 +23,11 @@ const _cvs = document.createElement("canvas").getContext("2d");
    police, telle que le canevas la reçoit, se relit de la clé quand il faut
    remesurer. */
 export const _lg = new Map();
+/* Une version des mesures, qui avance quand une police arrivée en change une
+   (`remesureTextes`) ou que la table repart de zéro : les noms gardés stand par
+   stand (`libelles.mjs` `nomsGardes`) s'y comparent, sans relire la table. */
+let versionMesures = 0;
+export const versionDesMesures = () => versionMesures + ":" + (_lg.size ? 1 : 0);
 function mesureTexte(police, txt){
   _cvs.font = police;
   return mesureIci(txt);
@@ -88,6 +93,7 @@ export function remesureTextes(/** @type {string[] | null} */ familles = null){
       if (w !== _lg.get(k)){ _lg.set(k, w); change = true; }
     }
   }
+  if (change) versionMesures++;
   return change;
 }
 

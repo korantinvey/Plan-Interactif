@@ -265,12 +265,17 @@ function releveDists(){
  * désignent : une marque restée à pleine force au milieu d'un hall effacé se
  * lirait comme un résultat.
  */
+/** Ce dont dépend ce que chaque calque des marques porte, écrit par `dessineDists`. */
+/** @type {WeakMap<Element, { traces: any[], eteints: string }>} */
+const ECRITS = new WeakMap();
+
 export function dessineDists(){
   if (!DATA) return;
   const g = calqueDists();
   const eteint = $("stands").style.display === "none";
   if (eteint || DISTINCTIONS.every(d => modeDist(d, "plan") === "aucun")){
     if (g.firstChild) g.textContent = "";
+    ECRITS.delete(g);
     return;
   }
   if (DISTS_VUES.plan !== state.plan || DISTS_VUES.modes !== modesDuPlan())
@@ -284,6 +289,19 @@ export function dessineDists(){
   /* Chaque marque nomme son stand : la vue immersive (`webgl.mjs`) la pose
      sur le dessus de son volume, qu'elle ne saurait pas trouver sans lui. Pas
      « data-id », qui la ferait désigner au clic à la place du stand. */
+  /* Rien de changé, rien de réécrit. Choisir un stand, refermer sa fiche :
+     chacun de ces gestes redessine les marques, et les réécrire à l'identique
+     donnait au dessin des éléments neufs — que le moteur, qui compare les
+     traits par l'élément qui les porte (`webgl.mjs` `memesTraits`), prenait
+     pour des tracés neufs : la géométrie de toutes les marques se refaisait
+     quatre fois par tap en vue immersive (banc de FUNEXPO, 20 novembre 2026).
+     Ce qui décide de l'écriture se garde par calque — le relevé des marques,
+     qui ne change qu'avec le pavillon ou les modes, et les stands éteints : un
+     calque refait à neuf, ou vidé entre-temps, s'écrit. */
+  // en JSON : un identifiant qui porterait le séparateur confondrait deux ensembles (relu par CodeRabbit sur la #565)
+  const eteints = JSON.stringify([...dim].sort()), deja = ECRITS.get(g);
+  if (deja && deja.traces === DISTS_VUES.traces && deja.eteints === eteints && g.firstChild) return;
+  ECRITS.set(g, { traces: DISTS_VUES.traces, eteints });
   /* Le retrait se porte en attribut, comme le reste du style de la marque. */
   g.innerHTML = DISTS_VUES.traces.map(t =>
     '<g class="dM d-' + esc(t.cle) + '"' + (dim.has(t.id) ? ' opacity=".22"' : "") + ' data-sur="' + esc(t.id) + '">' +

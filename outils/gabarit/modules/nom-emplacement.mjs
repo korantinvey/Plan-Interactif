@@ -193,6 +193,20 @@ let decoupes = new Map();
 let cleDebords = "";
 /** Les stands sur lesquels `debords` a été calculée, débords ou non. */
 let mesures = new WeakSet();
+/* Combien de fois les débords se sont refaits : ce qui les lit (`placesDuNom`)
+   change avec eux, sans qu'on compare la table. */
+let versionDebords = 0;
+
+/**
+ * Ce qui, hors du stand lui-même, décide de la mesure de son nom : les paliers,
+ * le tassement de la vue immersive, la version des débords et les réglages qui
+ * couchent, harmonisent ou comptent. Les noms gardés stand par stand
+ * (`libelles.mjs` `nomsGardes`) s'y comparent ; à lire après `posePaliers`.
+ */
+export function etatDesNoms(){
+  return paliers.join(",") + "|" + tassement.join(",") + "|" + versionDebords + "|" +
+    (nomsPivotes() ? 1 : 0) + (nomsUniformes() ? 1 : 0) + (coexComptes() ? 1 : 0);
+}
 
 /**
  * Fixe les paliers des noms d'après les stands d'un pavillon. Chaque nom se
@@ -225,6 +239,7 @@ export function posePaliers(stands, zones, tasse = [1, 1], libres = new Map()){
   if (cle !== cleDebords || (stands.length && !mesures.has(stands[0]))){
     debords = debordsAuxAllees(stands, zones); cleDebords = cle;
     mesures = new WeakSet(stands);
+    versionDebords++;
   }
   const tailles = [];
   for (const s of stands){
