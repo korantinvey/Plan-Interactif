@@ -649,21 +649,30 @@ test.describe("la sonde silencieuse, ce qu'un tap lent a coûté", () => {
     const p = await pointVide(page);
     expect(p).not.toBeNull();
     await page.mouse.move(p.x, p.y);
+    /* L'image de l'appui gèle elle aussi au rendu logiciel (1,2 s sur le run
+       44809728146) : l'appui, de ce gel, devenait la pire interaction de la
+       visite, sans attente à dire, et le relâché n'était plus celui qu'on
+       relit. Le gel se mesure ici, de l'appui à sa deuxième image, et le
+       travail le dépasse : le relâché dure au moins son attente, plus que
+       l'appui, quelle que soit la lenteur du poste. */
+    const avantAppui = Date.now();
     await page.mouse.down();
     await deuxImages(page);
-    await page.evaluate(() => {
+    const travailMs = Math.max(400, Date.now() - avantAppui + 300);
+    await page.evaluate((ms) => {
       setTimeout(() => window.__essais.sonde.chronometre("essai", () => {
         const t = performance.now();
-        while (performance.now() - t < 400) { /* la page tenue */ }
+        while (performance.now() - t < ms) { /* la page tenue */ }
       }), 0);
-    });
+    }, travailMs);
     await page.mouse.up();
     await page.waitForTimeout(300);
+    // dit, en cas d'échec, quelle interaction a pris la place du relâché
     await expect.poll(async () => {
       await cache(page);
-      const dernier = envois.at(-1);
-      return Boolean(dernier && dernier.resume.reactivite.pire && dernier.resume.reactivite.pire.occupe);
-    }, { timeout: 15_000 }).toBe(true);
+      const x = envois.length ? envois.at(-1).resume.reactivite : null;
+      return !x || !x.pire ? "aucune pire" : x.pire.occupe ? "occupée" : x.pireType;
+    }, { timeout: 15_000 }).toBe("occupée");
     const r = envois.at(-1).resume;
     const d = r.reactivite.pire;
     expect(r.rev).toBe(7);
