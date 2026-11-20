@@ -2752,21 +2752,21 @@ Importé par :
 
 abords-salles · itineraire · trajet · troncon
 
-### `modules/recherche.mjs` — 1089 l. → plan, plan-admin
+### `modules/recherche.mjs` — 1098 l. → plan, plan-admin
 
 - l.1 · La recherche, la liste et les critères — sans mot-clé ni critère retenu on
 
 Fonctions :
 
-`appliqueSecteurs` 74 · `filtreTheme` 92 · `themeFiltrable` 149 · `ordreCriteres` 165
-`clesCriteres` 192 · `texteCriteres` 206 · `texteAnglaisPerso` 222 · `indexeCriteres` 236
-`refaitCriteres` 270 · `critereActif` 277 · `basculeCritere` 279 · `videCriteres` 288
-`majVideQ` 297 · `videRecherche` 310 · `nCriteres` 325 · `majCriteres` 334
-`remplitCriteres` 401 · `basculeCriteres` 540 · `ouvreCriteres` 545 · `marqueRetrait` 579
-`appliqueFiltre` 602 · `oublieRetrait` 618 · `reprendRecherche` 627 · `rangSorte` 640
-`codeCase` 677 · `caseNumero` 694 · `sousLigne` 714 · `liste` 729 · `ecritLaListe` 730
-`marqueChoisie` 873 · `prechargeMarque` 899 · `prechargeLesVignettes` 950
-`chargeUnLot` 996 · `policesArrivees` 1038 · `brancheRecherche` 1061
+`appliqueSecteurs` 81 · `filtreTheme` 99 · `themeFiltrable` 156 · `ordreCriteres` 172
+`clesCriteres` 199 · `texteCriteres` 213 · `texteAnglaisPerso` 229 · `indexeCriteres` 243
+`refaitCriteres` 279 · `critereActif` 286 · `basculeCritere` 288 · `videCriteres` 297
+`majVideQ` 306 · `videRecherche` 319 · `nCriteres` 334 · `majCriteres` 343
+`remplitCriteres` 410 · `basculeCriteres` 549 · `ouvreCriteres` 554 · `marqueRetrait` 588
+`appliqueFiltre` 611 · `oublieRetrait` 627 · `reprendRecherche` 636 · `rangSorte` 649
+`codeCase` 686 · `caseNumero` 703 · `sousLigne` 723 · `liste` 738 · `ecritLaListe` 739
+`marqueChoisie` 882 · `prechargeMarque` 908 · `prechargeLesVignettes` 959
+`chargeUnLot` 1005 · `policesArrivees` 1047 · `brancheRecherche` 1070
 
 Importe :
 
