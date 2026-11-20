@@ -687,11 +687,16 @@ test.describe("la sonde silencieuse, ce qu'un tap lent a coûté", () => {
         return Boolean(dernier && dernier.resume.reactivite.pire && dernier.resume.reactivite.pire.occupe);
       }, { timeout: 15_000 }).toBe(true);
     } catch (e) {
-      const dernier = envois.at(-1);
-      throw new Error("la sonde n'a pas dit ce qui tenait la page : " + JSON.stringify({
-        reactivite: dernier && dernier.resume.reactivite,
-        geste: await page.evaluate(() => window.__geste),
-      }), { cause: e });
+      const dernier = envois.at(-1), geste = await page.evaluate(() => window.__geste);
+      const mesures = JSON.stringify({ reactivite: dernier && dernier.resume.reactivite, geste });
+      /* Le préalable d'abord : un relâché arrivé hors du travail — après lui,
+         ou traité avant qu'il commence — ne dit rien de la sonde. Le
+         navigateur ne relève l'entrée du relâché que s'il a attendu. */
+      const releve = geste.entrees.find((x) => x.nom === "pointerup");
+      const pendant = Boolean(releve && geste.travail !== null &&
+        releve.debut >= geste.travail && releve.debut < geste.travail + 400);
+      if (!pendant) throw new Error("scénario non exploitable, le relâché n'est pas arrivé pendant le travail : " + mesures, { cause: e });
+      throw new Error("la sonde n'a pas dit ce qui tenait la page : " + mesures, { cause: e });
     }
     const r = envois.at(-1).resume;
     const d = r.reactivite.pire;
