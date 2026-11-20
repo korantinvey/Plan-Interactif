@@ -2458,6 +2458,24 @@ function marquesSurLesToits(/** @type {any} */ c){
   return [tues, copie];
 }
 
+/**
+ * Ce que `marquesSurLesToits` fait des couches des marques quand ce stand monte :
+ * le stand passe pour en route le temps de l'appel, et tout est rendu tel quel.
+ * Seuls les essais l'appellent (`plan.mjs` `__essais`) : sous la carte graphique
+ * logicielle de l'intégration, la première image après un choix vient après la
+ * fin de la montée, qu'aucune image ne montre.
+ */
+export function marquesEnRoute(/** @type {string} */ id){
+  const g = $("stands").querySelector('g.stand[data-id="' + CSS.escape(id) + '"]');
+  if (!g || !GL.deck) return null;
+  const couches = /** @type {any[]} */ ((GL.deck.props.layers || []).flat(Infinity).filter(Boolean))
+    .filter(c => c.props.marques);
+  const avant = hausses.get(g);
+  hausses.set(g, { de: 0, vers: HAUTEUR_STAND * HAUSSE_CHOIX, t0: performance.now() });
+  try { return couches.map(c => ({ avant: c, apres: [].concat(marquesSurLesToits(c)) })); }
+  finally { if (avant) hausses.set(g, avant); else hausses.delete(g); }
+}
+
 function hauteurVolume(el, anneaux){
   if (!cameraEnJeu()) return 0;
   const g = el.parentNode;

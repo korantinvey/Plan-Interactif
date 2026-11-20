@@ -36,51 +36,49 @@ test("en immersif, seules les marques du stand qui monte se reposent à chaque i
   const webgl = await page.waitForFunction(() => window.__essais.GL.actif && window.__essais.GL.camera, null, { timeout: 30_000 })
     .then(() => true, () => false);
   test.skip(!webgl, "pas de carte graphique : pas de vue immersive");
-  await expect.poll(() => page.evaluate(() => document.querySelectorAll("#dists [data-sur]").length)).toBeGreaterThan(10);
-  await page.waitForTimeout(1500);
+  // les marques peintes sur leurs toits
+  await page.waitForFunction(() => (window.__essais.GL.deck.props.layers || []).flat(Infinity).filter(Boolean)
+    .some((c) => c.props.marques && c.props.data && c.props.data.length > 10), null, { timeout: 30_000 });
 
-  // un stand marqué, choisi par la liste : il monte
-  const lignes = page.locator("#list .row");
-  let id = null;
-  for (let i = 0; i < 12 && !id; i++) {
-    await lignes.nth(i).click();
-    id = await page.evaluate(() => {
-      const g = document.querySelector("#stands > g.sel");
-      return g && document.querySelector('#dists [data-sur="' + CSS.escape(g.dataset.id) + '"]') ? g.dataset.id : null;
-    });
+  /* Sous la carte graphique logicielle, la première image après un choix
+     vient après la fin de la montée : on fait passer un stand marqué pour en
+     route, et l'on regarde ce que deviennent les couches des marques. */
+  const r = await page.evaluate(() => {
+    const id = document.querySelector("#dists [data-sur]").getAttribute("data-sur");
+    const sienne = (d) => Boolean(d.sur && d.sur.getAttribute("data-id") === id);
+    return window.__essais.marquesEnRoute(id).map(({ avant, apres }) => {
+      const poly = "getFillColor" in avant.props && !("getColor" in avant.props);
+      const acces = poly ? "getFillColor" : "getColor", geo = poly ? "getPolygon" : "getPath";
+      const [tues, copie] = apres;
+      const lit = (c, d) => { const f = c.props[acces]; return [...(typeof f === "function" ? f(d) : f)]; };
+      const mobile = avant.props.data.find(sienne), autre = avant.props.data.find((d) => !sienne(d));
+      const forme = copie && copie.props[geo](copie.props.data[0]);
+      const points = poly ? forme.flat() : forme;
+      return {
+        siennes: avant.props.data.filter(sienne).length,
+        couches: apres.length,
+        memesDonnees: tues.props.data === avant.props.data,
+        memeGeometrie: JSON.stringify(tues.props.updateTriggers[geo] ?? null) === JSON.stringify(avant.props.updateTriggers[geo] ?? null),
+        tue: mobile ? lit(tues, mobile) : null,
+        autreGarde: autre ? JSON.stringify(lit(tues, autre)) === JSON.stringify(lit(avant, autre)) : true,
+        enRoute: copie ? { id: copie.id, toutes: copie.props.data.every(sienne), n: copie.props.data.length,
+          enHauteur: points.every((p) => p.length === 3 && p[2] >= 0) } : null,
+      };
+    }).filter((c) => c.siennes > 0);
+  });
+  expect(r.length).toBeGreaterThan(0);
+  for (const c of r) {
+    // la couche des marques garde ses données et sa géométrie : seule la couleur tait les marques en route
+    expect(c.couches).toBe(2);
+    expect(c.memesDonnees).toBe(true);
+    expect(c.memeGeometrie).toBe(true);
+    expect(c.tue).toEqual([0, 0, 0, 0]);
+    expect(c.autreGarde).toBe(true);
+    // et une couche à part les porte, elles seules, à la hauteur du moment
+    expect(c.enRoute.id).toMatch(/-en-route$/);
+    expect(c.enRoute.toutes).toBe(true);
+    expect(c.enRoute.n).toBe(c.siennes);
+    expect(c.enRoute.enHauteur).toBe(true);
   }
-  expect(id).not.toBeNull();
-  await page.evaluate((id) => { window.__choisi = id; window.__donnees = null; }, id);
-
-  // pendant la montée : ses marques ont leur couche, les autres gardent la leur, données comprises
-  const pendant = await page.waitForFunction(() => {
-    // les couches des marques, telles que le moteur les reçoit à cette image
-    const l = (window.__essais.GL.deck.props.layers || []).flat(Infinity).filter(Boolean);
-    const m = { toutes: l.filter((c) => /^#dists-/.test(c.id) && !/-en-route$/.test(c.id)),
-      enRoute: l.filter((c) => /-en-route$/.test(c.id)) };
-    if (!m.enRoute.length) return false;
-    const toutes = m.toutes.find((c) => c.props.data.some((d) => d.sur && d.sur.dataset.id === window.__choisi));
-    if (!toutes) return false;
-    const mobile = toutes.props.data.find((d) => d.sur && d.sur.dataset.id === window.__choisi);
-    const acces = toutes.props.getColor !== undefined && toutes.constructor.name !== "SolidPolygonLayer" ? "getColor" : "getFillColor";
-    const f = toutes.props[acces];
-    if (!window.__donnees) { window.__donnees = toutes.props.data; return false; }
-    return {
-      memesDonnees: window.__donnees === toutes.props.data,
-      tue: typeof f === "function" ? [...f(mobile)] : null,
-      enRoute: m.enRoute.map((c) => c.props.data.every((d) => d.sur && d.sur.dataset.id === window.__choisi)),
-    };
-  }, null, { timeout: 10_000, polling: "raf" })
-    .then((h) => h.jsonValue(), async (e) => {
-      throw new Error("aucune couche des marques en route pendant la montée : " + e.message);
-    });
-  expect(pendant.memesDonnees).toBe(true);
-  expect(pendant.tue).toEqual([0, 0, 0, 0]);
-  expect(pendant.enRoute.length).toBeGreaterThan(0);
-  expect(pendant.enRoute.every(Boolean)).toBe(true);
-
-  // arrivé : plus de couche à part, et ses marques de nouveau peintes dans la leur
-  await page.waitForFunction(() => !(window.__essais.GL.deck.props.layers || []).flat(Infinity).filter(Boolean)
-    .some((c) => /-en-route$/.test(c.id)), null, { timeout: 10_000 });
   expect(erreurs).toEqual([]);
 });
