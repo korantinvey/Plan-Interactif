@@ -284,23 +284,25 @@ test.describe("la sonde silencieuse, ce qu'une longue image a fait", () => {
        elle-même : ses trois places sont libres. L'essai retrouve ensuite le
        sien par son moment — Chromium ne nomme pas un rappel d'image —, à
        cinquante millisecondes près : la longue image commence avec la tâche
-       qui l'a demandée. */
+       qui l'a demandée, et avant que l'image tenue finisse. Un gel venu après
+       reste dehors, même plus long (relu par CodeRabbit sur la #569). */
     await page.evaluate(() => dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })));
     // une image tenue un tiers de seconde, le plan déjà paru
-    const depuis = await page.evaluate(() => new Promise((ok) => {
-      const d = window.__essais.sonde.resume.duree;
+    // l'instant de la visite où l'image est demandée, et celui où elle cesse d'être tenue
+    const [depuis, jusqua] = await page.evaluate(() => new Promise((ok) => {
+      const d = window.__essais.sonde.resume.duree, avant = performance.now();
       requestAnimationFrame(() => {
         const t = performance.now();
         while (performance.now() - t < 300) { /* l'image tenue */ }
-        ok(d);
+        ok([d, d + performance.now() - avant]);
       });
     }));
     const pires = () => page.evaluate(() => window.__essais.sonde.resume.gels.pires);
-    const lesien = (/** @type {any} */ p) => p.ms >= 300 && p.t >= depuis - 50;
+    const lesien = (/** @type {any} */ p) => p.ms >= 300 && p.t >= depuis - 50 && p.t <= jusqua;
     // dit, en cas d'échec, les gels que la visite gardait à la place
     await expect.poll(async () => {
       const l = await pires();
-      return l.some(lesien) ? "gardé" : JSON.stringify({ depuis, pires: l.map((p) => [p.ms, p.t, p.invocation]) });
+      return l.some(lesien) ? "gardé" : JSON.stringify({ depuis, jusqua, pires: l.map((p) => [p.ms, p.t, p.invocation]) });
     }, { timeout: 15_000 }).toBe("gardé");
     const gel = (await pires()).find(lesien);
     expect(gel.t).toBeGreaterThan(0);
