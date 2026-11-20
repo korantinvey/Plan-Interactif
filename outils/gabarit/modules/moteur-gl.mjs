@@ -36,6 +36,7 @@
 import { Viewport, View, OrthographicView, rapporte, IDENTITE, mul4, translation4 } from "./moteur-gl-matrices.mjs";
 import { Couche, LayerExtension, PathStyleExtension, Programme, nomExtension } from "./moteur-gl-couche.mjs";
 import { SolidPolygonLayer, PathLayer } from "./moteur-gl-formes.mjs";
+import { COMPARAISONS, PROFONDEUR_VIDE } from "./moteur-gl-calcul.mjs";
 import { TextLayer } from "./moteur-gl-texte.mjs";
 import { BitmapLayer, SimpleMeshLayer, appareil, compteCree } from "./moteur-gl-objets.mjs";
 
@@ -549,6 +550,52 @@ export class Deck {
     // la relecture attend la carte graphique : elle compte dans la désignation
     this._comptes.designation += performance.now() - t0; this._comptes.designations++;
     return this._lis(passe, retourne(px, passe.cote));
+  }
+
+  /**
+   * La même question, tranchée sur le processeur (`moteur-gl-calcul.mjs`) :
+   * les couches désignables rejouées dans l'ordre où la carte les peint, avec
+   * ses règles de profondeur. Rend l'objet, `null` s'il n'y a rien, ou
+   * `undefined` quand le calcul ne sait pas reproduire la carte — un rayon,
+   * une couche d'une autre sorte que les aplats et les maillages (les logos),
+   * une extension dont il ignore l'effet, un décalage de profondeur : la
+   * carte graphique répond alors, comme avant.
+   * @param {{ x: number, y: number, radius?: number }} o
+   */
+  designe(o){
+    if (this.finalise || !this.gl || this.perdu || !this.vue || o.radius) return undefined;
+    const { w, h, dpr } = this._taille();
+    const vp = this._vue(w, h);
+    const ctx = this._contexte(vp, w, h, dpr);
+    if (this.sales) this._reconcilie(ctx);
+    const couches = this._peintes(vp, true).slice(0, 254);
+    const q = [(o.x / w) * 2 - 1, 1 - (o.y / h) * 2];
+    let tenu = PROFONDEUR_VIDE, gagnant = null, objet = -1;
+    for (const c of couches){
+      // une sorte que le calcul sait rejouer, et rien qu'avec les extensions dont il connaît l'effet
+      const sorte = /** @type {any} */ (c.constructor);
+      if ((sorte !== SolidPolygonLayer && sorte !== SimpleMeshLayer) ||
+        (c.props.extensions || []).some((/** @type {any} */ x) => !sorte.extensionsDesignees.includes(nomExtension(x)))) return undefined;
+      // une couche dont le programme n'est pas prêt ne se peint pas : elle ne désigne rien non plus
+      const prog = this.programmes.get(sorte.programme().nom);
+      if (!prog || !prog.lie || prog.erreur) continue;
+      const r = c.props.parameters || {};
+      const passe = COMPARAISONS[r.depthCompare === undefined ? "less-equal" : r.depthCompare];
+      if (!passe || r.depthBias || r.depthBiasSlopeScale) return undefined;
+      const ecrit = r.depthWriteEnabled === undefined ? true : Boolean(r.depthWriteEnabled);
+      const m = c.props.modelMatrix ? mul4(ctx.vp, rapporte(c.props.modelMatrix, ctx.origine)) : ctx.vp;
+      try {
+        const su = /** @type {any} */ (c).designe(m, q, (/** @type {number} */ i, /** @type {number} */ z) => {
+          if (!passe(z, tenu)) return;
+          gagnant = c; objet = i;
+          if (ecrit) tenu = z;
+        }, ctx);
+        if (su === false) return undefined;
+      } catch (e) { return undefined; }
+    }
+    // depuis la création, pour les essais : combien de questions la carte n'a pas eu à entendre
+    this.designationsCalculees = (this.designationsCalculees || 0) + 1;
+    return gagnant ? { layer: gagnant, index: objet, object: objetDe(gagnant, objet), picked: true } : null;
   }
 
   /** La même question, la réponse lue sans que la page attende la carte graphique. */

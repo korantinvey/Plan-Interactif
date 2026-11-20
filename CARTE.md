@@ -1365,20 +1365,20 @@ Importé par :
 reglage-application · reglage-fiche · reglage-sponsor · reglage-suggestion · reglages
 reprise-emplacements · volets
 
-### `modules/fiche.mjs` — 1234 l. → plan, plan-admin
+### `modules/fiche.mjs` — 1267 l. → plan, plan-admin
 
 - l.1 · La sélection et la fiche d'un exposant
 - l.75 · 7. Sélection et fiche
 
 Fonctions :
 
-`injecteALaFiche` 73 · `anime` 110 · `noeud` 167 · `canalPlan` 177 · `rangSociete` 185
-`select` 194 · `choisitLeStand` 198 · `centre` 231 · `brancheActesFiche` 242
-`centreEtBaisseLaFiche` 258 · `centrePoint` 276 · `programme` 308 · `produits` 357
-`ficheProduit` 385 · `ficheConf` 455 · `poseAppuiTactile` 608 · `ecarteClicFantome` 611
-`nomSociete` 620 · `choisitExposant` 634 · `poseMarque` 672 · `montreMarque` 732
-`poseCode` 755 · `rangeMarque` 796 · `ouvre` 852 · `ouvreLaFiche` 855 · `ferme` 1180
-`fermeLaFiche` 1181 · `onglet` 1200 · `brancheFiche` 1218
+`injecteALaFiche` 73 · `coinsArrondisLeTempsDuMouvement` 123 · `anime` 139 · `noeud` 200
+`canalPlan` 210 · `rangSociete` 218 · `select` 227 · `choisitLeStand` 231 · `centre` 264
+`brancheActesFiche` 275 · `centreEtBaisseLaFiche` 291 · `centrePoint` 309 · `programme` 341
+`produits` 390 · `ficheProduit` 418 · `ficheConf` 488 · `poseAppuiTactile` 641
+`ecarteClicFantome` 644 · `nomSociete` 653 · `choisitExposant` 667 · `poseMarque` 705
+`montreMarque` 765 · `poseCode` 788 · `rangeMarque` 829 · `ouvre` 885 · `ouvreLaFiche` 888
+`ferme` 1213 · `fermeLaFiche` 1214 · `onglet` 1233 · `brancheFiche` 1251
 
 Éléments :
 
@@ -1547,17 +1547,17 @@ Importé par :
 
 plan-admin
 
-### `modules/gestes.mjs` — 655 l. → plan, plan-admin
+### `modules/gestes.mjs` — 691 l. → plan, plan-admin
 
 - l.1 · Les gestes sur le plan — glisser, pincer, la molette, l'appui qui ouvre
 - l.74 · 8. Interactions du plan
 
 Fonctions :
 
-`poseGestesAdmin` 72 · `milieu` 104 · `commencePince` 110 · `suitPince` 124
-`noteGlisser` 208 · `stoppeElan` 214 · `lanceElan` 220 · `plieLesBandes` 252
-`rendLesBandes` 275 · `saisitPlan` 281 · `cibleElargie` 318 · `planifieFiltre` 361
-`brancheGestes` 375 · `brancheLangue` 638
+`poseGestesAdmin` 72 · `milieu` 107 · `commencePince` 113 · `suitPince` 127
+`noteGlisser` 211 · `stoppeElan` 217 · `lanceElan` 223 · `plieLesBandes` 255
+`rendLesBandes` 278 · `saisitPlan` 284 · `cibleElargie` 321 · `planifieFiltre` 364
+`brancheGestes` 378 · `brancheLangue` 674
 
 Importe :
 
@@ -2097,6 +2097,19 @@ Importe :
 
 mot-de-passe
 
+### `modules/moteur-gl-calcul.mjs` — 169 l. → plan, plan-admin
+
+- l.1 · Le moteur du plan — la désignation par le calcul
+
+Fonctions :
+
+`profondeur16` 42 · `coupe` 51 · `PROCHE` 64 · `LOINTAIN` 65 · `couvre` 74
+`dansTriangle` 92 · `projette` 114 · `traverse` 158
+
+Importé par :
+
+moteur-gl · moteur-gl-formes · moteur-gl-objets
+
 ### `modules/moteur-gl-couche.mjs` — 364 l. → plan, plan-admin
 
 - l.1 · Le moteur du plan — la couche, ses attributs et ses programmes
@@ -2110,18 +2123,18 @@ Importé par :
 
 moteur-gl · moteur-gl-formes · moteur-gl-objets · moteur-gl-texte
 
-### `modules/moteur-gl-formes.mjs` — 492 l. → plan, plan-admin
+### `modules/moteur-gl-formes.mjs` — 533 l. → plan, plan-admin
 
 - l.1 · Le moteur du plan — les aplats et les traits
 
 Fonctions :
 
-`coins` 84 · `remplisAttributs` 93 · `numerote` 104 · `reglageFiltre` 124
-`poseLumiere` 159 · `aire` 211 · `anneauxDe` 218
+`coins` 85 · `remplisAttributs` 94 · `numerote` 110 · `reglageFiltre` 130
+`poseLumiere` 165 · `aire` 217 · `anneauxDe` 224
 
 Importe :
 
-moteur-gl-couche
+moteur-gl-calcul · moteur-gl-couche
 
 Importé par :
 
@@ -2139,19 +2152,19 @@ Importé par :
 
 moteur-gl
 
-### `modules/moteur-gl-objets.mjs` — 475 l. → plan, plan-admin
+### `modules/moteur-gl-objets.mjs` — 531 l. → plan, plan-admin
 
 - l.1 · Le moteur du plan — les images, les objets, les textures
 
 Fonctions :
 
-`reglePrise` 61 · `compteCree` 80 · `appareil` 87 · `textureDe` 128 · `imageDe` 148
-`coinsImage` 189 · `ATTR_MAILLAGE` 242 · `matriceExemplaire` 321 · `textureFormes` 346
-`attributsMaillage` 361
+`reglePrise` 62 · `compteCree` 81 · `appareil` 88 · `textureDe` 129 · `imageDe` 149
+`coinsImage` 190 · `ATTR_MAILLAGE` 243 · `matriceExemplaire` 322 · `textureFormes` 347
+`attributsMaillage` 362
 
 Importe :
 
-moteur-gl-couche · moteur-gl-formes
+moteur-gl-calcul · moteur-gl-couche · moteur-gl-formes
 
 Importé par :
 
@@ -2174,18 +2187,18 @@ Importé par :
 
 moteur-gl
 
-### `modules/moteur-gl.mjs` — 664 l. → plan, plan-admin
+### `modules/moteur-gl.mjs` — 711 l. → plan, plan-admin
 
 - l.1 · Le moteur du plan — WebGL2, écrit pour lui
 
 Fonctions :
 
-`lumieresDe` 65 · `couchesDeChauffe` 597 · `objetDe` 621 · `retourne` 627
+`lumieresDe` 66 · `couchesDeChauffe` 644 · `objetDe` 668 · `retourne` 674
 
 Importe :
 
-moteur-gl-couche · moteur-gl-formes · moteur-gl-matrices · moteur-gl-objets
-moteur-gl-texte
+moteur-gl-calcul · moteur-gl-couche · moteur-gl-formes · moteur-gl-matrices
+moteur-gl-objets · moteur-gl-texte
 
 Importé par :
 
@@ -3812,7 +3825,7 @@ Injections :
 
 - `injecteALaVue` (rendu) — chaque image d'un geste rappelle, dans un ordre fixe, ce qui suit la vue : noms, poignées, pastilles, flèches, borne, calage
 
-### `modules/webgl.mjs` — 4459 l. → plan, plan-admin
+### `modules/webgl.mjs` — 4484 l. → plan, plan-admin
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -3858,16 +3871,17 @@ Fonctions :
 `lisModelesLibelles` 3617 · `groupesNoms` 3650 · `couchesNoms` 3676
 `couchesPastilles` 3692 · `couchesLibellesWebgl` 3709 · `couchesDessineesWebgl` 3762
 `stage` 3783 · `lectureDifferee` 3816 · `survolTrouve` 3856 · `demandeSurvolWebgl` 3862
-`survoleWebgl` 3868 · `brancheSurvolWebgl` 3896 · `poseSurvolWebgl` 3909 · `enTuiles` 3946
-`hauteurTuile` 3959 · `visePour` 3965 · `suisChoisies` 3975 · `gonfleSurvol` 3983
-`coucheTuileSoulevee` 4006 · `couchesTuiles` 4037 · `poseCurseurWebgl` 4050
-`poseFocusWebgl` 4059 · `aplatsDe` 4066 · `coucheSurvol` 4069 · `coucheSurvolVolume` 4094
-`coucheFocus` 4130 · `couchesPhare` 4160 · `lueurDe` 4177 · `opacitePhare` 4215
-`echellePhare` 4216 · `couchesPhareNoms` 4219 · `instant` 4245 · `aUnInstant` 4247
-`animeCouche` 4252 · `majAnimationWebgl` 4275 · `animeWebgl` 4283 · `reanime` 4319
-`logosSurLesToits` 4328 · `objetSous` 4358 · `sansProfondeurDeDesignation` 4379
-`peutDesigner` 4399 · `objetSousDiffere` 4401 · `viseEnAvance` 4417 · `lisObjet` 4425
-`cibleWebgl` 4430 · `priseWebgl` 4440 · `libelleSousWebgl` 4445 · `rectEcranWebgl` 4450
+`survoleWebgl` 3868 · `brancheSurvolWebgl` 3898 · `poseSurvolWebgl` 3911 · `enTuiles` 3948
+`hauteurTuile` 3961 · `visePour` 3967 · `suisChoisies` 3977 · `gonfleSurvol` 3985
+`coucheTuileSoulevee` 4008 · `couchesTuiles` 4039 · `poseCurseurWebgl` 4052
+`poseFocusWebgl` 4061 · `aplatsDe` 4068 · `coucheSurvol` 4071 · `coucheSurvolVolume` 4096
+`coucheFocus` 4132 · `couchesPhare` 4162 · `lueurDe` 4179 · `opacitePhare` 4217
+`echellePhare` 4218 · `couchesPhareNoms` 4221 · `instant` 4247 · `aUnInstant` 4249
+`animeCouche` 4254 · `majAnimationWebgl` 4277 · `animeWebgl` 4285 · `reanime` 4321
+`logosSurLesToits` 4330 · `objetSous` 4360 · `sansProfondeurDeDesignation` 4383
+`peutDesigner` 4403 · `objetCalcule` 4411 · `objetSousDiffere` 4419 · `viseEnAvance` 4435
+`lisObjet` 4450 · `cibleWebgl` 4455 · `priseWebgl` 4465 · `libelleSousWebgl` 4470
+`rectEcranWebgl` 4475
 
 Importe :
 

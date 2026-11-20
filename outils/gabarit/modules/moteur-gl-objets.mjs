@@ -21,6 +21,7 @@
    ============================================================ */
 import { Couche, ENTETE_SOMMETS, ENTETE_FRAGMENTS, aRefaire, remplis } from "./moteur-gl-couche.mjs";
 import { Assemblage, remplisAttributs, numerote, GLSL_LUMIERE, poseLumiere } from "./moteur-gl-formes.mjs";
+import { traverse } from "./moteur-gl-calcul.mjs";
 
 /* ------------------------------------------------------------
    Les textures, et la carte graphique que `logos-stands.mjs` interroge
@@ -415,10 +416,62 @@ export class SimpleMeshLayer extends Couche {
         }
         gl.bindVertexArray(null);
         a.pose(8, remplis({ accessor: "", taille: 1, type: "f32", defaut: [0] }, (/** @type {any} */ d, /** @type {any} */ i) => i.index, data, comptes, data.length), 1, "f32", 1);
-        remplisAttributs(this, a, specs, comptes, data.length, 1, null);
+        // les matrices et les positions restent aussi de ce côté-ci : la désignation par le calcul les relit (`designe`)
+        e.mat = mat;
+        e.ipos = remplisAttributs(this, a, specs, comptes, data.length, 1, null).a_ipos;
       }
-    } else if (r.acces.size && e.M) remplisAttributs(this, e.a, specs, e.comptes, e.total, 1, r.acces);
+    } else if (r.acces.size && e.M){
+      const poses = remplisAttributs(this, e.a, specs, e.comptes, e.total, 1, r.acces);
+      if (poses.a_ipos) e.ipos = poses.a_ipos;
+    }
     this.etat = e;
+  }
+
+  /**
+   * Les exemplaires qui couvrent le point `q`, comme la passe de désignation
+   * les peindrait (`moteur-gl.mjs` `designe`) : le maillage tourné, mis à
+   * l'échelle et posé par sa matrice, puis à sa position — ce que fait le
+   * shader des sommets. Un logo que le fondu efface ne se vise plus (le
+   * shader des fragments le jette) ; une planche pas encore prête ne se
+   * peint pas. Rend `false` quand le calcul ne sait pas : les allures des
+   * figurants, lues dans une texture.
+   * @param {ArrayLike<number>} m @param {number[]} q
+   * @param {(objet: number, profondeur: number) => void} rend @param {any} ctx
+   */
+  designe(m, q, rend, ctx){
+    const e = this.etat, p = this.props;
+    if (!e || !e.M || !e.total || !e.mat) return true;
+    if (e.formes) return false;
+    const src = p.texture;
+    if (src && !(src instanceof TextureMoteur ? !src.detruite
+      : (src.naturalWidth || src.width) && (src.naturalHeight || src.height))) return true;
+    if (this.extension("CasesEtFondu")){
+      const [a, b] = p.fonduZoom || [-100, -100], z = Math.log2(ctx.echelle);
+      const t = b === a ? (z < a ? 0 : 1) : Math.min(1, Math.max(0, (z - a) / (b - a)));
+      if (t * t * (3 - 2 * t) < .02) return true;
+    }
+    const k = p.sizeScale ?? 1, ip = e.ipos;
+    if (!e.places || e.places.mat !== e.mat || e.places.ipos !== ip || e.places.k !== k){
+      // des triangles entiers par exemplaire : la carte n'en dessine pas d'autres, et ne les mêle pas d'un exemplaire au suivant
+      const M = e.M, nv = M.n, ni = 3 * Math.floor((M.indices ? M.indices.length : nv) / 3);
+      const pos = new Float32Array(e.total * nv * 3), indices = new Uint32Array(e.total * ni), objets = new Float32Array(e.total * nv);
+      for (let i = 0; i < e.total; i++){
+        const t = e.mat.subarray(i * 12, i * 12 + 12);
+        const o = ip && ip.donnees ? ip.donnees.subarray(i * 3, i * 3 + 3) : (ip && ip.constante) || [0, 0, 0];
+        for (let v = 0; v < nv; v++){
+          const x = M.pos[3 * v], y = M.pos[3 * v + 1], z = M.pos[3 * v + 2], w = 3 * (i * nv + v);
+          pos[w] = (t[0] * x + t[3] * y + t[6] * z) * k + t[9] + o[0];
+          pos[w + 1] = (t[1] * x + t[4] * y + t[7] * z) * k + t[10] + o[1];
+          pos[w + 2] = (t[2] * x + t[5] * y + t[8] * z) * k + t[11] + o[2];
+          objets[i * nv + v] = i;
+        }
+        for (let j = 0; j < ni; j++) indices[i * ni + j] = i * nv + (M.indices ? M.indices[j] : j);
+      }
+      e.places = { mat: e.mat, ipos: ip, k, pos, indices, objets };
+    }
+    const g = e.places;
+    e.projete = traverse(m, g.pos, g.indices, g.objets, q, rend, e.projete);
+    return true;
   }
 
   dessine(/** @type {any} */ ctx, /** @type {any} */ prog){
@@ -469,6 +522,9 @@ export class SimpleMeshLayer extends Couche {
     this.etat = null;
   }
 }
+/* Les extensions dont le calcul sait l'effet sur la désignation : le fondu des
+   logos (rejoué dans `designe`), la teinte des figurants (la couleur seule). */
+SimpleMeshLayer.extensionsDesignees = ["CasesEtFondu", "TeinteDesFigurants"];
 SimpleMeshLayer.layerName = "SimpleMeshLayer";
 SimpleMeshLayer.defaultProps = { mesh: null, texture: null, sizeScale: 1, _instanced: true, wireframe: false, material: true,
   getPosition: (/** @type {any} */ d) => d.position, getColor: [0, 0, 0, 255], getOrientation: [0, 0, 0], getScale: [1, 1, 1],

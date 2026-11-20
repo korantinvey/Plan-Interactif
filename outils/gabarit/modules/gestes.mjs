@@ -77,6 +77,9 @@ export function poseGestesAdmin(/** @type {GestesAdmin} */ g){ admin = g; }
 /** Le glissé en cours, ou rien : la carte graphique le lit pour taire son survol. */
 /** @type {any} */
 export let drag = null;
+/* Combien d'appuis ont commencé : un clic dont la réponse arrive après qu'un
+   autre appui a commencé — fût-il déjà relâché — ne tranche plus rien. */
+let appuis = 0;
 /* Le temps qu'un doigt posé sans bouger met à dire qu'il choisit : le stand
    appuyé commence alors à monter. Plus bref, c'est un appui, que le relâché
    tranche ; un glissement part presque toujours avant. */
@@ -378,6 +381,7 @@ export function brancheGestes(){
      « versPlan », le glisser, la molette. Rien à faire avant le premier plan. */
   svg.addEventListener("pointerdown", e => {
     if (!view) return;
+    appuis++;
     poseAppuiTactile(e.pointerType === "touch" || e.pointerType === "pen");
     // la main posée l'emporte sur la molette : un glissement qui finissait sa
     // course tirerait la vue sous le doigt qui vient de la saisir
@@ -409,10 +413,19 @@ export function brancheGestes(){
     // le SVG caché ne sait plus où tombent ses formes : on demande au dessin
     const ecran = [e.clientX, e.clientY], touche = e.target;
     const tactile = e.pointerType === "touch" || e.pointerType === "pen";
-    /* Au doigt, la carte graphique est interrogée dès l'appui, sans
-       l'attendre : le relâché trouve la réponse prête (`viseEnAvance`). Un
-       stand redessiné entre-temps hors de la page ne compte plus. */
-    const avance = tactile ? viseEnAvance(ecran[0], ecran[1]) : null;
+    /* La carte graphique est interrogée dès l'appui, sans l'attendre : le
+       relâché trouve la réponse prête (`viseEnAvance`). Un stand redessiné
+       entre-temps hors de la page ne compte plus. À la souris aussi : la
+       question posée en l'attendant faisait patienter la page jusqu'à ce que
+       la carte ait fini l'image en cours — trente-cinq à cinquante
+       millisecondes par clic sur un PC à carte graphique intégrée, en vue
+       immersive (`?perf`, FUNEXPO, 20 novembre 2026), avant que le stand ne
+       commence à monter. Le survol n'en dispensait qu'une souris immobile
+       depuis sa réponse. Et quand le moteur du plan la tranche par le calcul
+       (`moteur-gl.mjs` `designe`), la réponse est là sur-le-champ, sans rien
+       demander à la carte : la relecture différée bloquait encore la page une
+       tâche plus tard. */
+    const avance = viseEnAvance(ecran[0], ecran[1]);
     const vise = () => avance && avance.fini && (!avance.el || avance.el.isConnected) ? avance.el
       : GL.actif ? cibleWebgl(ecran[0], ecran[1])
       : touche instanceof Element ? touche.closest("[data-id],[data-poi]") : null;
@@ -424,14 +437,23 @@ export function brancheGestes(){
        geste commençait par là (`?perf`, le 13 octobre 2026). Le doigt qui
        glisse ne paie donc que la question posée sans l'attendre ; celui qui
        reste posé voit le stand monter un instant plus tard, et le relâché
-       désigne comme avant. La souris garde
-       sa montée immédiate : elle ne glisse que bouton tenu, et rarement. */
+       désigne comme avant. La souris, elle, fait monter le stand dès que la
+       réponse revient — une image plus tard, sans geler la page : elle ne
+       glisse que bouton tenu, et rarement. Sans lecture différée, elle le
+       cherche et le fait monter sur-le-champ, comme avant. */
     const d = drag = { x: ex, y: ey, vx: view.x, vy: view.y, bouge: false, bute: false, glisse: false,
-             /** @type {any} */ cible: tactile ? undefined : vise(), vise, montee: 0 };
+             /** @type {any} */ cible: tactile || (avance && !avance.fini) ? undefined : vise(), vise, avance, montee: 0 };
     svg.setPointerCapture(e.pointerId); saisitPlan(true);
     // le stand appuyé commence à monter, sans attendre que le relâché le choisisse
-    if (!tactile) monteALAppui(d.cible);
-    else d.montee = setTimeout(() => {
+    if (!tactile){
+      if (!avance || avance.fini) monteALAppui(d.cible);
+      // relâché avant la réponse, le clic l'a déjà cherché lui-même (`pointerup`)
+      else avance.promesse.then(() => {
+        if (drag !== d || d.glisse || d.bouge) return;
+        d.cible = vise();
+        monteALAppui(d.cible);
+      });
+    } else d.montee = setTimeout(() => {
       const monte = () => {
         if (drag !== d || d.glisse || d.bouge) return;
         d.cible = vise();
@@ -485,7 +507,21 @@ export function brancheGestes(){
     if (d) clearTimeout(d.montee);
     if (d && d.bouge){ if (!lanceElan()) poseVue(); return; }
     if (!d) return;
-    // un appui bref au doigt : ce qu'il touche se cherche maintenant
+    /* La réponse de la carte graphique, demandée à l'appui, est encore en
+       route : on l'attend plutôt que de la redemander en l'attendant, ce qui
+       gelait la page le temps que la carte finisse son image. Un appui neuf
+       entre-temps l'emporte : le clic d'avant ne tranche plus rien. */
+    if (d.cible === undefined && d.avance && !d.avance.fini){
+      const rang = appuis;
+      d.avance.promesse.then(() => { if (rang === appuis) tranche(d, e); });
+      return;
+    }
+    tranche(d, e);
+  });
+  /** Ce que le relâché d'un appui bref décide : une borne, un repère, un bout
+   *  de trajet, une fiche — ou la fermeture. */
+  function tranche(/** @type {any} */ d, /** @type {PointerEvent} */ e){
+    // un appui bref : ce qu'il touche se cherche maintenant, s'il ne l'est pas encore
     if (d.cible === undefined) d.cible = d.vise();
     /* Ce que l'appui désigne. Un appui qui porte sur un objet allumé garde le
        sien — il a touché ce qu'il visait ; les autres reviennent au résultat de
@@ -525,7 +561,7 @@ export function brancheGestes(){
          de loin et amènent le plan sur le stand. */
       select(cible.dataset.id, false, canalPlan(cible), rangSociete(cible));
     } else { ferme(); finVisee(); }
-  });
+  }
   svg.addEventListener("pointercancel", e => {
     doigts.delete(e.pointerId);
     rendLAppui();
