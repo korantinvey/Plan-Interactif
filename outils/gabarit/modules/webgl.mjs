@@ -957,8 +957,26 @@ function cleBloc(b){
  * ne passe pas par là — un geste garde sa trame, « vueWebgl » la sert
  * directement.
  */
+/* Réglage de diagnostic, le temps d'une enquête (`?latence=differe`) : sur
+   un PC à carte graphique intégrée, le stand qui monte au clic se fige un
+   dixième de seconde peu après son départ, au moment où le plan se reconvertit
+   — deux fois — et où la fiche s'ouvre (`?perf`, FUNEXPO, 20 novembre 2026).
+   Avec lui, la reconversion attend que la montée soit bien partie, pour dire
+   laquelle des deux fige l'image. À retirer une fois tranché. */
+const LATENCE = new Set((new URLSearchParams(location.search).get("latence") || "").split(","));
+const RECONVERSION_DIFFEREE = LATENCE.has("differe") ? 600 : 0;
+/** Quand le dernier volume s'est mis en mouvement. */
+let _dernierDepart = -Infinity;
+/** Sous le diagnostic, les noms à refaire une fois la montée partie. */
+let _nomsEnAttente = false;
+
 export function planifieWebgl(){
   if (!GL.actif || GL.image) return;
+  const attente = RECONVERSION_DIFFEREE - (performance.now() - _dernierDepart);
+  if (RECONVERSION_DIFFEREE && attente > 0){
+    GL.image = setTimeout(() => { GL.image = 0; planifieWebgl(); }, attente);
+    return;
+  }
   GL.image = requestAnimationFrame(() => { GL.image = setTimeout(repeintWebgl, 0); });
 }
 function toutRepeindreWebgl(){
@@ -980,6 +998,9 @@ function blocsDansLOrdre(){
 function repeintWebgl(){
   GL.image = 0;
   if (!GL.actif) return;
+  // le diagnostic : un repeint demandé avant le clic attend lui aussi que la montée soit partie
+  if (RECONVERSION_DIFFEREE && performance.now() - _dernierDepart < RECONVERSION_DIFFEREE){ planifieWebgl(); return; }
+  if (_nomsEnAttente){ _nomsEnAttente = false; GL.couchesLibelles = null; }
   _epoqueSurvol++;
   const t0 = performance.now();
   const vus = new Set();
@@ -3231,8 +3252,12 @@ function noteHauteur(/** @type {Element} */ g, /** @type {number} */ haut){
     const enRoute = hausses.get(g), maintenant = performance.now();
     const de = enRoute ? hauteurHausse(enRoute, maintenant) : avant;
     hausses.set(g, { de, vers: haut, t0: maintenant });
-    // son nom quitte les couches communes pour monter avec lui
-    GL.couchesLibelles = null;
+    _dernierDepart = maintenant;
+    /* son nom quitte les couches communes pour monter avec lui — sauf sous le
+       diagnostic, qui garde les noms en place jusqu'à la reconversion différée :
+       les refaire, c'est une trentaine de couches reprises dès l'appui */
+    if (RECONVERSION_DIFFEREE) _nomsEnAttente = true;
+    else GL.couchesLibelles = null;
   }
   const h = hausses.get(g);
   if (h && (h.vers !== haut || performance.now() - h.t0 >= DUREE_HAUSSE)){ hausses.delete(g); return null; }

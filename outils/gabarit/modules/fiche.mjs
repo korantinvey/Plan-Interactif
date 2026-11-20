@@ -107,12 +107,20 @@ let naissance = 0;
 let toucher = { x: 0, y: 0, t: -1e9 };
 $("plan").addEventListener("pointerup", e => { toucher = { x: e.clientX, y: e.clientY, t: e.timeStamp }; });
 
+/* Réglage de diagnostic, le temps d'une enquête (`?latence=fiche`) : la
+   fiche s'ouvre sans s'étirer depuis le stand, pour dire si son animation est
+   ce qui fige le stand qui monte au clic sur un PC à carte graphique intégrée
+   (voir `webgl.mjs` `planifieWebgl`). À retirer une fois tranché. */
+const FICHE_SECHE = (new URLSearchParams(location.search).get("latence") || "").split(",").includes("fiche");
+
 export function anime(mesure, sens){
   const p = $("detail");
   /* L'animation d'avant s'arrête, et rend le glissement CSS : son rejet, qui
      arrive après coup, ne doit pas l'ôter à celle qui la remplace. */
   if (anim){ anim.cancel(); anim = null; p.classList.remove("glisse"); }
   if (naissance){ cancelAnimationFrame(naissance); naissance = 0; p.classList.remove("glisse"); }
+  // l'animation d'avant arrêtée, la fermeture ne retirera pas la fiche qui s'ouvre
+  if (FICHE_SECHE && sens > 0) return;
   if (!REDUIT && ETROIT() && sens > 0 && performance.now() - toucher.t < 700){
     const { x, y } = toucher;
     /* Le glissement CSS du tiroir se tait le temps du geste — c'est
