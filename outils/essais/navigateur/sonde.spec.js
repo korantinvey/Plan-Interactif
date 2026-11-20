@@ -276,17 +276,38 @@ test.describe("la sonde silencieuse, ce qu'une longue image a fait", () => {
     const apres = await travaux();
     expect(apres.couches).toBeGreaterThanOrEqual(avant.couches);
     expect(apres.attrMs).toBeGreaterThanOrEqual(avant.attrMs);
+    /* La sonde ne garde que les trois pires gels de la visite. Au rendu
+       logiciel de la CI, l'ouverture en compte souvent trois de plus de
+       300 ms : le gel de l'essai n'y entrait pas (run 44815576781), et un gel
+       de l'ouverture paru après l'affichage pouvait passer pour le sien. Le
+       retour du cache arrière ouvre une visite neuve, que la sonde fait
+       elle-même : ses trois places sont libres. L'essai retrouve ensuite le
+       sien par son moment — Chromium ne nomme pas un rappel d'image —, à
+       cinquante millisecondes près : la longue image commence avec la tâche
+       qui l'a demandée. */
+    await page.evaluate(() => dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })));
     // une image tenue un tiers de seconde, le plan déjà paru
-    await page.evaluate(() => new Promise((ok) => requestAnimationFrame(() => {
-      const t = performance.now();
-      while (performance.now() - t < 300) { /* l'image tenue */ }
-      ok();
-    })));
-    await expect.poll(() => page.evaluate(() => window.__essais.sonde.resume.gels.pires
-      .some((p) => p.ms >= 300 && p.t > 0 && !p.avantAffichage && p.travaux && typeof p.travaux === "object"))).toBe(true);
+    const depuis = await page.evaluate(() => new Promise((ok) => {
+      const d = window.__essais.sonde.resume.duree;
+      requestAnimationFrame(() => {
+        const t = performance.now();
+        while (performance.now() - t < 300) { /* l'image tenue */ }
+        ok(d);
+      });
+    }));
+    const pires = () => page.evaluate(() => window.__essais.sonde.resume.gels.pires);
+    const lesien = (/** @type {any} */ p) => p.ms >= 300 && p.t >= depuis - 50;
+    // dit, en cas d'échec, les gels que la visite gardait à la place
+    await expect.poll(async () => {
+      const l = await pires();
+      return l.some(lesien) ? "gardé" : JSON.stringify({ depuis, pires: l.map((p) => [p.ms, p.t, p.invocation]) });
+    }, { timeout: 15_000 }).toBe("gardé");
+    const gel = (await pires()).find(lesien);
+    expect(gel.t).toBeGreaterThan(0);
+    expect(gel.avantAffichage).toBeUndefined();
+    expect(typeof gel.travaux).toBe("object");
     /* Et où l'image a passé son temps : dans un rappel d'image, que le rendu
        contient — non à la « ligne 1 » d'un paquet. */
-    const gel = await page.evaluate(() => window.__essais.sonde.resume.gels.pires.find((p) => p.ms >= 300 && !p.avantAffichage));
     expect(gel.invocation).toBe("user-callback");
     expect(gel.scriptsMs).toBeGreaterThanOrEqual(250);
     expect(gel.renduMs).toBeGreaterThanOrEqual(250);
