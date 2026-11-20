@@ -67,14 +67,21 @@ import { chronometre } from "./journal-travaux.mjs";
    montre : le réglage qui l'éteint doit donc retirer le filtre avec les
    couleurs, et non le laisser retrancher des stands sans que rien ne le dise.
    Un simple changement de couleur, lui, ne rebâtit pas l'index — on le relève
-   à chaque glissement du sélecteur. */
+   à chaque glissement du sélecteur.
+
+   La valeur retenue est celle sur laquelle l'index a été bâti, et
+   `indexeCriteres` la pose lui-même. Retenue ici seulement, elle valait
+   encore `null` au premier montage du plan : l'index que l'indexation du salon
+   venait de bâtir se refaisait aussitôt, à l'identique — près d'une centaine
+   de millisecondes de plus dans la tâche qui précède l'affichage, sur un
+   téléphone (profil du démarrage, 20 novembre 2026). */
 let _secteursOfferts = null;
 
 /** Les couleurs du plan et le critère suivent le même réglage. */
 export function appliqueSecteurs(){
   coloreSecteurs();
   const offert = secteursMontres();
-  if (offert !== _secteursOfferts){ _secteursOfferts = offert; indexeCriteres(); }
+  if (offert !== _secteursOfferts) indexeCriteres();
 }
 
 /**
@@ -234,6 +241,8 @@ export function texteAnglaisPerso(o){
  */
 let CRITERES = [];
 export function indexeCriteres(){
+  // `clesCriteres` en dépend : l'index dit pour quelle valeur il vaut (`appliqueSecteurs`)
+  _secteursOfferts = secteursMontres();
   const fiches = TOUS.filter(o => o.kind === "stand").concat(HEBERGES);
   CRITERES = clesCriteres().map(cle => {
     const n = new Map();
