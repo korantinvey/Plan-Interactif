@@ -417,7 +417,10 @@ export function brancheGestes(){
        millisecondes par clic sur un PC à carte graphique intégrée, en vue
        immersive (`?perf`, FUNEXPO, 20 novembre 2026), avant que le stand ne
        commence à monter. Le survol n'en dispensait qu'une souris immobile
-       depuis sa réponse. */
+       depuis sa réponse. Et quand le moteur du plan la tranche par le calcul
+       (`moteur-gl.mjs` `designe`), la réponse est là sur-le-champ, sans rien
+       demander à la carte : la relecture différée bloquait encore la page une
+       tâche plus tard. */
     const avance = viseEnAvance(ecran[0], ecran[1]);
     const vise = () => avance && avance.fini && (!avance.el || avance.el.isConnected) ? avance.el
       : GL.actif ? cibleWebgl(ecran[0], ecran[1])
@@ -435,11 +438,11 @@ export function brancheGestes(){
        glisse que bouton tenu, et rarement. Sans lecture différée, elle le
        cherche et le fait monter sur-le-champ, comme avant. */
     const d = drag = { x: ex, y: ey, vx: view.x, vy: view.y, bouge: false, bute: false, glisse: false,
-             /** @type {any} */ cible: tactile || avance ? undefined : vise(), vise, avance, montee: 0 };
+             /** @type {any} */ cible: tactile || (avance && !avance.fini) ? undefined : vise(), vise, avance, montee: 0 };
     svg.setPointerCapture(e.pointerId); saisitPlan(true);
     // le stand appuyé commence à monter, sans attendre que le relâché le choisisse
     if (!tactile){
-      if (!avance) monteALAppui(d.cible);
+      if (!avance || avance.fini) monteALAppui(d.cible);
       // relâché avant la réponse, le clic l'a déjà cherché lui-même (`pointerup`)
       else avance.promesse.then(() => {
         if (drag !== d || d.glisse || d.bouge) return;

@@ -3875,6 +3875,8 @@ function survoleWebgl(){
      souris immobile est alors le bon, ce qu'il n'était pas après un zoom. */
   if (!_survolXY || !GL.actif || GL.geste || _page.drag() || _page.pince()) return;
   const [x, y] = _survolXY, rayon = _page.enEdition() ? 3 : 0;
+  const calcule = objetCalcule(x, y, rayon);
+  if (calcule !== undefined){ survolTrouve(x, y, rayon, calcule); return; }
   if (!lectureDifferee()){ survolTrouve(x, y, rayon, objetSous(x, y, rayon)); return; }
   // une désignation à la fois : la suivante part au retour de celle-ci
   if (_survolEnCours) return;
@@ -4357,6 +4359,8 @@ function logosSurLesToits(/** @type {any} */ c){
  *  que l'éditeur saisit, le libellé qu'on place. */
 function objetSous(x, y, rayon){
   if (!peutDesigner()) return null;
+  const calcule = objetCalcule(x, y, rayon);
+  if (calcule !== undefined) return calcule;
   sansProfondeurDeDesignation();
   const r = cadrePlan();
   return lisObjet(GL.deck.pickObject({ x: x - r.left, y: y - r.top, radius: rayon || 0 }));
@@ -4397,6 +4401,20 @@ function sansProfondeurDeDesignation(){
    appui pendant le chargement du plan y tombait (Funexpo 2026, octobre et
    novembre). Rien n'est alors sous le doigt. */
 function peutDesigner(){ return !!(GL.deck && GL.deck.isInitialized); }
+/* Ce qui est sous la souris, tranché sans la carte graphique quand le moteur
+   du plan sait le faire (`moteur-gl.mjs` `designe`) : sa relecture, même
+   différée, attendait qu'elle ait fini ce qu'on lui avait confié avant, et
+   bloquait la page une tâche plus tard — jusqu'à cent millisecondes au
+   survol comme au clic sur un PC à carte graphique intégrée (`?perf`,
+   FUNEXPO, 20 novembre 2026). `undefined` : le calcul ne sait pas, la carte
+   répond. deck.gl, le recours, n'a pas ce calcul. */
+function objetCalcule(/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ rayon){
+  const d = /** @type {any} */ (GL.deck);
+  if (!peutDesigner() || typeof d.designe !== "function") return undefined;
+  const r = cadrePlan();
+  const o = d.designe({ x: x - r.left, y: y - r.top, radius: rayon || 0 });
+  return o === undefined ? undefined : lisObjet(o);
+}
 /** La même question, la réponse relue sans attendre la carte graphique. */
 async function objetSousDiffere(/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ rayon){
   if (!peutDesigner()) return null;
@@ -4415,7 +4433,14 @@ async function objetSousDiffere(/** @type {number} */ x, /** @type {number} */ y
  * @returns {{ fini: boolean, el: Element | null, promesse: Promise<Element | null | undefined> } | null}
  */
 export function viseEnAvance(/** @type {number} */ x, /** @type {number} */ y){
-  if (!GL.actif || !lectureDifferee()) return null;
+  if (!GL.actif) return null;
+  // tranchée par le calcul, la réponse est là sur-le-champ
+  const calcule = objetCalcule(x, y, 0);
+  if (calcule !== undefined){
+    const el = calcule ? calcule.el : null;
+    return { fini: true, el, promesse: Promise.resolve(el) };
+  }
+  if (!lectureDifferee()) return null;
   /** @type {{ fini: boolean, el: Element | null, promesse: Promise<Element | null | undefined> }} */
   const a = { fini: false, el: null, promesse: Promise.resolve(undefined) };
   a.promesse = objetSousDiffere(x, y, 0).then(o => { a.el = o ? o.el : null; a.fini = true; return a.el; },

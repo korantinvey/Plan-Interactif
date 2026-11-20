@@ -13,6 +13,7 @@
    ============================================================ */
 import earcut from "earcut";
 import { Couche, ENTETE_SOMMETS, ENTETE_FRAGMENTS, remplis, tampon, aRefaire } from "./moteur-gl-couche.mjs";
+import { traverse } from "./moteur-gl-calcul.mjs";
 
 /* ------------------------------------------------------------
    Ce que les couches partagent : les attributs posés sur la carte graphique
@@ -94,10 +95,15 @@ export function remplisAttributs(/** @type {any} */ couche, /** @type {Assemblag
   /** @type {Record<string, import("./moteur-gl-couche.mjs").SpecAttribut>} */ specs, /** @type {ArrayLike<number>} */ comptes,
   /** @type {number} */ total, /** @type {number} */ diviseur, /** @type {Set<string> | null} */ acces){
   const p = couche.props, data = p.data;
-  for (const spec of Object.values(specs)){
+  /** @type {Record<string, any>} */
+  const poses = {};
+  for (const [nom, spec] of Object.entries(specs)){
     if (acces && !acces.has(spec.accessor)) continue;
-    a.pose(/** @type {number} */ (spec.emplacement), remplis(spec, p[spec.accessor], data, comptes, total), spec.taille, spec.type, diviseur);
+    a.pose(/** @type {number} */ (spec.emplacement), poses[nom] = remplis(spec, p[spec.accessor], data, comptes, total),
+      spec.taille, spec.type, diviseur);
   }
+  // ce que la carte graphique a reçu, pour qui veut le relire sans elle (`designe`)
+  return poses;
 }
 
 /** Les attributs objet par objet, numérotés à la suite de ceux de la géométrie. */
@@ -291,10 +297,42 @@ export class SolidPolygonLayer extends Couche {
       a.pose(2, { donnees: g.tampons.a_dessus }, 1, "f32", 0);
       a.pose(3, { donnees: g.tampons.a_objet }, 1, "f32", 0);
       a.poseIndices(g.indices);
-      e = { a, comptes: g.comptes, total: g.total, n: g.indices.length };
-      remplisAttributs(this, a, ATTR_POLYGONE, e.comptes, e.total, 0, null);
-    } else if (r.acces.size) remplisAttributs(this, e.a, ATTR_POLYGONE, e.comptes, e.total, 0, r.acces);
+      /* Les sommets et les triangles restent aussi de ce côté-ci, tels que la
+         carte les a reçus : la désignation par le calcul les relit (`designe`). */
+      e = { a, comptes: g.comptes, total: g.total, n: g.indices.length, sommets: g.tampons.a_p,
+        dessus: g.tampons.a_dessus, objets: g.tampons.a_objet, indices: g.indices, haut: null };
+      e.haut = remplisAttributs(this, a, ATTR_POLYGONE, e.comptes, e.total, 0, null).a_haut;
+    } else if (r.acces.size){
+      const poses = remplisAttributs(this, e.a, ATTR_POLYGONE, e.comptes, e.total, 0, r.acces);
+      if (poses.a_haut) e.haut = poses.a_haut;
+    }
     this.etat = e;
+  }
+
+  /**
+   * Les objets de la couche qui couvrent le point `q`, dans l'ordre où la
+   * carte les peindrait pour la désignation, avec leur profondeur — ce que le
+   * shader des sommets fait, refait ici : le dessus monte de sa hauteur en
+   * relief, puis la matrice de modèle et la vue.
+   * @param {ArrayLike<number>} m la vue rapportée à l'origine, la matrice de modèle comprise
+   * @param {number[]} q @param {(objet: number, profondeur: number) => void} rend
+   */
+  designe(m, q, rend){
+    const e = this.etat, p = this.props;
+    if (!e || !e.n) return;
+    let pos = e.sommets;
+    if (p.extruded){
+      // les dessus montés, gardés tant que les hauteurs reçues ne changent pas : le survol redemande sans cesse
+      const k = (p.elevationScale ?? 1), h = e.haut;
+      if (!e.montes || e.montes.haut !== h || e.montes.k !== k){
+        const cst = h && h.constante ? h.constante[0] : 0, monte = new Float32Array(e.sommets);
+        for (let v = 0; v < e.dessus.length; v++) if (e.dessus[v])
+          monte[3 * v + 2] += e.dessus[v] * (h && h.donnees ? h.donnees[v] : cst) * k;
+        e.montes = { haut: h, k, pos: monte };
+      }
+      pos = e.montes.pos;
+    }
+    e.projete = traverse(m, pos, e.indices, e.objets, q, rend, e.projete);
   }
 
   dessine(/** @type {any} */ ctx, /** @type {any} */ prog){

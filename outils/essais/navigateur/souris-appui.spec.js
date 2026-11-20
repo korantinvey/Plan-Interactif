@@ -1,6 +1,7 @@
 /**
- * À la souris, l'appui ne fait plus attendre la carte graphique
- * (`modules/gestes.mjs`, `webgl.mjs` `viseEnAvance`).
+ * À la souris, l'appui et le survol ne demandent plus rien à la carte
+ * graphique (`modules/gestes.mjs`, `webgl.mjs` `viseEnAvance`,
+ * `moteur-gl.mjs` `designe`).
  *
  * L'appui demandait ce qui était sous la souris en attendant la réponse : la
  * page patientait jusqu'à ce que la carte graphique ait fini l'image en cours,
@@ -8,15 +9,17 @@
  * en vue immersive, avant que le stand ne commence à monter (`?perf`, FUNEXPO,
  * 20 novembre 2026). Le survol n'en dispensait qu'une souris immobile depuis sa
  * réponse : un clic qui suit un mouvement la redemandait. La question part
- * désormais sans l'attendre, comme au doigt, et le relâché qui la devance
- * l'attend au lieu de la redemander. L'essai compte les désignations attendues
- * (`pickObject`) pendant un clic bref qui suit un mouvement : aucune, et le
- * stand est choisi.
+ * ensuite sans l'attendre — mais sa relecture, différée, bloquait encore la
+ * page une tâche plus tard, jusqu'à cent millisecondes, au clic comme au
+ * survol (même relevé, sur la branche). Le moteur la tranche désormais par le
+ * calcul. L'essai compte les questions posées à la carte, attendues
+ * (`pickObject`) ou différées (`pickObjectAsync`), pendant un survol puis un
+ * clic bref qui suit un mouvement : aucune, et le stand est choisi.
  */
 const { test, expect } = require("@playwright/test");
 const { prepare, attendLaListe, standAViser } = require("./aide.js");
 
-test("un clic à la souris choisit son stand sans attendre la carte graphique", async ({ page }) => {
+test("un survol et un clic à la souris choisissent leur stand sans rien demander à la carte graphique", async ({ page }) => {
   const erreurs = await prepare(page);
   await page.goto("/plan?plan=smcl-2026");
   await attendLaListe(page);
@@ -27,18 +30,24 @@ test("un clic à la souris choisit son stand sans attendre la carte graphique", 
   await page.waitForFunction(() => document.documentElement.classList.contains("plan-affiche"), null, { timeout: 30_000 });
   await page.waitForTimeout(1000);
 
-  // les désignations attendues, comptées sur le moteur même
+  // les questions posées à la carte, attendues ou différées, comptées sur le moteur même
   await page.evaluate(() => {
-    const d = window.__essais.GL.deck, pick = d.pickObject.bind(d);
+    const d = window.__essais.GL.deck, pick = d.pickObject.bind(d), differe = d.pickObjectAsync.bind(d);
     window.__attendues = 0;
     d.pickObject = (o) => { window.__attendues++; return pick(o); };
+    d.pickObjectAsync = (o) => { window.__attendues++; return differe(o); };
   });
   const p = await standAViser(page);
   expect(p).not.toBeNull();
   // la souris arrive sur le stand et clique aussitôt : le survol n'a pas encore répondu
   await page.mouse.move(p.x - 40, p.y - 40);
   await page.waitForTimeout(300);
-  await page.evaluate(() => { window.__attendues = 0; });
+  // le survol d'abord : la souris passe sur le plan, et la question lui est répondue sans la carte
+  const calculees = () => page.evaluate(() => window.__essais.GL.deck.designationsCalculees || 0);
+  const avant = await calculees();
+  await page.mouse.move(p.x - 20, p.y - 20, { steps: 4 });
+  await expect.poll(calculees).toBeGreaterThan(avant);
+  expect(await page.evaluate(() => window.__attendues)).toBe(0);
   await page.mouse.move(p.x, p.y);
   // un clic bref : au banc, sans carte graphique, plus court que la réponse — le relâché l'attend
   await page.mouse.down();
